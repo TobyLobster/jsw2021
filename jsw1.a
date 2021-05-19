@@ -1,4 +1,4 @@
-; $.JSW1   001100 001f90
+; $.JSW1   001100 002f7e
 ;
 ; Reassembly by TobyLobster, 2021
 ;
@@ -2530,18 +2530,7 @@ room_data
 room_01_data                                        ; (Watch Tower)
     !byte $f2, $20, $98, $a1, $c9, $ef, $60, $77, $3f, $62, $67, $fb, $6e, $aa, $81, $8c ; items: 4 (1111)
     !byte $f8, $cb, $ae, $91, $78, $a0                                                   ; exits: left: $01, right: $01, up: $26, down: $05
-
-; ***************************************************************************************
-entry_point
-    ldx #$97                                        ;
-    ldy #$1f                                        ; *RUN JSW1.5
-    jsr OSCLI                                       ;
-    !text "R.JSW1.5",$0d                            ;
-
-; [This 'entry_point' routine is erroneously in the middle of the Watch Tower definition:
-;
-; Should be:
-;    !byte $cc, $4a, $62, $c6, $82, $49, $26, $43, $66, $99, $b9, $71, $34, $ba, $4e, $96]
+    !byte $cc, $4a, $62, $c6, $82, $49, $26, $43, $66, $99, $b9, $71, $34, $ba, $4e, $96
 
     !byte $94, $16, $1d, $0a, $56, $1c, $79, $0a, $10, $21  ; conveyor: right, slope: /, rope: no
     !byte $0a, $5d, $56, $56, $6c, $d8, $f4, $47, $b1, $4f, $9d, $91, $89, $35, $fd, $55    ; tiles: $db (2), $dc (3), $88 (3), $df (1), $dd (2), $e0
@@ -4639,8 +4628,16 @@ room_00_data                                        ; (Game Over screen)
                                                     ; $02 (3) @ (15,12), range (0,0), moving l 0
                                                     ; $01 (2) @ (15,0), range (0,0), moving r 2
 
+; ***************************************************************************************
+entry_point
+    ldx #<starRunCommandString                      ;
+    ldy #>starRunCommandString                      ; *RUN JSW1.5
+    jsr OSCLI                                       ;
+starRunCommandString
+    !text "R.JSW1.5",$0d                            ;
+
+
 ; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00

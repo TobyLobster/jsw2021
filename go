@@ -38,7 +38,7 @@ echo "$.!BOOT     FF1900 FF1900 $myfilesizehex" >new/\!BOOT.INF
 # Create INF file for JSW1
 myfilesize=$(stat -f %z "new/JSW1")
 myfilesizehex=$(printf '%x\n' $myfilesize)
-echo "$.JSW1 00001100 00001F90 $myfilesizehex L" >new/JSW1.INF
+echo "$.JSW1 00001100 00002f7e $myfilesizehex L" >new/JSW1.INF
 
 # Create INF file for JSW1.5
 myfilesize=$(stat -f %z "new/JSW1.5")
