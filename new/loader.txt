@@ -1,12 +1,12 @@
- 10 MODE1:VDU23;11;0;0;0;
- 20 FOR X=0 TO &3F STEP2:X?&900=X:X?&901=0:NEXT
- 30 VDU19,2,6;0;
- 40 VDU23;2,90,0;0;0;
- 50 VDU23;6,15,0;0;0;
- 60 VDU23;7,29,0;0;0;
- 70 VDU23;8,&C0,0;0;0;
- 80 VDU23;1,64;0;0;0
- 90 ?&352=0:?&E0=&0:?&E1=&9
+ 10 MODE1:VDU23;8202;0;0;0;
+ 20 REM FOR X=0 TO &3F STEP2:X?&900=X:X?&901=0:NEXT
+ 30 VDU19,2,6;0;:REM colour 2 is cyan
+ 40 VDU23;2,90,0;0;0;:REM shift screen right
+ 50 VDU23;6,15,0;0;0;:REM show only 15 rows
+ 60 VDU23;7,29,0;0;0;:REM vertical sync position 29
+ 70 VDU23;8,&C0,0;0;0;:REM non-interlaced, disable cursor-output
+ 80 VDU23;1,64;0;0;0:REM 64 horizontal displayed 'characters' (32 actual characters)
+ 90 REM ?&352=0:?&E0=&0:?&E1=&9
 100 ?&FE00=&06:?&FE01=&B
-110 VDU28,6,14,31,9
+110 REM VDU28,6,14,31,9
 120 *R.JSW1
