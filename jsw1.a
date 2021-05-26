@@ -71,13 +71,13 @@ OSBYTE                                              = $fff4     ; *TAPE, keys, w
 
 
 ; game constants
-;player_start_room                                   = 21        ; 21 = The Bathroom
-;player_start_y                                      = $68       ;
-;player_start_x                                      = $a8       ;
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_y                                      = $68       ;
+player_start_x                                      = $a0       ;
 
-player_start_room                                   = 33        ; 33 = Cold Store
-player_start_y                                      = $30       ;
-player_start_x                                      = $d8       ;
+;player_start_room                                   = 33        ; 33 = Cold Store
+;player_start_y                                      = $30       ;
+;player_start_x                                      = $d8       ;
 
 
 ; game variables (memory locations)
@@ -128,6 +128,9 @@ scrolltext_address_high                             = $71
 timer_two                                           = $71
 tile_type                                           = $72
 scrolltext_offset                                   = $72
+
+; $73 unused
+
 length2                                             = $74
 start_x                                             = $75
 previous_x                                          = $75
@@ -180,6 +183,9 @@ player_started_jump                                 = $8b
 player_x                                            = $8c
 player_y                                            = $8d
 player_horizontal_speed                             = $8e
+
+; $8f unused
+
 sprite_address_low1                                 = $90
 tile_address_low2                                   = $90
 sprite_address                                      = $90
@@ -218,6 +224,9 @@ bit_for_item                                        = $97
 rope_pixel_x                                        = $97
 packed_byte2                                        = $97
 seven                                               = $98
+
+; $99 unused
+
 player_entered_room_falling_too_far                 = $9a
 player_lives                                        = $9b
 player_not_plotted                                  = $9c
@@ -225,42 +234,11 @@ out_of_time                                         = $9d
 house_clear                                         = $9e
 player_rope_pixel                                   = $9f
 melody_active                                       = $028a
-to_title_screen                                     = $0400
-sound_definitions                                   = $0880
-sound_0_pitch                                       = sound_definitions + 4
-irq_counter                                         = $08bf
 
 screen_memory_start                                 = $5600
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
 
 * = $1100
-
-to_reset_items
-    jmp reset_items                                 ;
-
-to_animate_game_over_boot
-    jmp animate_game_over_boot                      ;
-
-to_update_game
-    jmp update_game                                 ;
-
-to_initialise_enemies                               ; [unused]
-    jmp initialise_enemies                          ;
-
-to_initialise_room
-    jmp initialise_room                             ;
-
-to_plot_sprite
-    jmp plot_sprite                                 ;
-
-to_get_x_bits_of_room_data
-    jmp get_x_bits_of_room_data                     ;
-
-to_calculate_tile_address_for_enemy_X
-    jmp calculate_tile_address_for_enemy_X          ;
-
-to_calculate_screen_address
-    jmp calculate_screen_address                    ;
 
 ; ***************************************************************************************
 initialise_room
@@ -269,6 +247,7 @@ initialise_room
     jsr initialise_arrows                           ;
     jmp calculate_screen_address_of_conveyor        ;
 
+; player state on entry into the current room (reset to these values on death)
 entry_horizontal_speed
     !byte 0
 entry_jump_timer
@@ -314,7 +293,6 @@ initialise_room_data
     lda player_is_jumping                           ;
     sta entry_is_jumping                            ;
     lda #0                                          ;
-    sta $73                                         ; [unused variable]
     sta tile_x                                      ;
     sta tile_y                                      ;
     sta tile_type                                   ;
@@ -722,8 +700,12 @@ first_enemy                                         ; If not, unpack its sprite
     adc #>packed_enemy_sprites                      ;
     sta sprite_address_high1                        ;
     lda tmp                                         ;
-    and #$e0                                        ;
+    and #$e0                                        ; just the top three bits (frame_offset * 32)
+    clc                                             ;
+    adc #<packed_enemy_sprites                      ;
     sta sprite_address_low1                         ;
+    bcc unpack_frames_loop                          ;
+    inc sprite_address_high1                        ;
 unpack_frames_loop
     jsr unpack_enemy_sprite                         ;
     dec number_of_frames                            ;
@@ -1117,18 +1099,18 @@ handle_player_keys
     sta player_conveyor_direction                   ; Mark player as not being conveyed
     beq check_for_jump                              ;
 player_not_conveyed
-    ldx #$9e                                        ; Z
+    ldx #$9e                                        ; 'Z'
     jsr check_for_keypress                          ;
     and #$fe                                        ;
     sta player_horizontal_speed                     ;
-    ldx #$bd                                        ; X
+    ldx #$bd                                        ; 'X'
     jsr check_for_keypress                          ;
     and #2                                          ;
     clc                                             ;
     adc player_horizontal_speed                     ;
     sta player_horizontal_speed                     ;
 check_for_jump
-    ldx #$b7                                        ; *
+    ldx #$b7                                        ; '*'
     jsr check_for_keypress                          ;
     sta player_started_jump                         ;
     rts                                             ;
@@ -1177,7 +1159,7 @@ player_can_move
     ldx slope_direction                             ;
     cmp slope_speeds,X                              ;
     beq not_jumping_along_slope                     ;
-    inc enemies_y                                   ; player_y_in_enemies ; Make player move down to follow slope
+    inc enemies_y                                   ; Make player move down to follow slope
     inc player_y_in_enemies                         ;
 not_jumping_along_slope
     ldx #0                                          ; player
@@ -1211,7 +1193,7 @@ not_slope1
     jsr calculate_tile_address_for_enemy_X          ;
     jsr mark_enemies_that_overlap_player            ;
     jsr plot_enemies                                ;
-    lda #$b0                                        ; BCS ; Set to restore background
+    lda #$b0                                        ; 'BCS' opcode ; Set to restore background
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
     beq skip_unplot                                 ;
@@ -1226,7 +1208,7 @@ wait_for_irq                                        ; Slight delay to stop playe
 skip_unplot
     jsr plot_enemies                                ;
     jsr update_arrows                               ;
-    lda #$90                                        ; BCC ; Set to copy background
+    lda #$90                                        ; 'BCC' opcode ; Set to copy background
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
     bpl skip_plot                                   ;
@@ -1268,7 +1250,7 @@ leave13
 
 ; ***************************************************************************************
 jump_parabola_table
-    !byte $00, $04, $04, $04, $04, $02, $02, $02, $00, $00, $00, $00, $fe, $fe, $fe, $fe, $fc
+    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
     !byte $fc, $fc
 
 ; ***************************************************************************************
@@ -1341,13 +1323,14 @@ set_tile_table_for_background
     sec                                             ;
     sbc tile_y                                      ;
     asl                                             ;
-    asl                                             ;
+    asl                                             ; tile_address = tile_table + (15-tile_y) * 32 + tile_x
     asl                                             ;
     asl                                             ;
     asl                                             ;
     rol tile_address_high1                          ;
     adc tile_x                                      ;
     sta tile_address_low1                           ;
+
     lda tile_type                                   ;
     adc #1                                          ;
     cmp #5                                          ; DEADLY
@@ -2106,8 +2089,6 @@ calculate_room_data_address
     lda room_data_address_low_table,X               ;
     sta room_data_address_low                       ;
     lda room_data_address_high_table,X              ;
-    clc                                             ;
-    adc #>room_data_address_low_table               ;
     sta room_data_address_high                      ;
     rts                                             ;
 
@@ -2336,16 +2317,6 @@ leave27
     rts                                             ;
 
 ; ***************************************************************************************
-; [unused]  ; BASIC fragment
-    !byte $36, $20, $88, $32, $0d, $01, $fe, $0c, $20, $50, $25, $3d, $26, $42, $30, $30 ; ... 6 STEP 2
-    !byte $0d, $02, $03, $0d, $20, $4f, $25, $3d, $26, $35, $43, $30, $30, $0d, $02, $08 ; 510 P%=$B00
-    !byte $05, $20, $0d, $03, $e8, $0a, $5b, $4f, $50, $54, $20 ; 515 O%=$5C00
-                                                    ; 520
-                                                    ; 1000 [OPT
-
-    !byte 0,0
-
-; ***************************************************************************************
 ;
 ; Table of room addresses
 ;
@@ -2416,135 +2387,130 @@ leave27
 ; ***************************************************************************************
 
 room_data_address_low_table
-
-!if (<room_data_address_low_table != 0) {
-    !error "room data address low table", room_data_address_low_table
-}
-
-    !byte <(room_00_data - room_data_address_low_table)
-    !byte <(room_01_data - room_data_address_low_table)
-    !byte <(room_02_data - room_data_address_low_table)
-    !byte <(room_03_data - room_data_address_low_table)
-    !byte <(room_04_data - room_data_address_low_table)
-    !byte <(room_05_data - room_data_address_low_table)
-    !byte <(room_06_data - room_data_address_low_table)
-    !byte <(room_07_data - room_data_address_low_table)
-    !byte <(room_08_data - room_data_address_low_table)
-    !byte <(room_09_data - room_data_address_low_table)
-    !byte <(room_0a_data - room_data_address_low_table)
-    !byte <(room_0b_data - room_data_address_low_table)
-    !byte <(room_0c_data - room_data_address_low_table)
-    !byte <(room_0d_data - room_data_address_low_table)
-    !byte <(room_0e_data - room_data_address_low_table)
-    !byte <(room_0f_data - room_data_address_low_table)
-    !byte <(room_10_data - room_data_address_low_table)
-    !byte <(room_11_data - room_data_address_low_table)
-    !byte <(room_12_data - room_data_address_low_table)
-    !byte <(room_13_data - room_data_address_low_table)
-    !byte <(room_14_data - room_data_address_low_table)
-    !byte <(room_15_data - room_data_address_low_table)
-    !byte <(room_16_data - room_data_address_low_table)
-    !byte <(room_17_data - room_data_address_low_table)
-    !byte <(room_18_data - room_data_address_low_table)
-    !byte <(room_19_data - room_data_address_low_table)
-    !byte <(room_1a_data - room_data_address_low_table)
-    !byte <(room_1b_data - room_data_address_low_table)
-    !byte <(room_1c_data - room_data_address_low_table)
-    !byte <(room_1d_data - room_data_address_low_table)
-    !byte <(room_1e_data - room_data_address_low_table)
-    !byte <(room_1f_data - room_data_address_low_table)
-    !byte <(room_20_data - room_data_address_low_table)
-    !byte <(room_21_data - room_data_address_low_table)
-    !byte <(room_22_data - room_data_address_low_table)
-    !byte <(room_23_data - room_data_address_low_table)
-    !byte <(room_24_data - room_data_address_low_table)
-    !byte <(room_25_data - room_data_address_low_table)
-    !byte <(room_26_data - room_data_address_low_table)
-    !byte <(room_27_data - room_data_address_low_table)
-    !byte <(room_28_data - room_data_address_low_table)
-    !byte <(room_29_data - room_data_address_low_table)
-    !byte <(room_2a_data - room_data_address_low_table)
-    !byte <(room_2b_data - room_data_address_low_table)
-    !byte <(room_2c_data - room_data_address_low_table)
-    !byte <(room_2d_data - room_data_address_low_table)
-    !byte <(room_2e_data - room_data_address_low_table)
-    !byte <(room_2f_data - room_data_address_low_table)
-    !byte <(room_30_data - room_data_address_low_table)
-    !byte <(room_31_data - room_data_address_low_table)
-    !byte <(room_32_data - room_data_address_low_table)
-    !byte <(room_33_data - room_data_address_low_table)
-    !byte <(room_34_data - room_data_address_low_table)
-    !byte <(room_35_data - room_data_address_low_table)
-    !byte <(room_36_data - room_data_address_low_table)
-    !byte <(room_37_data - room_data_address_low_table)
-    !byte <(room_38_data - room_data_address_low_table)
-    !byte <(room_39_data - room_data_address_low_table)
-    !byte <(room_3a_data - room_data_address_low_table)
-    !byte <(room_3b_data - room_data_address_low_table)
-    !byte <(room_3c_data - room_data_address_low_table)
+    !byte <room_00_data
+    !byte <room_01_data
+    !byte <room_02_data
+    !byte <room_03_data
+    !byte <room_04_data
+    !byte <room_05_data
+    !byte <room_06_data
+    !byte <room_07_data
+    !byte <room_08_data
+    !byte <room_09_data
+    !byte <room_0a_data
+    !byte <room_0b_data
+    !byte <room_0c_data
+    !byte <room_0d_data
+    !byte <room_0e_data
+    !byte <room_0f_data
+    !byte <room_10_data
+    !byte <room_11_data
+    !byte <room_12_data
+    !byte <room_13_data
+    !byte <room_14_data
+    !byte <room_15_data
+    !byte <room_16_data
+    !byte <room_17_data
+    !byte <room_18_data
+    !byte <room_19_data
+    !byte <room_1a_data
+    !byte <room_1b_data
+    !byte <room_1c_data
+    !byte <room_1d_data
+    !byte <room_1e_data
+    !byte <room_1f_data
+    !byte <room_20_data
+    !byte <room_21_data
+    !byte <room_22_data
+    !byte <room_23_data
+    !byte <room_24_data
+    !byte <room_25_data
+    !byte <room_26_data
+    !byte <room_27_data
+    !byte <room_28_data
+    !byte <room_29_data
+    !byte <room_2a_data
+    !byte <room_2b_data
+    !byte <room_2c_data
+    !byte <room_2d_data
+    !byte <room_2e_data
+    !byte <room_2f_data
+    !byte <room_30_data
+    !byte <room_31_data
+    !byte <room_32_data
+    !byte <room_33_data
+    !byte <room_34_data
+    !byte <room_35_data
+    !byte <room_36_data
+    !byte <room_37_data
+    !byte <room_38_data
+    !byte <room_39_data
+    !byte <room_3a_data
+    !byte <room_3b_data
+    !byte <room_3c_data
 
 room_data_address_high_table
-    !byte >(room_00_data - room_data_address_low_table)
-    !byte >(room_01_data - room_data_address_low_table)
-    !byte >(room_02_data - room_data_address_low_table)
-    !byte >(room_03_data - room_data_address_low_table)
-    !byte >(room_04_data - room_data_address_low_table)
-    !byte >(room_05_data - room_data_address_low_table)
-    !byte >(room_06_data - room_data_address_low_table)
-    !byte >(room_07_data - room_data_address_low_table)
-    !byte >(room_08_data - room_data_address_low_table)
-    !byte >(room_09_data - room_data_address_low_table)
-    !byte >(room_0a_data - room_data_address_low_table)
-    !byte >(room_0b_data - room_data_address_low_table)
-    !byte >(room_0c_data - room_data_address_low_table)
-    !byte >(room_0d_data - room_data_address_low_table)
-    !byte >(room_0e_data - room_data_address_low_table)
-    !byte >(room_0f_data - room_data_address_low_table)
-    !byte >(room_10_data - room_data_address_low_table)
-    !byte >(room_11_data - room_data_address_low_table)
-    !byte >(room_12_data - room_data_address_low_table)
-    !byte >(room_13_data - room_data_address_low_table)
-    !byte >(room_14_data - room_data_address_low_table)
-    !byte >(room_15_data - room_data_address_low_table)
-    !byte >(room_16_data - room_data_address_low_table)
-    !byte >(room_17_data - room_data_address_low_table)
-    !byte >(room_18_data - room_data_address_low_table)
-    !byte >(room_19_data - room_data_address_low_table)
-    !byte >(room_1a_data - room_data_address_low_table)
-    !byte >(room_1b_data - room_data_address_low_table)
-    !byte >(room_1c_data - room_data_address_low_table)
-    !byte >(room_1d_data - room_data_address_low_table)
-    !byte >(room_1e_data - room_data_address_low_table)
-    !byte >(room_1f_data - room_data_address_low_table)
-    !byte >(room_20_data - room_data_address_low_table)
-    !byte >(room_21_data - room_data_address_low_table)
-    !byte >(room_22_data - room_data_address_low_table)
-    !byte >(room_23_data - room_data_address_low_table)
-    !byte >(room_24_data - room_data_address_low_table)
-    !byte >(room_25_data - room_data_address_low_table)
-    !byte >(room_26_data - room_data_address_low_table)
-    !byte >(room_27_data - room_data_address_low_table)
-    !byte >(room_28_data - room_data_address_low_table)
-    !byte >(room_29_data - room_data_address_low_table)
-    !byte >(room_2a_data - room_data_address_low_table)
-    !byte >(room_2b_data - room_data_address_low_table)
-    !byte >(room_2c_data - room_data_address_low_table)
-    !byte >(room_2d_data - room_data_address_low_table)
-    !byte >(room_2e_data - room_data_address_low_table)
-    !byte >(room_2f_data - room_data_address_low_table)
-    !byte >(room_30_data - room_data_address_low_table)
-    !byte >(room_31_data - room_data_address_low_table)
-    !byte >(room_32_data - room_data_address_low_table)
-    !byte >(room_33_data - room_data_address_low_table)
-    !byte >(room_34_data - room_data_address_low_table)
-    !byte >(room_35_data - room_data_address_low_table)
-    !byte >(room_36_data - room_data_address_low_table)
-    !byte >(room_37_data - room_data_address_low_table)
-    !byte >(room_38_data - room_data_address_low_table)
-    !byte >(room_39_data - room_data_address_low_table)
-    !byte >(room_3a_data - room_data_address_low_table)
-    !byte >(room_3b_data - room_data_address_low_table)
-    !byte >(room_3c_data - room_data_address_low_table)
+    !byte >room_00_data
+    !byte >room_01_data
+    !byte >room_02_data
+    !byte >room_03_data
+    !byte >room_04_data
+    !byte >room_05_data
+    !byte >room_06_data
+    !byte >room_07_data
+    !byte >room_08_data
+    !byte >room_09_data
+    !byte >room_0a_data
+    !byte >room_0b_data
+    !byte >room_0c_data
+    !byte >room_0d_data
+    !byte >room_0e_data
+    !byte >room_0f_data
+    !byte >room_10_data
+    !byte >room_11_data
+    !byte >room_12_data
+    !byte >room_13_data
+    !byte >room_14_data
+    !byte >room_15_data
+    !byte >room_16_data
+    !byte >room_17_data
+    !byte >room_18_data
+    !byte >room_19_data
+    !byte >room_1a_data
+    !byte >room_1b_data
+    !byte >room_1c_data
+    !byte >room_1d_data
+    !byte >room_1e_data
+    !byte >room_1f_data
+    !byte >room_20_data
+    !byte >room_21_data
+    !byte >room_22_data
+    !byte >room_23_data
+    !byte >room_24_data
+    !byte >room_25_data
+    !byte >room_26_data
+    !byte >room_27_data
+    !byte >room_28_data
+    !byte >room_29_data
+    !byte >room_2a_data
+    !byte >room_2b_data
+    !byte >room_2c_data
+    !byte >room_2d_data
+    !byte >room_2e_data
+    !byte >room_2f_data
+    !byte >room_30_data
+    !byte >room_31_data
+    !byte >room_32_data
+    !byte >room_33_data
+    !byte >room_34_data
+    !byte >room_35_data
+    !byte >room_36_data
+    !byte >room_37_data
+    !byte >room_38_data
+    !byte >room_39_data
+    !byte >room_3a_data
+    !byte >room_3b_data
+    !byte >room_3c_data
 
 room_data
 room_01_data                                        ; (Watch Tower)
@@ -4649,20 +4615,6 @@ room_00_data                                        ; (Game Over screen)
                                                     ; $01 (2) @ (15,0), range (0,0), moving r 2
 
 ; ***************************************************************************************
-; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00
-
-
-; $.jsw1.5 4700 4D00
-
 packed_enemy_sprites                                ; 1 bit per pixel, 16x16, vertically inverted
 enemy_sprite_01_frame_0
     !byte $3c, $76                                  ; ...#....#....... ; The Nightmare Room
@@ -4681,11 +4633,6 @@ enemy_sprite_01_frame_0
     !byte $10, $80                                  ; #.............#.
     !byte $10, $80                                  ; .#....###...##.#
     !byte $10, $80                                  ; ..####...###.##.
-
-!if (<packed_enemy_sprites != 0) {
-    !error "packed enemy sprites need to be page aligned ", packed_enemy_sprites
-}
-
 
 enemy_sprite_02_frame_0
     !byte $37, $ec                                  ; ..##.######.##.. ; Top Landing
@@ -7555,44 +7502,45 @@ enemy_sprite_29_frame_1
     !byte $05, $00                                  ; .#...#.#.....#..
     !byte $02, $00                                  ; ...###.###...#..
 
-tile_table                                          ; Initial values are [unused]
+; align to the next available 2 page boundary, filling with zeros
+!align 511, 0, 0                                    ;
+tile_table                                          ;
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 !if (($0200 *(tile_table / $0200)) != tile_table) {
-    !error "tile_table must be on an even page boundary", tile_table
+    !error "tile_table must be on an even page boundary ", tile_table
 }
-
-    !byte $33, $11, $cc, $00, $77, $00, $cc, $00, $55, $bb, $88, $00, $11, $ff, $00, $00 ; [initial values unused]
-    !byte $66, $ff, $66, $00, $77, $ff, $ee, $00, $33, $ff, $cc, $00, $11, $ff, $88, $00
-    !byte $00, $ff, $00, $00, $00, $66, $00, $00, $00, $ff, $00, $00, $11, $ff, $00, $00
-    !byte $00, $bb, $00, $00, $11, $ff, $88, $00, $00, $ff, $00, $00, $00, $ff, $00, $00
-    !byte $00, $ee, $ee, $00, $00, $77, $66, $00, $00, $66, $ee, $00, $00, $33, $cc, $00
-    !byte $00, $dd, $ff, $00, $00, $ee, $ff, $00, $00, $77, $ee, $00, $00, $77, $ee, $00
-    !byte $00, $33, $cc, $00, $00, $11, $88, $00, $00, $33, $cc, $00, $00, $77, $cc, $00
-    !byte $00, $22, $cc, $00, $00, $77, $ee, $00, $00, $33, $cc, $00, $00, $33, $cc, $00
-    !byte $00, $00, $ee, $00, $00, $00, $66, $00, $00, $00, $66, $00, $00, $00, $ff, $00
-    !byte $00, $11, $bb, $88, $00, $11, $dd, $88, $00, $11, $dd, $88, $00, $11, $dd, $88
-    !byte $00, $00, $ff, $00, $00, $00, $66, $00, $00, $00, $ff, $00, $00, $11, $ff, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 space_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -7651,11 +7599,8 @@ clear_screen_loop
     bne clear_screen_loop                           ;
     rts                                             ;
 
-; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
+; align to next page boundary
+!align 255, 0, 0
 
 unpacked_sprites                                    ; 2 bits per pixel, 16x16, vertically inverted
 player_sprite_left_frame_0
@@ -7677,7 +7622,7 @@ player_sprite_left_frame_0
     !byte $00, $ff, $00, $00                        ; ..##...###......
 
 !if (<unpacked_sprites != 0) {
-    !error "unpacked sprites must be on a page boundary"
+    !error "unpacked_sprites must be on a page boundary ", unpacked_sprites
 }
 
 
@@ -7901,7 +7846,7 @@ background_sprite_00
     !byte $00                                       ; ........
 
 !if (<background_sprite_data != 0) {
-    !error "background_sprite_data must be aligned to a page"
+    !error "background_sprite_data must be aligned to a page ", background_sprite_data
 }
 
 
@@ -7986,7 +7931,7 @@ background_sprite_08
     !byte $30                                       ; ..##....
 
 background_sprite_09
-    !byte $ff                                       ; ######## ;  ; [unused]
+    !byte $ff                                       ; ######## ; [unused]
     !byte $5b                                       ; .#.##.##
     !byte $d6                                       ; ##.#.##.
     !byte $af                                       ; #.#.####
@@ -7996,7 +7941,7 @@ background_sprite_09
     !byte $f7                                       ; ####.###
 
 background_sprite_0a
-    !byte $01                                       ; .......# ;  ; [unused]
+    !byte $01                                       ; .......# ; [unused]
     !byte $40                                       ; .#......
     !byte $04                                       ; .....#..
     !byte $46                                       ; .#...##.
@@ -8006,7 +7951,7 @@ background_sprite_0a
     !byte $f9                                       ; #####..#
 
 background_sprite_0b
-    !byte $a0                                       ; #.#..... ;  ; [unused]
+    !byte $a0                                       ; #.#..... ; [unused]
     !byte $14                                       ; ...#.#..
     !byte $82                                       ; #.....#.
     !byte $50                                       ; .#.#....
@@ -8116,7 +8061,7 @@ background_sprite_15
     !byte $08                                       ; ....#...
 
 background_sprite_16
-    !byte $aa                                       ; #.#.#.#. ;  ; [unused]
+    !byte $aa                                       ; #.#.#.#. ; [unused]
     !byte $55                                       ; .#.#.#.#
     !byte $aa                                       ; #.#.#.#.
     !byte $ff                                       ; ########
@@ -8126,7 +8071,7 @@ background_sprite_16
     !byte $55                                       ; .#.#.#.#
 
 background_sprite_17
-    !byte $70                                       ; .###.... ;  ; [unused]
+    !byte $70                                       ; .###.... ; [unused]
     !byte $07                                       ; .....###
     !byte $77                                       ; .###.###
     !byte $77                                       ; .###.###
@@ -8136,7 +8081,7 @@ background_sprite_17
     !byte $7d                                       ; .#####.#
 
 background_sprite_18
-    !byte $14                                       ; ...#.#.. ;  ; [unused]
+    !byte $14                                       ; ...#.#.. ; [unused]
     !byte $2a                                       ; ..#.#.#.
     !byte $14                                       ; ...#.#..
     !byte $09                                       ; ....#..#
@@ -8156,7 +8101,7 @@ background_sprite_19
     !byte $00                                       ; ........
 
 background_sprite_1a
-    !byte $7b                                       ; .####.## ;  ; [unused]
+    !byte $7b                                       ; .####.## ; [unused]
     !byte $00                                       ; ........
     !byte $ed                                       ; ###.##.#
     !byte $00                                       ; ........
@@ -8256,7 +8201,7 @@ background_sprite_23
     !byte $01                                       ; .......#
 
 background_sprite_24
-    !byte $04                                       ; .....#.. ;  ; [unused]
+    !byte $04                                       ; .....#.. ; [unused]
     !byte $03                                       ; ......##
     !byte $c9                                       ; ##..#..#
     !byte $d8                                       ; ##.##...
@@ -8266,7 +8211,7 @@ background_sprite_24
     !byte $01                                       ; .......#
 
 background_sprite_25
-    !byte $19                                       ; ...##..# ;  ; [unused]
+    !byte $19                                       ; ...##..# ; [unused]
     !byte $60                                       ; .##.....
     !byte $0e                                       ; ....###.
     !byte $f0                                       ; ####....
@@ -8276,7 +8221,7 @@ background_sprite_25
     !byte $38                                       ; ..###...
 
 background_sprite_26
-    !byte $c2                                       ; ##....#. ;  ; [unused]
+    !byte $c2                                       ; ##....#. ; [unused]
     !byte $34                                       ; ..##.#..
     !byte $0b                                       ; ....#.##
     !byte $44                                       ; .#...#..
@@ -8366,7 +8311,7 @@ background_sprite_2e
     !byte $00                                       ; ........
 
 background_sprite_2f
-    !byte $ff                                       ; ######## ;  ; [unused]
+    !byte $ff                                       ; ######## ; [unused]
     !byte $aa                                       ; #.#.#.#.
     !byte $13                                       ; ...#..##
     !byte $aa                                       ; #.#.#.#.
@@ -8396,7 +8341,7 @@ background_sprite_31
     !byte $f8                                       ; #####...
 
 background_sprite_32
-    !byte $ff                                       ; ######## ;  ; [unused]
+    !byte $ff                                       ; ######## ; [unused]
     !byte $aa                                       ; #.#.#.#.
     !byte $77                                       ; .###.###
     !byte $aa                                       ; #.#.#.#.
@@ -8556,7 +8501,7 @@ background_sprite_41
     !byte $55                                       ; .#.#.#.#
 
 background_sprite_42
-    !byte $66                                       ; .##..##. ;  ; [unused]
+    !byte $66                                       ; .##..##. ; [unused]
     !byte $66                                       ; .##..##.
     !byte $66                                       ; .##..##.
     !byte $00                                       ; ........
@@ -8566,7 +8511,7 @@ background_sprite_42
     !byte $66                                       ; .##..##.
 
 background_sprite_43
-    !byte $51                                       ; .#.#...# ;  ; [unused]
+    !byte $51                                       ; .#.#...# ; [unused]
     !byte $55                                       ; .#.#.#.#
     !byte $54                                       ; .#.#.#..
     !byte $55                                       ; .#.#.#.#
@@ -8838,7 +8783,7 @@ background_sprite_59
     !byte $aa                                       ; #.#.#.#.
 
 background_sprite_5a
-    !byte $81                                       ; #......# ;  ; [unused]
+    !byte $81                                       ; #......# ; [unused]
     !byte $81                                       ; #......#
     !byte $42                                       ; .#....#.
     !byte $24                                       ; ..#..#..
@@ -8868,7 +8813,7 @@ background_sprite_5c
     !byte $44                                       ; .#...#..
 
 background_sprite_5d
-    !byte $28                                       ; ..#.#... ;  ; [unused]
+    !byte $28                                       ; ..#.#... ; [unused]
     !byte $54                                       ; .#.#.#..
     !byte $aa                                       ; #.#.#.#.
     !byte $54                                       ; .#.#.#..
@@ -8978,7 +8923,7 @@ background_sprite_67
     !byte $42                                       ; .#....#.
 
 background_sprite_68
-    !byte $20                                       ; ..#..... ;  ; [unused]
+    !byte $20                                       ; ..#..... ; [unused]
     !byte $40                                       ; .#......
     !byte $a0                                       ; #.#.....
     !byte $18                                       ; ...##...
@@ -9108,7 +9053,7 @@ background_sprite_74
     !byte $40                                       ; .#......
 
 background_sprite_75
-    !byte $28                                       ; ..#.#... ;  ; [unused]
+    !byte $28                                       ; ..#.#... ; [unused]
     !byte $54                                       ; .#.#.#..
     !byte $aa                                       ; #.#.#.#.
     !byte $55                                       ; .#.#.#.#
@@ -9118,7 +9063,7 @@ background_sprite_75
     !byte $28                                       ; ..#.#...
 
 background_sprite_76
-    !byte $00                                       ; ........ ;  ; [unused]
+    !byte $00                                       ; ........ ; [unused]
     !byte $0a                                       ; ....#.#.
     !byte $bd                                       ; #.####.#
     !byte $ff                                       ; ########
@@ -9198,7 +9143,7 @@ background_sprite_7d
     !byte $00                                       ; ........
 
 background_sprite_7e
-    !byte $42                                       ; .#....#. ;  ; [unused]
+    !byte $42                                       ; .#....#. ; [unused]
     !byte $99                                       ; #..##..#
     !byte $66                                       ; .##..##.
     !byte $a1                                       ; #.#....#
@@ -9308,7 +9253,7 @@ background_sprite_88
     !byte $80                                       ; #.......
 
 background_sprite_89
-    !byte $70                                       ; .###.... ;  ; [unused]
+    !byte $70                                       ; .###.... ; [unused]
     !byte $20                                       ; ..#.....
     !byte $20                                       ; ..#.....
     !byte $50                                       ; .#.#....
@@ -9548,7 +9493,7 @@ background_sprite_a0
     !byte $22                                       ; ..#...#.
 
 background_sprite_a1
-    !byte $82                                       ; #.....#. ;  ; [unused]
+    !byte $82                                       ; #.....#. ; [unused]
     !byte $41                                       ; .#.....#
     !byte $3e                                       ; ..#####.
     !byte $6a                                       ; .##.#.#.
@@ -9958,7 +9903,7 @@ background_sprite_c9
     !byte $ff                                       ; ########
 
 background_sprite_ca
-    !byte $07                                       ; .....### ;  ; [unused]
+    !byte $07                                       ; .....### ; [unused]
     !byte $55                                       ; .#.#.#.#
     !byte $1f                                       ; ...#####
     !byte $00                                       ; ........
@@ -9968,7 +9913,7 @@ background_sprite_ca
     !byte $66                                       ; .##..##.
 
 background_sprite_cb
-    !byte $81                                       ; #......# ;  ; [unused]
+    !byte $81                                       ; #......# ; [unused]
     !byte $64                                       ; .##..#..
     !byte $cd                                       ; ##..##.#
     !byte $0f                                       ; ....####
@@ -10058,7 +10003,7 @@ background_sprite_d3
     !byte $55                                       ; .#.#.#.#
 
 background_sprite_d4
-    !byte $55                                       ; .#.#.#.# ;  ; [unused]
+    !byte $55                                       ; .#.#.#.# ; [unused]
     !byte $a2                                       ; #.#...#.
     !byte $55                                       ; .#.#.#.#
     !byte $0c                                       ; ....##..
@@ -10068,7 +10013,7 @@ background_sprite_d4
     !byte $8a                                       ; #...#.#.
 
 background_sprite_d5
-    !byte $12                                       ; ...#..#. ;  ; [unused]
+    !byte $12                                       ; ...#..#. ; [unused]
     !byte $12                                       ; ...#..#.
     !byte $12                                       ; ...#..#.
     !byte $12                                       ; ...#..#.
@@ -10158,7 +10103,7 @@ background_sprite_dd
     !byte $68                                       ; .##.#...
 
 background_sprite_de
-    !byte $ff                                       ; ######## ;  ; [unused]
+    !byte $ff                                       ; ######## ; [unused]
     !byte $fe                                       ; #######.
     !byte $f8                                       ; #####...
     !byte $f0                                       ; ####....
@@ -10586,7 +10531,7 @@ skip_inversion1
 
 plot_rope_pixel
     sta rope_pixel_x                                ;
-    jsr to_calculate_screen_address                 ;
+    jsr calculate_screen_address                    ;
     ldy #0                                          ;
     lda (screen_address_low),Y                      ;
     beq rope_not_touching_player                    ; [Bug: triggers for enemies too (e.g. Cold Store)]
@@ -10809,6 +10754,8 @@ reset_game
     sta player_is_jumping                           ;
     sta player_jump_timer                           ;
     sta swimming_pool_item_collected                ;
+    lda #2                                          ;
+    sta player_speed                                ; face right
     lda #$f0                                        ;
     sta hours_high                                  ;
     lda #7                                          ; Game starts at 7:00pm
@@ -10821,7 +10768,7 @@ reset_game
     sta player_x_in_enemies                         ;
     lda #player_start_room                          ; Player starts in "The Bathroom"
     sta player_room                                 ;
-    jsr to_reset_items                              ;
+    jsr reset_items                                 ;
     rts                                             ;
 
 handle_endgame
@@ -10967,7 +10914,7 @@ update_active_arrow
 arrow_still_active
     jsr plot_arrow                                  ;
     ldx #8                                          ; Use enemy slot 8 for arrow
-    jsr to_calculate_tile_address_for_enemy_X       ;
+    jsr calculate_tile_address_for_enemy_X          ;
     ldy #$20                                        ;
     lda (tile_address1),Y                           ;
     ldy arrow                                       ;
@@ -10980,7 +10927,7 @@ plot_arrow
     sta enemies_x + 8                               ;
     ldx arrow_y,Y                                   ;
     stx enemies_y + 8                               ;
-    jsr to_calculate_screen_address                 ;
+    jsr calculate_screen_address                    ;
     lda arrow_sprite_offsets,Y                      ;
     sta arrow_sprite_address_low                    ;
     lda arrow_active,Y                              ;
@@ -11054,7 +11001,7 @@ skip_floor3
     adc #$10                                        ;
     sta life_x                                      ;
     ldx life_y                                      ;
-    jsr to_plot_sprite                              ;
+    jsr plot_sprite                                 ;
     dec lives_remaining_to_plot                     ;
     bne update_lives_loop                           ;
 leave6
@@ -11071,21 +11018,21 @@ initialise_room_background_tiles_and_title
     ldy #4                                          ; For each of five tiles
 set_tile_colours_loop
     ldx #2                                          ;
-    jsr to_get_x_bits_of_room_data                  ; Get two bits of room data for each tile colour
+    jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour
     sta background_tiles_colours,Y                  ;
     dey                                             ;
     bpl set_tile_colours_loop                       ;
     ldy #5                                          ; For each of six tiles
 set_tile_sprites_loop
     ldx #8                                          ; Get eight bits of room data for each tile sprite
-    jsr to_get_x_bits_of_room_data                  ;
+    jsr get_x_bits_of_room_data                     ;
     sta background_tiles_sprites,Y                  ;
     dey                                             ;
     bpl set_tile_sprites_loop                       ;
     ldy #3                                          ; For each of four screen colours
 set_screen_colours_loop
     ldx #3                                          ;
-    jsr to_get_x_bits_of_room_data                  ; Get three bits of room data for each screen colour
+    jsr get_x_bits_of_room_data                     ; Get three bits of room data for each screen colour
     jsr set_colour_y_to_a                           ;
     dey                                             ;
     bpl set_screen_colours_loop                     ;
@@ -11094,13 +11041,13 @@ set_screen_colours_loop
     lda #$1f                                        ;
     jsr OSWRCH                                      ;
     ldx #4                                          ; Get four bits of room data for position of room title
-    jsr to_get_x_bits_of_room_data                  ;
+    jsr get_x_bits_of_room_data                     ;
     jsr OSWRCH                                      ;
     lda #$10                                        ;
     jsr OSWRCH                                      ; TAB to start of room title
 write_room_title_loop
     ldx #5                                          ; Get five bits of room data for each character of title
-    jsr to_get_x_bits_of_room_data                  ;
+    jsr get_x_bits_of_room_data                     ;
     cmp #$1b                                        ;
     bcs is_1b_1c_1d_1e_or_1f                        ;
     jsr write_letter                                ; $00 to $1a writes "a" to "z"
@@ -11172,11 +11119,11 @@ initialise_arrows_loop
     sta arrow_active,Y                              ;
     sta arrow_timer,Y                               ;
     ldx #1                                          ; Get one bit of room data for presence of arrow
-    jsr to_get_x_bits_of_room_data                  ;
+    jsr get_x_bits_of_room_data                     ;
     tax                                             ;
     beq consider_next_arrow2                        ; If arrow present
     ldx #4                                          ; Get four bits of room data for arrow_y
-    jsr to_get_x_bits_of_room_data                  ;
+    jsr get_x_bits_of_room_data                     ;
     tax                                             ;
     beq consider_next_arrow2                        ;
     asl                                             ;
@@ -11185,7 +11132,7 @@ initialise_arrows_loop
     eor #$78                                        ;
     sta arrow_y,Y                                   ;
     ldx #3                                          ; Get three bits of room data for arrow timing
-    jsr to_get_x_bits_of_room_data                  ;
+    jsr get_x_bits_of_room_data                     ;
     tax                                             ;
     lda arrow_timers_table,X                        ;
     sta arrow_timer,Y                               ;
@@ -11239,10 +11186,10 @@ not_nightmare_room
     rts                                             ;
 
 real_entry_point
-    jsr to_title_screen                             ;
+    jsr title_screen                                ;
     jsr reset_game                                  ;
 new_life_loop
-    jsr to_initialise_room                          ;
+    jsr initialise_room                             ;
 game_loop
     lda #$13                                        ; Wait for Vertical Retrace ; Three v-syncs per game frame
     jsr OSBYTE                                      ;
@@ -11251,7 +11198,7 @@ game_loop
     lda #$13                                        ; Wait for Vertical Retrace
     jsr OSBYTE                                      ;
     jsr update_lives                                ;
-    jsr to_update_game                              ;
+    jsr update_game                                 ;
     jsr check_for_suicide                           ;
     lda player_killed                               ;
     beq game_loop                                   ;
@@ -11267,7 +11214,7 @@ write_clear_window_loop
     bne write_clear_window_loop                     ;
     lda #0                                          ;
     jsr fill_space_sprite                           ; Ensure space sprite is black
-    jsr to_animate_game_over_boot                   ;
+    jsr animate_game_over_boot                      ;
     ldx #0                                          ;
     stx game_over_string + 4                        ;
 game_over_loop
@@ -11499,9 +11446,9 @@ move_memory_loop
     lda irq2_vector_high                            ;
     sta previous_irq2_vector_high                   ;
 
-    lda #<to_irq_routine                            ;
+    lda #<irq_routine                               ;
     sta irq2_vector_low                             ;
-    lda #>to_irq_routine                            ;
+    lda #>irq_routine                               ;
     sta irq2_vector_high                            ;
 
     lda #$a0                                        ; Enable timer 2
@@ -11509,9 +11456,9 @@ move_memory_loop
     lda #0                                          ;
     sta userVIAAuxiliaryControlRegister             ; Auxiliary control register
 
-    lda #<to_event_routine                          ;
+    lda #<event_routine                             ;
     sta event_interrupt_vector_low                  ;
-    lda #>to_event_routine                          ;
+    lda #>event_routine                             ;
     sta event_interrupt_vector_high                 ;
 
     ldx #4                                          ; vsync event
@@ -11565,18 +11512,6 @@ register_CRTC_array
     !byte 11                                        ; R14 = Cursor position register
     !byte 60                                        ; R15 = Cursor position register
 
-    ; [unused]
-    !byte $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
 bytes_to_copy
     !byte $00, $00
     !text " GO 4 IT"
@@ -11590,8 +11525,6 @@ bytes_to_copy_end
 copy_from
 !pseudopc $0400 {
 copy_to
-to_title_screen
-    jmp title_screen                                ;
 
 !if (>(text_message_address - $10) != >(text_message_address + 8 - $10)) {
     !error "Source and destination of scrolling text copy not on same page"
@@ -11650,28 +11583,11 @@ unpack_byte_loop
 +
     jsr OSWRCH                                      ;
 
-    ; debug!
-;    txa                                             ;
-;    pha                                             ;
-;    tya                                             ;
-;    pha                                             ;
-;    lda #19                                         ;
-;    jsr OSBYTE                                      ;
-;    pla                                             ;
-;    tay                                             ;
-;    pla                                             ;
-;    tax                                             ;
-
-
     dey                                             ;
     bpl unpack_byte_loop                            ;
     inx                                             ;
     cpx #title_screen_logo_end - title_screen_logo  ;
     bne plot_title_screen_logo_loop                 ;
-
-    ; debug!
-;-
-;    jmp -
 
     rts                                             ;
 
@@ -11791,77 +11707,6 @@ title_screen_logo
     !byte $d7, $9d
 title_screen_logo_end
 
-; [unused code, corresponing to end of add_block_of_tiles]
-    dec height1                                     ; $0692-$06a1 is an [unused] copy of $1290 to $129f
-    bpl -                                           ;
-    lda tile_y                                      ;
-    sec                                             ;
-    sbc block_y_delta                               ;
-    sta tile_y                                      ;
-    lda tile_x                                      ;
-    clc                                             ;
-    adc x_delta                                     ;
-; [unused]
-    sei                                             ;
-; [unused code, corresponding to end of add_line_of_tiles]
-    sta scrolltext_address_high                     ; $06a3-$06ff is an [unused] copy of $13a3 to $13ff
-    dec $74                                         ;
-    bne --                                          ;
-    lda $82                                         ;
-    beq +                                           ;
-    jsr $13b1                                       ; add_background_tile
-+
-    rts                                             ;
-
-; [unused code, corresponding to add_background_tile]
-    ldy tile_type                                   ;
-    ldx background_tiles_colours,Y                  ;
-    lda background_tiles_sprites,Y                  ;
-    jsr $1551                                       ; plot_background_sprite
-    jsr $1867                                       ; except this is $1878, set_tile_table_for_background
-    rts                                             ;
-
-; [unused data, corresponding to directions tables]
-    !byte $01, $00, $ff, $00
-    !byte $00, $01, $00, $ff
-    !byte $01, $ff, $01, $ff
-    !byte $01, $01, $ff, $ff
-
-; [unused code, corresponding to start of unpack_enemy_sprites]
-    lda #0                                          ;
-    sta unpacked_sprite_address_low                 ;
-    lda #$73                                        ;
-    sta unpacked_sprite_address_high                ;
-    lda #8                                          ;
-    sta unpacked_sprite_offset                      ;
-    lda enemies_on_screen                           ;
-    sta enemy_to_consider1                          ;
-    beq nonsense3                                   ;
-    ldx enemy_to_consider1                          ;
-    cpx enemies_on_screen                           ;
-    beq nonsense2                                   ;
-    ldy enemies_on_screen                           ;
--
-    lda enemies_sprite,Y                            ;
-    cmp enemies_sprite,X                            ;
-    bne +                                           ;
-    lda enemies_unpacked_sprite_offset,Y            ;
-    sta enemies_unpacked_sprite_offset,X            ;
-    bpl nonsense                                    ;
-+
-    dey                                             ;
-    cpy enemy_to_consider1                          ;
-    bne -                                           ;
-nonsense2
-    !byte $bc                                       ;
-
-; ***************************************************************************************
-to_event_routine
-    jmp event_routine                               ;
-
-to_irq_routine
-    jmp irq_routine                                 ;
-
 ; ***************************************************************************************
 event_routine
     php                                             ;
@@ -11965,9 +11810,6 @@ skip_increment
     sta irq_accumulator                             ;
     jmp (previous_irq2_vector_low)                  ;
 
-; [unused]
-    !byte $00, $00
-
 melody_pitch_table
     !byte $84, $70, $68, $70, $68, $64, $54, $64, $68, $70, $68, $70, $68, $64, $68, $70
     !byte $78, $7c, $78, $7c, $78, $70, $84, $80, $78, $70, $68, $64, $68, $70, $64, $74
@@ -11977,19 +11819,7 @@ melody_duration_table
     !byte $40, $08, $08, $08, $08, $10, $20, $08, $08, $08, $08, $08, $08, $08, $08, $08
     !byte $08, $08, $08, $08, $08, $40, $20, $10, $10, $08, $08, $08, $08, $10, $10, $08
     !byte $08, $08, $08, $10, $10, $00
-
-; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 }
-
-; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00
 
 copy_to_sound_workspace
 !pseudopc $0800 {
@@ -12004,6 +11834,9 @@ copy_to_sound_workspace
     !byte $e2, $01, $b8, $e4, $01, $b8, $e6, $01, $b8, $e8, $01, $b8, $ea, $01, $01, $b8
     !byte $64, $06, $f8, $00, $00, $f8, $00, $00, $f8, $00, $00, $f8, $00, $00, $00, $90
 
+sound_definitions
+sound_0_pitch = sound_definitions + 4
+
 ;         channel   volume    pitch     duration
     !byte $12, $00, $f8, $ff, $ea, $00, $01, $00    ; sound_0 (game over)
     !byte $12, $00, $01, $00, $46, $00, $0a, $00    ; sound_1 (player jumping)
@@ -12013,7 +11846,8 @@ copy_to_sound_workspace
     !byte $10, $00, $f3, $ff, $07, $00, $04, $00    ; sound_5 (player death)
 
 ; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00
 
 previous_irq2_vector_low
     !byte $89
@@ -12023,6 +11857,7 @@ previous_irq2_vector_high
 irq_counter
     !byte $01
 
+; $08c0
 ; OS envelope storage area
     !byte $02, $04, $04, $04, $0a, $0a, $0a, $0a, $00, $00, $ec, $5a, $5a, $00, $00, $00 ; envelope_1
     !byte $02, $00, $00, $00, $0a, $28, $08, $19, $05, $fb, $f6, $7e, $6e, $00, $00, $00 ; envelope_2
@@ -12136,8 +11971,8 @@ background_tiles_colours
 background_tiles_sprites
     !byte $8d, $8e, $03, $90, $40, $91
 
-; [unused]
-    !byte $00, $00, $00
+unused1
+    !byte $00, $00, $00                 ; [unused]
 
 enemies_sprite
     !byte $00, $1c, $04, $02, $26, $1c, $0e, $00, $00
@@ -12181,15 +12016,6 @@ enemies_need_replot
 enemy_has_moved
     !byte $c9, $00, $00, $01, $00, $00, $00, $7c, $0a
 
-; [unused code]
-    pla                                             ; [$0a75-$0a7b is an unused copy of $076b-$0771]
-    tay                                             ;
-    pla                                             ;
-    tax                                             ;
-    pla                                             ;
-    plp                                             ;
-    rts                                             ;
-
 arrow_timer
     !byte $00, $00
 
@@ -12229,140 +12055,87 @@ initial_zero_page_values
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $6c, $04
 
 ; $4d
-    !byte $8c                                       ;  life_y
-    !byte $fb                                       ;  space_tile
-    !byte $01                                       ;  swimming_pool_item_collected
-    !byte $fd                                       ;  room_data_address_low
-    !byte $2c                                       ;  room_data_address_high
-    !byte $46                                       ;  room_data_offset
-    !byte $01                                       ;  bits_remaining_in_room_data_byte
-    !byte $00                                       ;  room_data_byte
-    !byte $11                                       ;  player_room
-    !byte $02                                       ;  pages_of_tile_table_remaining_when_finding_conveyor
-    !byte $88                                       ;  game_timer
-    !byte $04                                       ;  conveyor_length
-    !byte $c0                                       ;  conveyor_screen_address_low
-    !byte $45                                       ;  conveyor_screen_address_high
-    !byte $00                                       ;  rope_position_relative_to_centre
-    !byte $01                                       ;  rope_velocity_relative_to_centre
-    !byte $b9                                       ;  rope_end_x
-    !byte $48                                       ;  rope_end_y
-    !byte $d2                                       ;  rope_position
-    !byte $ef                                       ;  tile_address_low
-    !byte $6e                                       ;  tile_address_high
-    !byte $40                                       ;  where_player_fell_from
-    !byte $00                                       ;  player_killed
-    !byte $01                                       ;  player_is_jumping
-    !byte $02                                       ;  player_jump_timer
-    !byte $02                                       ;  items_in_room_minus_one
-    !byte $07                                       ;  item_number
-    !byte $80                                       ;  tile
-    !byte $00                                       ;  player_conveyor_direction
-    !byte $fe                                       ;  conveyor_direction
-    !byte $00                                       ;  player_on_slope
-    !byte $00                                       ;  slope_direction
-    !byte $00                                       ;  do_triangle_ends
-    !byte $ff                                       ;  length
-    !byte $00                                       ;  room_contains_rope
-    !byte $01                                       ;  scrolltext_address_low
-    !byte $3e                                       ;  scrolltext_address_high
-    !byte $05                                       ;  tile_type
-    !byte $00                                       ;  [unused]
-    !byte $00                                       ;  length
-    !byte $00                                       ;  start_x / previous_x
-    !byte $ff                                       ;  previous_y / height
-    !byte $01                                       ;  x_delta
-    !byte $01                                       ;  y_delta
-    !byte $00                                       ;  width / enemy_to_consider
-    !byte $ff                                       ;  (various)
-    !byte $81                                       ;  (various)
-    !byte $08                                       ;  direction
-    !byte $01                                       ;  triangle_direction
-    !byte $ff                                       ;  x_skip
-    !byte $00                                       ;  triangle_length
-    !byte $ff                                       ;  height
-    !byte $f0                                       ;  previous_tile_type / previous_y / room / conveyor_colour
-    !byte $01                                       ;  add_first_and_last
-    !byte $08                                       ;  direction_base
-    !byte $00                                       ;  unpacked_sprite_address_low
-    !byte $75                                       ;  unpacked_sprite_address_high
-    !byte $10                                       ;  unpacked_sprite_offset
-    !byte $02                                       ;  enemies_on_screen
-    !byte $aa                                       ;  unpacked_byte_two
-    !byte $85                                       ;  sprite_colour
-    !byte $00                                       ;  enemy_to_consider
-    !byte $00                                       ;  player_started_jump
-    !byte $78                                       ;  player_x
-    !byte $42                                       ;  player_y
-    !byte $00                                       ;  player_horizontal_speed
-    !byte $ff                                       ;  [unused]
-    !byte $f1                                       ;  screen_address_low
-    !byte $44                                       ;  screen_address_high
-    !byte $c0                                       ;  sprite_address_low
-    !byte $72                                       ;  sprite_address_high
-    !byte $3f                                       ;  sprite_size_in_bytes
-    !byte $18                                       ;  sprite_width
-    !byte $05                                       ;  (various)
-    !byte $ff                                       ;  (various)
-    !byte $07                                       ;  seven ; This value is used
-    !byte $ff                                       ;  [unused]
-    !byte $00                                       ;  player_entered_room_falling_too_far
-    !byte $07                                       ;  player_lives
-    !byte $00                                       ;  player_not_plotted
-    !byte $00                                       ;  out_of_time
-    !byte $00                                       ;  house_clear
-    !byte $00                                       ;  player_rope_pixel
+    !byte $8c                                       ; $4d  life_y
+    !byte $fb                                       ; $4e  space_tile
+    !byte $01                                       ; $4f  swimming_pool_item_collected
+    !byte $fd                                       ; $50  room_data_address_low
+    !byte $2c                                       ; $51  room_data_address_high
+    !byte $46                                       ; $52  room_data_offset
+    !byte $01                                       ; $53  bits_remaining_in_room_data_byte
+    !byte $00                                       ; $54  room_data_byte
+    !byte $11                                       ; $55  player_room
+    !byte $02                                       ; $56  pages_of_tile_table_remaining_when_finding_conveyor
+    !byte $88                                       ; $57  game_timer
+    !byte $04                                       ; $58  conveyor_length
+    !byte $c0                                       ; $59  conveyor_screen_address_low
+    !byte $45                                       ; $5a  conveyor_screen_address_high
+    !byte $00                                       ; $5b  rope_position_relative_to_centre
+    !byte $01                                       ; $5c  rope_velocity_relative_to_centre
+    !byte $b9                                       ; $5d  rope_end_x
+    !byte $48                                       ; $5e  rope_end_y
+    !byte $d2                                       ; $5f  rope_position
+    !byte $ef                                       ; $60  tile_address_low
+    !byte $6e                                       ; $61  tile_address_high
+    !byte $40                                       ; $62  where_player_fell_from
+    !byte $00                                       ; $63  player_killed
+    !byte $01                                       ; $64  player_is_jumping
+    !byte $02                                       ; $65  player_jump_timer
+    !byte $02                                       ; $66  items_in_room_minus_one
+    !byte $07                                       ; $67  item_number
+    !byte $80                                       ; $68  tile
+    !byte $00                                       ; $69  player_conveyor_direction
+    !byte $fe                                       ; $6a  conveyor_direction
+    !byte $00                                       ; $6b  player_on_slope
+    !byte $00                                       ; $6c  slope_direction
+    !byte $00                                       ; $6d  do_triangle_ends
+    !byte $ff                                       ; $6e  length
+    !byte $00                                       ; $6f  room_contains_rope
+    !byte $01                                       ; $70  scrolltext_address_low
+    !byte $3e                                       ; $71  scrolltext_address_high
+    !byte $05                                       ; $72  tile_type
+    !byte $00                                       ; $73  [unused]
+    !byte $00                                       ; $74  length
+    !byte $00                                       ; $75  start_x / previous_x
+    !byte $ff                                       ; $76  previous_y / height
+    !byte $01                                       ; $77  x_delta
+    !byte $01                                       ; $78  y_delta
+    !byte $00                                       ; $79  width / enemy_to_consider
+    !byte $ff                                       ; $7a  (various)
+    !byte $81                                       ; $7b  (various)
+    !byte $08                                       ; $7c  direction
+    !byte $01                                       ; $7d  triangle_direction
+    !byte $ff                                       ; $7e  x_skip
+    !byte $00                                       ; $7f  triangle_length
+    !byte $ff                                       ; $80  height
+    !byte $f0                                       ; $81  previous_tile_type / previous_y / room / conveyor_colour
+    !byte $01                                       ; $82  add_first_and_last
+    !byte $08                                       ; $83  direction_base
+    !byte $00                                       ; $84  unpacked_sprite_address_low
+    !byte $75                                       ; $85  unpacked_sprite_address_high
+    !byte $10                                       ; $86  unpacked_sprite_offset
+    !byte $02                                       ; $87  enemies_on_screen
+    !byte $aa                                       ; $88  unpacked_byte_two
+    !byte $85                                       ; $89  sprite_colour
+    !byte $00                                       ; $8a  enemy_to_consider
+    !byte $00                                       ; $8b  player_started_jump
+    !byte $78                                       ; $8c  player_x
+    !byte $42                                       ; $8d  player_y
+    !byte $00                                       ; $8e  player_horizontal_speed
+    !byte $ff                                       ; $8f  [unused]
+    !byte $f1                                       ; $90  screen_address_low
+    !byte $44                                       ; $91  screen_address_high
+    !byte $c0                                       ; $92  sprite_address_low
+    !byte $72                                       ; $93  sprite_address_high
+    !byte $3f                                       ; $94  sprite_size_in_bytes
+    !byte $18                                       ; $95  sprite_width
+    !byte $05                                       ; $96  (various)
+    !byte $ff                                       ; $97  (various)
+    !byte $07                                       ; $98  seven ; This value is used
+    !byte $ff                                       ; $99  [unused]
+    !byte $00                                       ; $9a  player_entered_room_falling_too_far
+    !byte $07                                       ; $9b  player_lives
+    !byte $00                                       ; $9c  player_not_plotted
+    !byte $00                                       ; $9d  out_of_time
+    !byte $00                                       ; $9e  house_clear
+    !byte $00                                       ; $9f  player_rope_pixel
 
-; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00
-
-    !byte 0,0,0,0,0
