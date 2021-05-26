@@ -229,37 +229,6 @@ to_title_screen                                     = $0400
 sound_definitions                                   = $0880
 sound_0_pitch                                       = sound_definitions + 4
 irq_counter                                         = $08bf
-rope_x_delta_table                                  = $0900
-rope_y_delta_table                                  = $0928
-rope_pixels_x                                       = $0994
-rope_pixels_y                                       = $09b6
-background_tiles_colours                            = $09f1
-background_tiles_sprites                            = $09f7
-enemies_sprite                                      = $0a00
-enemies_unpacked_sprite_offset                      = $0a09
-enemies_direction                                   = $0a12
-enemies_x                                           = $0a1b
-player_x_in_enemies                                 = $0a1b
-enemies_y                                           = $0a24
-player_y_in_enemies                                 = $0a24
-enemies_speed                                       = $0a2d
-player_speed                                        = $0a2d
-enemies_minimum                                     = $0a36
-enemies_maximum                                     = $0a3f
-enemies_colour                                      = $0a48
-enemies_previous_tile_address_low                   = $0a51
-enemies_previous_speed                              = $0a5a
-enemies_need_replot                                 = $0a63
-enemy_has_moved                                     = $0a6c
-arrow_timer                                         = $0a7c
-arrow_y                                             = $0a7e
-items_colour                                        = $0a80
-items_screen_address_low                            = $0a8c
-items_screen_address_high                           = $0a98
-exit_rooms                                          = $0aa4
-items_tile_address_low                              = $0aa8
-items_tile_address_high                             = $0ab4
-screen_address_lookup_table                         = $0ac0
 
 screen_memory_start                                 = $5600
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
@@ -297,7 +266,7 @@ to_calculate_screen_address
 initialise_room
     jsr initialise_room_data                        ;
     jsr initialise_enemies                          ;
-    jsr to_initialise_arrows                        ;
+    jsr initialise_arrows                           ;
     jmp calculate_screen_address_of_conveyor        ;
 
 entry_horizontal_speed
@@ -323,7 +292,7 @@ initialise_room_data
     jsr calculate_room_data_address                 ;
     jsr clear_screen                                ;
     jsr initialise_room_items_and_exits             ;
-    jsr to_initialise_room_background_tiles_and_title ;
+    jsr initialise_room_background_tiles_and_title  ;
     lda #$ff                                        ;
     sta item_number                                 ;
     lda #$d2                                        ;
@@ -349,7 +318,7 @@ initialise_room_data
     sta tile_x                                      ;
     sta tile_y                                      ;
     sta tile_type                                   ;
-    jsr to_write_status_line                        ;
+    jsr write_status_line                           ;
     jsr wipe_tile_table                             ;
 initialise_background_scenery_loop
     ldy #$ff                                        ;
@@ -1174,7 +1143,7 @@ update_game
 consider_keys
     jsr handle_player_keys                          ;
 skip_keys
-    jsr to_handle_rope_time_and_events              ;
+    jsr handle_rope_time_and_events                 ;
     jsr handle_player_jumping                       ;
     lda player_horizontal_speed                     ;
     beq player_isnt_moving                          ;
@@ -1240,7 +1209,7 @@ not_slope1
     jsr update_enemies                              ;
     ldx #0                                          ; player
     jsr calculate_tile_address_for_enemy_X          ;
-    jsr to_mark_enemies_that_overlap_player         ;
+    jsr mark_enemies_that_overlap_player            ;
     jsr plot_enemies                                ;
     lda #$b0                                        ; BCS ; Set to restore background
     sta plot_player_sprite_mode                     ;
@@ -1256,7 +1225,7 @@ wait_for_irq                                        ; Slight delay to stop playe
     jsr plot_or_unplot_previous_player_sprite       ; Unplot player
 skip_unplot
     jsr plot_enemies                                ;
-    jsr to_update_arrows                            ;
+    jsr update_arrows                               ;
     lda #$90                                        ; BCC ; Set to copy background
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
@@ -1279,9 +1248,9 @@ skip_plot
     lda player_killed                               ;
     beq leave13                                     ;
     lda #$10                                        ; sound_2
-    jsr to_play_sound_number_a                      ; Play sounds for player dying
+    jsr play_sound_number_a                         ; Play sounds for player dying
     lda #$28                                        ; sound_5
-    jsr to_play_sound_number_a                      ;
+    jsr play_sound_number_a                         ;
     dec player_lives                                ;
     lda entry_horizontal_speed                      ; Set player back to where they entered the room
     sta player_horizontal_speed                     ;
@@ -1727,7 +1696,7 @@ see_if_player_should_start_jump
     jsr check_player_jump_for_walls                 ;
     beq leave18                                     ;
     lda #8                                          ; sound_1
-    jsr to_play_sound_number_a                      ; Play sound for jumping
+    jsr play_sound_number_a                         ; Play sound for jumping
     jsr handle_player_jumping                       ;
 leave18
     rts                                             ;
@@ -1854,7 +1823,7 @@ tile_is_item                                        ; If the tile is an item,
     lda #0                                          ;
     sta items_colour,X                              ; If not, remove it from the screen
     stx item_number                                 ;
-    jsr to_collect_item                             ;
+    jsr collect_item                                ;
     bpl leave_with_initial_x_and_y                  ;
 tile_is_space
     lda room_contains_rope                          ;
@@ -2331,7 +2300,7 @@ animate_game_over_boot_loop
     inc sound_0_pitch                               ;
     inc sound_0_pitch                               ;
     lda #0                                          ; sound_0
-    jsr to_play_sound_number_a                      ; Play game over sound
+    jsr play_sound_number_a                         ; Play game over sound
     ldx #$0f                                        ;
     jsr delay                                       ;
     inc enemies_y + 1                               ;
@@ -7592,7 +7561,7 @@ tile_table                                          ; Initial values are [unused
     !error "tile_table must be on an even page boundary", tile_table
 }
 
-    !byte $33, $11, $cc, $00, $77, $00, $cc, $00, $55, $bb, $88, $00, $11, $ff, $00, $00 ; # $6e00 - $6eaf is a copy of $7100 - $71af
+    !byte $33, $11, $cc, $00, $77, $00, $cc, $00, $55, $bb, $88, $00, $11, $ff, $00, $00 ; [initial values unused]
     !byte $66, $ff, $66, $00, $77, $ff, $ee, $00, $33, $ff, $cc, $00, $11, $ff, $88, $00
     !byte $00, $ff, $00, $00, $00, $66, $00, $00, $00, $ff, $00, $00, $11, $ff, $00, $00
     !byte $00, $bb, $00, $00, $11, $ff, $88, $00, $00, $ff, $00, $00, $00, $ff, $00, $00
@@ -10538,47 +10507,6 @@ background_sprite_ff
 ; This first section is copied to $0b00
 
 !pseudopc $0b00 {
-to_write_status_line
-    jmp write_status_line                           ;
-
-to_handle_rope_time_and_events
-    jmp handle_rope_time_and_events                 ;
-
-to_collect_item
-    jmp collect_item                                ;
-
-to_reset_game                                       ; [unused]
-    jmp reset_game                                  ;
-
-to_mark_enemies_that_overlap_player
-    jmp mark_enemies_that_overlap_player            ;
-
-to_update_arrows
-    jmp update_arrows                               ;
-
-to_to_calculate_screen_address                      ; [unused]
-    jmp to_calculate_screen_address                 ;
-
-to_update_lives
-    jmp update_lives                                ;
-
-to_initialise_room_background_tiles_and_title
-    jmp initialise_room_background_tiles_and_title  ;
-
-to_initialise_arrows
-    jsr initialise_arrows                           ;
-
-to_handle_room_tweaks_on_entry                      ; [unused]
-    jmp handle_room_tweaks_on_entry                 ;
-
-to_real_entry_point
-    jmp real_entry_point                            ;
-
-to_game_over                                        ; [unused]
-    jmp game_over                                   ;
-
-to_play_sound_number_a
-    jmp play_sound_number_a                         ;
 
 handle_rope_time_and_events
     lda room_contains_rope                          ;
@@ -11233,6 +11161,10 @@ set_colour_y_to_a
     jsr OSWRCH                                      ;
     rts                                             ;
 
+arrow_timers_table
+;     0  1  2  3  4
+    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
+
 initialise_arrows
     ldy #1                                          ; For each of two arrows
 initialise_arrows_loop
@@ -11262,11 +11194,6 @@ initialise_arrows_loop
 consider_next_arrow2
     dey                                             ;
     bpl initialise_arrows_loop                      ;
-    rts                                             ;
-
-arrow_timers_table
-;     0  1  2  3  4
-    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
 
 handle_room_tweaks_on_entry
     lda #0                                          ;
@@ -11393,10 +11320,6 @@ tmp_x
     !byte 0
 tmp_y
     !byte 0
-
-; [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00
 }
 
 entry_point
@@ -11796,7 +11719,7 @@ title_screen_loop
     jsr scroll_scrolltext                           ;
     inc game_timer                                  ;
     jsr change_colour                               ;
-    jsr to_update_lives                             ; Animate lives
+    jsr update_lives                                ; Animate lives
     jsr check_for_space                             ;
     inc scrolltext_offset                           ;
     bne title_screen_loop                           ;
@@ -12225,12 +12148,15 @@ enemies_unpacked_sprite_offset
 enemies_direction
     !byte $00, $00, $00, $ff, $00, $00, $00, $00, $00
 
+player_x_in_enemies
 enemies_x
     !byte $a8, $3a, $e0, $78, $6c, $2c, $94, $8a, $f8
 
+player_y_in_enemies
 enemies_y
     !byte $68, $18, $68, $70, $18, $48, $60, $ad, $40
 
+player_speed
 enemies_speed
     !byte $02, $fe, $00, $00, $fe, $02, $fe, $2c, $ce
 

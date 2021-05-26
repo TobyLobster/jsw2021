@@ -18,6 +18,9 @@ done
 
 printf "*BASIC\rPAGE=&1900\r*FX21\rCLOSE#0:*RUN \"JSW1\"\r" >new/\!BOOT
 
+# Show entry point
+entry_point=$(grep jsw1.sym -e '\.entry_point$' | sed 's/.*C:\([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]\).*/\1/')
+
 # Create INF file for !BOOT
 myfilesize=$(stat -f %z "new/!BOOT")
 myfilesizehex=$(printf '%x\n' $myfilesize)
@@ -26,7 +29,7 @@ echo "$.!BOOT     FF1900 FF1900 $myfilesizehex" >new/\!BOOT.INF
 # Create INF file for JSW1
 myfilesize=$(stat -f %z "new/JSW1")
 myfilesizehex=$(printf '%x\n' $myfilesize)
-echo "$.JSW1 00001100 00005c00 $myfilesizehex L" >new/JSW1.INF
+echo "$.JSW1 00001100 0000$entry_point $myfilesizehex L" >new/JSW1.INF
 
 
 # grep jsw1.sym -e 'allFree' | sed 's/^.*\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\).*/\1/' | awk '{printf "%d bytes free\n",(("0x" $1) + 0)}'
