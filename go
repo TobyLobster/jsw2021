@@ -3,6 +3,10 @@ set -e
 mkdir -p new
 ../tools/acme -o new/jsw1 -r jsw1.txt --vicelabels jsw1.sym jsw1.a
 
+freeSpace=$(cat jsw1.sym | grep -e '\.free_total' | sed 's/.*C:\([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]\).*/\1/')
+
+echo "Free space: $((16#$freeSpace))"
+
 sort -o jsw1.tmp jsw1.sym
 uniq jsw1.tmp jsw1.sym
 rm jsw1.tmp
@@ -30,9 +34,6 @@ echo "$.!BOOT     FF1900 FF1900 $myfilesizehex" >new/\!BOOT.INF
 myfilesize=$(stat -f %z "new/JSW1")
 myfilesizehex=$(printf '%x\n' $myfilesize)
 echo "$.JSW1 00001100 0000$entry_point $myfilesizehex L" >new/JSW1.INF
-
-
-# grep jsw1.sym -e 'allFree' | sed 's/^.*\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\).*/\1/' | awk '{printf "%d bytes free\n",(("0x" $1) + 0)}'
 
 echo
 # Create new SSD file with the appropriate files

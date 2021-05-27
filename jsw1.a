@@ -81,6 +81,7 @@ player_start_x                                      = $a0       ;
 
 
 ; game variables (memory locations)
+vsync_counter                                       = $00
 life_y                                              = $4d
 space_tile                                          = $4e
 swimming_pool_item_collected                        = $4f
@@ -192,16 +193,12 @@ sprite_address                                      = $90
 rope_pixels_screen_address_low                      = $90
 tile_address2                                       = $90
 screen_address_low                                  = $90
-target_address_low                                  = $90
-target_address_high                                 = $91
 rope_pixels_screen_address_high                     = $91
 tile_address_high2                                  = $91
 sprite_address_high1                                = $91
 screen_address_high                                 = $91
 sprite_address_low2                                 = $92
-source_address_low                                  = $92
 sprite_address_high2                                = $93
-source_address_high                                 = $93
 sprite_size_in_bytes                                = $94
 sprite_width                                        = $95
 rows_to_check                                       = $96
@@ -849,10 +846,8 @@ plot_sprite_skipping_first_column
     sec                                             ;
     sbc #8                                          ;
     sta screen_address_low                          ;
-    lda screen_address_high                         ;
-    clc                                             ;
-    adc #2                                          ;
-    sta screen_address_high                         ;
+    inc screen_address_high                         ;
+    inc screen_address_high                         ;
     bpl plot_sprite_group_loop                      ;
 leave10
     rts                                             ;
@@ -1075,10 +1070,8 @@ continue_with_next_byte
     sec                                             ;
     sbc #8                                          ;
     sta screen_address_low                          ;
-    lda screen_address_high                         ;
-    clc                                             ;
-    adc #2                                          ;
-    sta screen_address_high                         ;
+    inc screen_address_high                         ;
+    inc screen_address_high                         ;
     bpl plot_player_sprite_outer_loop               ;
 leave12
     rts                                             ;
@@ -7502,6 +7495,8 @@ enemy_sprite_29_frame_1
     !byte $05, $00                                  ; .#...#.#.....#..
     !byte $02, $00                                  ; ...###.###...#..
 
+after_guardians
+
 ; align to the next available 2 page boundary, filling with zeros
 !align 511, 0, 0                                    ;
 tile_table                                          ;
@@ -7541,6 +7536,8 @@ tile_table                                          ;
 !if (($0200 *(tile_table / $0200)) != tile_table) {
     !error "tile_table must be on an even page boundary ", tile_table
 }
+
+free_after_guardians = tile_table - after_guardians
 
 space_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -7599,6 +7596,8 @@ clear_screen_loop
     bne clear_screen_loop                           ;
     rts                                             ;
 
+before_player
+
 ; align to next page boundary
 !align 255, 0, 0
 
@@ -7625,6 +7624,7 @@ player_sprite_left_frame_0
     !error "unpacked_sprites must be on a page boundary ", unpacked_sprites
 }
 
+free_before_player = unpacked_sprites - before_player
 
 player_sprite_left_frame_1
     !byte $00, $ee, $ee, $00                        ; ......####......
@@ -10448,6 +10448,7 @@ background_sprite_ff
 ; screen memory.
 ;
 ; ***************************************************************************************
+initialization_code
 
 ; This first section is copied to $0b00
 
@@ -11267,6 +11268,10 @@ tmp_x
     !byte 0
 tmp_y
     !byte 0
+
+end_of_b00_section
+
+free_after_b00_section = $1100 - end_of_b00_section
 }
 
 entry_point
@@ -11275,11 +11280,13 @@ entry_point
     jsr OSBYTE                                      ;
 
     ; relocate code
-    ldy #0                                          ;
+    ldy #<initialization_code                       ;
     sty $70                                         ;
+    ldx #>initialization_code                       ;
+    stx $71                                         ; Copy from initialization_code to $0b00
+
+    ldy #0
     sty $72                                         ;
-    ldx #$56                                        ;
-    stx $71                                         ; Copy from $5600 to $0b00
     ldx #$0b                                        ;
     stx $73                                         ;
 
@@ -11413,7 +11420,7 @@ write_CRTC_loop
     ldx #3                                          ; Normal ESCAPE effect, Memory cleared on next reset
     jsr OSBYTE                                      ;
 
-    ldx #$9f                                        ; Copy $5600-$569f to $0000-$009f
+    ldx #$9f                                        ; Copy initial_zero_page_values to $0000-$009f
 copy_zero_page_values_loop                          ;
     lda initial_zero_page_values,X                  ;
     sta $00,X                                       ;
@@ -11505,7 +11512,7 @@ register_CRTC_array
     !byte 35-5                                      ; R7 = Vertical sync position (*TV)
     !byte 192 + 1                                   ; R8 = Interlace and delay register
     !byte 7                                         ; R9 = Scan lines per character
-    !byte 103                                       ; R10 = Cursor start register
+    !byte $20                                       ; R10 = Cursor start register
     !byte 0                                         ; R11 = The cursor end register
     !byte >(screen_memory_start / 8)                ; R12 = Displayed screen start address/8 register (High)
     !byte <(screen_memory_start / 8)                ; R13 = Displayed screen start address/8 register (low)
@@ -11526,14 +11533,10 @@ copy_from
 !pseudopc $0400 {
 copy_to
 
-!if (>(text_message_address - $10) != >(text_message_address + 8 - $10)) {
-    !error "Source and destination of scrolling text copy not on same page"
-}
-
 scroll_scrolltext
     ldx #>(text_message_address - $10)              ;
     stx target_address_high                         ;
-;    ldx #>(text_message_address + 8 - $10)          ; Uncomment to avoid !if above
+    ldx #>(text_message_address + 8 - $10)          ; Uncomment to avoid !if above
     stx source_address_high                         ;
     ldy #<(text_message_address - $10)              ; Target: $57f0 = $5800 - $10
     sty target_address_low                          ;
@@ -11544,8 +11547,12 @@ scroll_scrolltext
     sta blocks_to_copy                              ;
     ldx #$f0                                        ;
 scroll_scrolltext_loop
-    lda (source_address_low),Y                      ;
-    sta (target_address_low),Y                      ;
+source_address_low = * + 1
+source_address_high = * + 2
+    lda $ffff,Y                                     ;
+target_address_low = * + 1
+target_address_high = * + 2
+    sta $ffff,Y                                     ;
     iny                                             ;
     bne +                                           ;
     inc target_address_high                         ;
@@ -11576,7 +11583,7 @@ plot_title_screen_logo_loop
     sta blocks_to_copy                              ;
     ldy #7                                          ; loop counter
 unpack_byte_loop
-    lda #' '                                        ; plot space...
+    lda #9                                          ; plot space...
     lsr blocks_to_copy                              ;
     bcc +                                           ;
     lda #$ff                                        ; ...or character 255
@@ -11613,6 +11620,7 @@ restart_scrolltext
 
     ldy #0                                          ;
     sty scrolltext_offset                           ;
+    sty vsync_counter                               ;
 title_screen_loop
     ldy scrolltext_offset                           ;
     lda #$1f                                        ; TAB(30, 20), i.e. end of scrolltext
@@ -11621,26 +11629,39 @@ title_screen_loop
     jsr OSWRCH                                      ;
     lda #20                                         ;
     jsr OSWRCH                                      ;
+    lda game_timer
+    and #1
+    bne +
     lda (scrolltext_address_low),Y                  ; Write character of scrolltext
     jsr OSWRCH                                      ;
+
+    inc scrolltext_offset                           ;
+    bne ++                                          ; move on to next character
+    inc scrolltext_address_high                     ;
+++
     tax                                             ;
     beq end_of_scrolltext                           ;
-    lda #$13                                        ; Wait for Vertical Retrace
-    jsr OSBYTE                                      ;
-    lda #$13                                        ; Wait for Vertical Retrace
-    jsr OSBYTE                                      ;
-    jsr scroll_scrolltext                           ;
-    lda #$13                                        ; Wait for Vertical Retrace
-    jsr OSBYTE                                      ;
++
+-
+    lda vsync_counter                               ;
+    cmp #2                                          ; Wait for Vertical retraces
+    bcs +                                           ;
+    jsr check_for_space                             ;
+    jmp -                                           ;
++
+    lda #0                                          ;
+    sta vsync_counter                               ;
+
+    lda game_timer                                  ;
+    and #3                                          ;
+    bne +                                           ;
+    jsr change_colour                               ;
++
     jsr scroll_scrolltext                           ;
     inc game_timer                                  ;
-    jsr change_colour                               ;
     jsr update_lives                                ; Animate lives
     jsr check_for_space                             ;
-    inc scrolltext_offset                           ;
-    bne title_screen_loop                           ;
-    inc scrolltext_address_high                     ;
-    bne title_screen_loop                           ;
+    jmp title_screen_loop                           ;
 
 end_of_scrolltext
     lda #$80                                        ;
@@ -11661,7 +11682,7 @@ skip_colour_change
 check_for_space
     lda #$81                                        ; Scan for a particular key
     ldy #$ff                                        ;
-    ldx #$9d                                        ; SPACE
+    ldx #$9d                                        ; SPACE BAR
     jsr OSBYTE                                      ;
     txa                                             ;
     beq leave                                       ;
@@ -11691,20 +11712,26 @@ change_colour_string
     !byte $13, $02, $05, $00, $00, $00
 
 title_screen_scrolltext
-    !text "...Jetset Willy was written for the BBC micro by Chris Robson..."
+    !text "...Jetset Willy was written for the BBC Micro by Chris Robson..."
     !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects and is copyright to Software Projects..."
     !text "...You must guide Willy to collect all the items around the house before midnight so that Maria will let you go to bed..."
     !text "....Press SPACE to start the game."
     !byte 0
 
 title_screen_logo
-    !byte $70, $77, $ee, $0e, $20, $21, $22, $04, $20, $27, $ee, $04, $20, $21, $28, $04
-    !byte $30, $27, $ee, $04, $00
--
-    !byte $00, $00, $00, $00, $00, $00, $00, $40, $54, $24, $02
-    !byte $40, $54, $24, $02, $40, $55, $e4, $03, $40, $55, $84, $00, $c0
---
-    !byte $d7, $9d
+    !le32 %....###.###.###..###.###.###....
+    !le32 %.....#....#...#...#....#..#.....
+    !le32 %.....#..###.###...#..###..#.....
+    !le32 %.....#....#.#.....#....#..#.....
+    !le32 %.....#..###.###...#..###..##....
+    !le32 %................................
+    !le32 %................................
+    !le32 %......#...#..#...#.#.#...#......
+    !le32 %......#...#..#...#.#.#...#......
+    !le32 %......#####..#...#.#.#.#.#......
+    !le32 %........#....#...#.#.#.#.#......
+    !le32 %........#..###.###.#.#####......
+
 title_screen_logo_end
 
 ; ***************************************************************************************
@@ -11715,6 +11742,7 @@ event_routine
     pha                                             ;
     tya                                             ;
     pha                                             ;
+    inc vsync_counter                               ;
     lda #$32                                        ; Set timer 2 to 12800
     sta userVIATimer2CounterHigh                    ; User VIA Timer 2 latch/counter MSB
     lda melody_active                               ;
@@ -11819,6 +11847,11 @@ melody_duration_table
     !byte $40, $08, $08, $08, $08, $10, $20, $08, $08, $08, $08, $08, $08, $08, $08, $08
     !byte $08, $08, $08, $08, $08, $40, $20, $10, $10, $08, $08, $08, $08, $10, $10, $08
     !byte $08, $08, $08, $10, $10, $00
+
+after_0400_segment
+* = $0800
+
+free_after_0400_segment = * - after_0400_segment
 }
 
 copy_to_sound_workspace
@@ -12139,3 +12172,4 @@ initial_zero_page_values
     !byte $00                                       ; $9e  house_clear
     !byte $00                                       ; $9f  player_rope_pixel
 
+free_total = free_after_0400_segment + free_after_b00_section + free_before_player + free_after_guardians
