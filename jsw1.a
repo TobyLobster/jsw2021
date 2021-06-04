@@ -26,7 +26,8 @@ crtcAddressWrite                                    = $fe01     ;
 ;         bits  32: number of columns (%00=10 columns, %01=20, %10=40, %11=80)
 ;            bit 1: teletext (1=enabled, 0=disabled)
 ;            bit 0: current flashing colour state
-videoULARegister                                    = $FE20
+videoULARegister                                    = $fe20
+videoULAPaletteRegister                             = $fe21     ; Video ULA palette register
 
 ; ***************************************************************************************
 ; Write to System VIA, register B
@@ -58,9 +59,14 @@ videoULARegister                                    = $FE20
 ;
 ; If C0=0 and C1=1 then hardware scrolling starts at $5800
 ;
-systemVIARegisterB                                  = $fe40
+systemVIARegisterB                                  = $fe40     ;
+systemVIAInterruptFlagRegister                      = $fe4d     ;
 
-userVIATimer2CounterHigh                            = $fe69     ; User VIA Timer 2 counter (high)
+userVIATimer1CounterLow                             = $fe64     ; Timer 1 counter (low)
+userVIATimer1CounterHigh                            = $fe65     ; Timer 1 counter (high)
+userVIATimer1LatchLow                               = $fe66     ; Timer 1 latch (low)
+userVIATimer1LatchHigh                              = $fe67     ; Timer 1 latch (high)
+
 userVIAAuxiliaryControlRegister                     = $fe6b     ; auxiliary control register
 userVIAInterruptFlagRegister                        = $fe6d     ; Interrupt flag register
 userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enable register
@@ -79,9 +85,22 @@ player_start_x                                      = $a0       ;
 ;player_start_y                                      = $30       ;
 ;player_start_x                                      = $d8       ;
 
+; ***************************************************************************************
+; This is the number of timer ticks per frame (num PAL scanlines * 64us/line)
+; This timing is only true of non-interlaced modes.
+; We have to subtract 2 because the latch reload costs 2us.
+; This is not documented anywhere!
+FramePeriod     = 312*64-2
+
+; Calculate here the timer value to interrupt at the desired line
+Timer1Value      = 76*64 + 25
+
+; This is the delay between interrupts (three character rows = 24 pixel rows)
+ShortTimerValue  = 24*64 - 2
 
 ; game variables (memory locations)
-vsync_counter                                       = $00
+irq_counter                                         = $00
+vsync_counter                                       = $01
 life_y                                              = $4d
 space_tile                                          = $4e
 swimming_pool_item_collected                        = $4f
@@ -747,9 +766,9 @@ unpack_enemy_sprite_loop
 
 ; ***************************************************************************************
 enemy_sprites_frames
-    !byte $08, $01, $01, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $02 ; # Slot 0 is [unused] ; eight frames suggests player
-    !byte $02, $02, $02, $04, $04, $08, $08, $08, $02, $02, $04, $08, $04, $04, $04, $01 ; # Last two slots, for sprites $2a and $2b, aren't used
-    !byte $01, $02, $04, $04, $08, $08, $04, $04, $04, $02, $02, $02
+    !byte $08, $01, $01, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $02 ; [Slot 0 is unused]
+    !byte $02, $02, $02, $04, $04, $08, $08, $08, $02, $02, $04, $08, $04, $04, $04, $01 ;
+    !byte $01, $02, $04, $04, $08, $08, $04, $04, $04, $02, $02, $02                     ; Last two slots, for sprites $2a and $2b, aren't used
 
 enemy_sprites_frame_offsets
     !byte $00, $00, $01, $02, $06, $0a, $0e, $12, $16, $1a, $1e, $22, $26, $2a, $2e, $32
@@ -780,33 +799,32 @@ unpack_byte_of_sprite_data
 ; ***************************************************************************************
 ;
 ; On Entry:
-;  A holds the Y coordinate in pixels
-;  X holds the X coordinate in pixels
+;  A holds the X coordinate in pixels
+;  X holds the Y coordinate in pixels
 ;
 ; ***************************************************************************************
 calculate_screen_address
-    and #$fc                                        ;
-    asl                                             ;
-    rol rope_pixels_screen_address_high             ;
-    sta screen_address_low                          ;
+    and #$fc                                        ; lose the lower two bits
+    asl                                             ; shift up
+    sta screen_address_low                          ; store
+    rol screen_address_high                         ; carry into lower bit of high byte
+
     txa                                             ;
     and #7                                          ;
     clc                                             ;
     adc screen_address_low                          ;
     sta screen_address_low                          ;
+
     txa                                             ;
     lsr                                             ;
     lsr                                             ;
-    and #$fe                                        ;
-    tax                                             ;
-    lda screen_address_low                          ;
-    clc                                             ;
-    adc screen_address_lookup_table + 1,X           ;
-    sta screen_address_low                          ;
+    lsr                                             ;
+    tax                                             ; offset within table for start of row
+
     lda screen_address_high                         ;
     and #1                                          ;
+    clc                                             ;
     adc screen_address_lookup_table,X               ;
-    adc #>screen_memory_start                       ; start of screen memory
     sta screen_address_high                         ;
     rts                                             ;
 
@@ -825,6 +843,7 @@ plot_sprite
 plot_sprite_group_loop
     ldy sprite_width                                ;
     sec                                             ;
+
 plot_sprite_loop
 plot_sprite_address_low = * + 1
 plot_sprite_address_high = * + 2
@@ -836,6 +855,7 @@ plot_sprite_address_high = * + 2
     sbc #8                                          ;
     tay                                             ;
     bcs plot_sprite_loop                            ;
+
     txa                                             ;
     bmi leave10                                     ;
 plot_sprite_skipping_first_column
@@ -1177,9 +1197,6 @@ not_jumping_along_slope
     sta player_y_in_enemies                         ;
 player_falling_after_jump
 not_slope1
-    jsr plot_room_items                             ;
-    jsr plot_room_items                             ;
-    jsr plot_room_items                             ;
     jsr update_conveyor                             ;
     jsr update_enemies                              ;
     ldx #0                                          ; player
@@ -1190,11 +1207,19 @@ not_slope1
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
     beq skip_unplot                                 ;
+
+-
+    lda vsync_counter                               ;
+    cmp #3                                          ;
+    bcc -
+
     lda #0                                          ;
-    sta irq_counter                                 ;
-wait_for_irq                                        ; Slight delay to stop player flickering
-    lda irq_counter                                 ;
-    beq wait_for_irq                                ;
+    sta vsync_counter                               ;
+
+    jsr plot_room_items                             ;
+    jsr plot_room_items                             ;
+    jsr plot_room_items                             ;
+
     lda player_x                                    ;
     ldx player_y                                    ;
     jsr plot_or_unplot_previous_player_sprite       ; Unplot player
@@ -1214,6 +1239,7 @@ skip_unplot
     ldx player_y                                    ;
     bmi skip_plot                                   ;
     jsr plot_or_unplot_player_sprite                ; Plot player
+
 skip_plot
     ldx #0                                          ; player
     stx player_not_plotted                          ;
@@ -1828,13 +1854,15 @@ skip_reset_colour
 item_collected1
     lda colour_mask_values,Y                        ;
     sta sprite_colour                               ;
-    ldy #$0f                                        ;
+
+    ldy #$0f                                        ; loop counter
 plot_item_loop
     lda unpacked_background_sprite,Y                ;
     and sprite_colour                               ;
     sta (screen_address_low),Y                      ;
     dey                                             ;
     bpl plot_item_loop                              ;
+
     lda items_tile_address_low,X                    ;
     sta tile_address_low2                           ;
     lda items_tile_address_high,X                   ;
@@ -1846,7 +1874,7 @@ plot_item_loop
 skip_item
     dec item_number                                 ;
     bpl leave21                                     ;
-    lda #$0b                                        ;
+    lda #$0b                                        ; [maximum number of items in a room?]
     sta item_number                                 ;
 leave21
     rts                                             ;
@@ -1969,6 +1997,7 @@ player_at_top_or_bottom_edge_of_room
     sta player_horizontal_speed                     ;
 change_room
     lda exit_rooms,Y                                ;
+goto_room
     sta player_room                                 ;
     jsr remove_collected_items_from_room_data       ;
     jsr initialise_room                             ;
@@ -7497,6 +7526,54 @@ enemy_sprite_29_frame_1
 
 after_guardians
 
+screen_address_lookup_table
+    !byte (>screen_memory_start) + $00
+    !byte (>screen_memory_start) + $02
+    !byte (>screen_memory_start) + $04
+    !byte (>screen_memory_start) + $06
+    !byte (>screen_memory_start) + $08
+    !byte (>screen_memory_start) + $0a
+    !byte (>screen_memory_start) + $0c
+    !byte (>screen_memory_start) + $0e
+    !byte (>screen_memory_start) + $10
+    !byte (>screen_memory_start) + $12
+    !byte (>screen_memory_start) + $14
+    !byte (>screen_memory_start) + $16
+    !byte (>screen_memory_start) + $18
+    !byte (>screen_memory_start) + $1a
+    !byte (>screen_memory_start) + $1c
+    !byte (>screen_memory_start) + $1e
+    !byte (>screen_memory_start) + $20
+    !byte (>screen_memory_start) + $22
+    !byte (>screen_memory_start) + $24
+    !byte (>screen_memory_start) + $26
+    !byte (>screen_memory_start) + $28
+    !byte (>screen_memory_start) + $2a
+    !byte (>screen_memory_start) + $2c
+    !byte (>screen_memory_start) + $2e
+    !byte (>screen_memory_start) + $30
+    !byte (>screen_memory_start) + $32
+    !byte (>screen_memory_start) + $34
+    !byte (>screen_memory_start) + $36
+    !byte (>screen_memory_start) + $38
+    !byte (>screen_memory_start) + $3a
+    !byte (>screen_memory_start) + $3c
+    !byte (>screen_memory_start) + $3e
+
+paletteLookupTable
+    !byte $00, $20, $80, $a0
+
+changePalette
+    ora paletteLookupTable                  ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$10                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$50                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$10                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    rts
+
 ; align to the next available 2 page boundary, filling with zeros
 !align 511, 0, 0                                    ;
 tile_table                                          ;
@@ -11192,12 +11269,6 @@ real_entry_point
 new_life_loop
     jsr initialise_room                             ;
 game_loop
-    lda #$13                                        ; Wait for Vertical Retrace ; Three v-syncs per game frame
-    jsr OSBYTE                                      ;
-    lda #$13                                        ; Wait for Vertical Retrace
-    jsr OSBYTE                                      ;
-    lda #$13                                        ; Wait for Vertical Retrace
-    jsr OSBYTE                                      ;
     jsr update_lives                                ;
     jsr update_game                                 ;
     jsr check_for_suicide                           ;
@@ -11213,24 +11284,38 @@ write_clear_window_loop
     inx                                             ;
     cpx #clear_window_string_end - clear_window_string  ;
     bne write_clear_window_loop                     ;
+
     lda #0                                          ;
     jsr fill_space_sprite                           ; Ensure space sprite is black
     jsr animate_game_over_boot                      ;
-    ldx #0                                          ;
+    ldx #64                                         ;
+    stx game_over_timer                             ;
+    ldx #1                                          ;
     stx game_over_string + 4                        ;
 game_over_loop
-    lda #$13                                        ; Wait for Vertical Retrace
-    jsr OSBYTE                                      ;
-    ldy #0                                          ;
+-
+    lda vsync_counter                               ;
+    cmp #4                                          ;
+    bcc -
+    ldy #0                                          ; loop counter
+    sty vsync_counter                               ;
 write_game_over_loop
     lda game_over_string,Y                          ;
     jsr OSWRCH                                      ;
     iny                                             ;
     cpy #game_over_string_end - game_over_string    ;
     bne write_game_over_loop                        ;
-    inc game_over_string + 4                        ;
-    bpl game_over_loop                              ;
+
+    ldx game_over_string + 4                        ; change colour
+    lda colour_array - 1,x                          ;
+    sta game_over_string + 4                        ;
+
+    dec game_over_timer                             ;
+    bne game_over_loop                              ;
     jmp real_entry_point                            ;
+
+game_over_timer
+    !byte 0
 
 check_for_suicide
     lda $ec                                         ; Internal key number of most recently pressed key
@@ -11241,6 +11326,9 @@ check_for_suicide
     jmp real_entry_point                            ;
 leave7
     rts                                             ;
+
+colour_array
+    !byte 2, 3, 1
 
 clear_window_string
     !byte $18, $00, $00, $00, $02, $ff, $03, $ff, $03, $10 ; Define graphics window ; clear graphics area
@@ -11458,19 +11546,31 @@ move_memory_loop
     lda #>irq_routine                               ;
     sta irq2_vector_high                            ;
 
-    lda #$a0                                        ; Enable timer 2
+    lda #$c0                                        ; Enable timer 1
     sta userVIAInterruptEnableRegister              ; User VIA Interrupt control register
-    lda #0                                          ;
+    lda #$c0                                        ; Enable free run mode
     sta userVIAAuxiliaryControlRegister             ; Auxiliary control register
 
-    lda #<event_routine                             ;
-    sta event_interrupt_vector_low                  ;
-    lda #>event_routine                             ;
-    sta event_interrupt_vector_high                 ;
+    lda #<Timer1Value                               ;
+    sta userVIATimer1CounterLow                     ;
+    ; Get high byte ready so we can write it as quickly as possible at the right moment
+    ldx #>Timer1Value                               ;
 
-    ldx #4                                          ; vsync event
-    lda #$0e                                        ; Enable Event
-    jsr OSBYTE                                      ;
+    ; Wait for VSync without having to catch it from its IRQ
+    lda #2                                          ;
+    sta systemVIAInterruptFlagRegister              ; clear VSync flag
+-
+    bit systemVIAInterruptFlagRegister              ;
+    beq -                                           ; poll VSync flag
+
+    stx userVIATimer1CounterHigh                    ; start User VIA Timer 1 counting
+    sta userVIAInterruptFlagRegister                ; clear VSync flag
+
+    ; Set timer to fire every 'short time' (set latch)
+    lda #<ShortTimerValue                           ;
+    sta userVIATimer1LatchLow                       ;
+    lda #>ShortTimerValue                           ;
+    sta userVIATimer1LatchHigh                      ;
 
     cli                                             ;
 
@@ -11482,9 +11582,9 @@ move_memory_loop
     lda #$15                                        ;
     sta crtcAddressWrite                            ; Write to video controller (register value)
 
-    lda #<screen_address_lookup_table               ;
+    lda #<os_screen_address_lookup_table            ;
     sta os_row_multiplication_table_low             ;
-    lda #>screen_address_lookup_table               ;
+    lda #>os_screen_address_lookup_table            ;
     sta os_row_multiplication_table_high            ;
     ldx #0                                          ;
 write_text_window_loop
@@ -11504,13 +11604,13 @@ text_window_string
 register_CRTC_array
     !byte 127                                       ; R0 = Horizontal total register
     !byte 64                                        ; R1 = Horizontal displayed register
-    !byte 90                                        ; R2 = Horizontal sync position register
+    !byte 86                                        ; R2 = Horizontal sync position register
     !byte 40                                        ; R3 = The sync width register
     !byte 38                                        ; R4 = Vertical total register
     !byte 0                                         ; R5 = Vertical total adjust register
-    !byte 21                                        ; R6 = Vertical displayed register (number of visible character rows)
-    !byte 35-5                                      ; R7 = Vertical sync position (*TV)
-    !byte 192 + 1                                   ; R8 = Interlace and delay register
+    !byte 32 - 11                                   ; R6 = Vertical displayed register (number of visible character rows)
+    !byte 35 - 5                                    ; R7 = Vertical sync position (*TV)
+    !byte 0                                         ; R8 = Interlace and delay register
     !byte 7                                         ; R9 = Scan lines per character
     !byte $20                                       ; R10 = Cursor start register
     !byte 0                                         ; R11 = The cursor end register
@@ -11620,7 +11720,6 @@ restart_scrolltext
 
     ldy #0                                          ;
     sty scrolltext_offset                           ;
-    sty vsync_counter                               ;
 title_screen_loop
     ldy scrolltext_offset                           ;
     lda #$1f                                        ; TAB(30, 20), i.e. end of scrolltext
@@ -11644,7 +11743,7 @@ title_screen_loop
 +
 -
     lda vsync_counter                               ;
-    cmp #2                                          ; Wait for Vertical retraces
+    cmp #2                                          ;
     bcs +                                           ;
     jsr check_for_space                             ;
     jmp -                                           ;
@@ -11652,6 +11751,16 @@ title_screen_loop
     lda #0                                          ;
     sta vsync_counter                               ;
 
+    ; --- delay ---
+    ldy #2                                          ;
+    ldx #0                                          ;
+-
+    inx                                             ;
+    bne -                                           ;
+    dey                                             ;
+    bne -                                           ;
+
+temp
     lda game_timer                                  ;
     and #3                                          ;
     bne +                                           ;
@@ -11735,32 +11844,22 @@ title_screen_logo
 title_screen_logo_end
 
 ; ***************************************************************************************
-event_routine
-    php                                             ;
-    pha                                             ;
-    txa                                             ;
-    pha                                             ;
-    tya                                             ;
-    pha                                             ;
-    inc vsync_counter                               ;
-    lda #$32                                        ; Set timer 2 to 12800
-    sta userVIATimer2CounterHigh                    ; User VIA Timer 2 latch/counter MSB
+update_music
     lda melody_active                               ;
     bne play_melody                                 ;
-    lda #1                                          ;
+    lda #0                                          ;
     sta note_number                                 ;
-    bne play_silence                                ;
+    jmp play_silence                                ;
+
 play_melody
     lda music_enabled                               ;
-    beq check_for_sound_keypresses                  ;
+    beq +                                           ;
     dec note_length                                 ;
-    bne check_for_sound_keypresses                  ;
+    bne +                                           ;
     ldx note_number                                 ;
     lda melody_duration_table,X                     ;
-nonsense = * + 2
     sta note_length                                 ;
     lda melody_pitch_table,X                        ;
-nonsense3
     sta melody_sound_pitch                          ;
     ldx #<melody_sound                              ;
     ldy #>melody_sound                              ; melody_sound
@@ -11769,10 +11868,14 @@ nonsense3
     inc note_number                                 ;
     lda note_number                                 ;
     cmp #$25                                        ;
-    bne check_for_sound_keypresses                  ;
+    bne +                                           ;
     lda #0                                          ;
     sta note_number                                 ;
-check_for_sound_keypresses
++
+    rts                                             ;
+
+; ***************************************************************************************
+check_for_q_and_s_keys
     lda $ec                                         ; Internal key number of most recently pressed key
     cmp #$d1                                        ; "S"
     bne s_not_pressed                               ;
@@ -11789,12 +11892,6 @@ play_silence
     lda #7                                          ; Generate a sound
     jsr OSWORD                                      ;
 q_not_pressed
-    pla                                             ;
-    tay                                             ;
-    pla                                             ;
-    tax                                             ;
-    pla                                             ;
-    plp                                             ;
     rts                                             ;
 
 music_enabled
@@ -11803,19 +11900,20 @@ music_enabled
 melody_sound
 melody_sound_pitch = * + 4
 ;         channel   volume    pitch     duration
-    !byte $13, $00, $fa, $ff, $00, $00, $20, $00
+    !byte $13, $00, $04, $00, $00, $00, $01, $00
 
     !byte $00
 
 note_length
     !byte $06
 note_number
-    !byte $01
+    !byte $00
 
 sound_silence
 ;         channel   volume    pitch     duration
     !byte $13, $00, $00, $00, $00, $00, $00, $00
 
+; ***************************************************************************************
 irq_routine
     lda irq_accumulator                             ;
     pha                                             ;
@@ -11823,13 +11921,48 @@ irq_routine
     pha                                             ;
     tya                                             ;
     pha                                             ;
-    lda userVIAInterruptFlagRegister                ; User VIA interrupt flag register
-    and #$a0                                        ;
-    cmp #$a0                                        ;
-    bne skip_increment                              ;
-    sta userVIAInterruptFlagRegister                ; User VIA interrupt flag register
-    inc irq_counter                                 ;
-skip_increment
+    lda userVIAInterruptFlagRegister                ; get User VIA interrupt flag register
+    and #$c0                                        ;
+    cmp #$c0                                        ;
+    bne exit_irq                                    ; unknown interrupt
+    sta userVIAInterruptFlagRegister                ; clear interrupt
+
+    ldx irq_counter                                 ;
+    inx                                             ;
+    cpx #13                                         ;
+    bcc +                                           ;
+    ldx #0                                          ;
++
+    stx irq_counter                                 ;
+    cpx #8                                          ;
+    bne +                                           ;
+    inc vsync_counter                               ;
++
+;    cpx #5
+;    bne +
+
+;    ; debug to show colour changes over the frame
+;    lda #1
+;    jsr changePalette
+;    jmp exit_irq
+;+
+;    cpx #6
+;    bne +
+;    lda #7
+;    jsr changePalette
+;    jmp exit_irq
+;+
+    cpx #3                                          ;
+    bne +                                           ;
+    jsr update_music                                ;
+    jmp exit_irq                                    ;
++
+    cpx #6                                          ;
+    bne +                                           ;
+    jsr check_for_q_and_s_keys                      ;
++
+
+exit_irq
     pla                                             ;
     tay                                             ;
     pla                                             ;
@@ -11839,14 +11972,14 @@ skip_increment
     jmp (previous_irq2_vector_low)                  ;
 
 melody_pitch_table
-    !byte $84, $70, $68, $70, $68, $64, $54, $64, $68, $70, $68, $70, $68, $64, $68, $70
-    !byte $78, $7c, $78, $7c, $78, $70, $84, $80, $78, $70, $68, $64, $68, $70, $64, $74
-    !byte $70, $68, $70, $74, $68, $84
+    !byte $70, $68, $70, $68, $64, $54, $64, $68, $70, $68, $70, $68, $64, $68, $70, $78
+    !byte $7c, $78, $7c, $78, $70, $84, $80, $78, $70, $68, $64, $68, $70, $64, $74, $70
+    !byte $68, $70, $74, $68, $84
 
 melody_duration_table
-    !byte $40, $08, $08, $08, $08, $10, $20, $08, $08, $08, $08, $08, $08, $08, $08, $08
-    !byte $08, $08, $08, $08, $08, $40, $20, $10, $10, $08, $08, $08, $08, $10, $10, $08
-    !byte $08, $08, $08, $10, $10, $00
+    !byte $08, $08, $08, $08, $10, $20, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08
+    !byte $08, $08, $08, $08, $40, $20, $10, $10, $08, $08, $08, $08, $10, $10, $08, $08
+    !byte $08, $08, $10, $10, $40
 
 after_0400_segment
 * = $0800
@@ -11873,12 +12006,12 @@ sound_0_pitch = sound_definitions + 4
 ;         channel   volume    pitch     duration
     !byte $12, $00, $f8, $ff, $ea, $00, $01, $00    ; sound_0 (game over)
     !byte $12, $00, $01, $00, $46, $00, $0a, $00    ; sound_1 (player jumping)
-    !byte $11, $00, $04, $00, $5a, $00, $08, $00    ; sound_2 (player death)
+    !byte $11, $00, $01, $00, $c8, $00, $04, $00    ; sound_2 (player death)
     !byte $12, $00, $02, $00, $aa, $00, $0a, $00    ; sound_3 (item collected)
     !byte $10, $00, $03, $00, $05, $00, $0a, $00    ; sound_4 (arrow fired)
     !byte $10, $00, $f3, $ff, $07, $00, $04, $00    ; sound_5 (player death)
 
-; [unused]
+unused2
     !byte $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00
 
@@ -11887,15 +12020,15 @@ previous_irq2_vector_low
 previous_irq2_vector_high
     !byte $de
 
-irq_counter
-    !byte $01
+unused
+    !byte 0                             ; [unused]
 
 ; $08c0
 ; OS envelope storage area
-    !byte $02, $04, $04, $04, $0a, $0a, $0a, $0a, $00, $00, $ec, $5a, $5a, $00, $00, $00 ; envelope_1
-    !byte $02, $00, $00, $00, $0a, $28, $08, $19, $05, $fb, $f6, $7e, $6e, $00, $00, $00 ; envelope_2
-    !byte $01, $00, $00, $00, $01, $04, $08, $04, $05, $fb, $9c, $64, $00, $00, $00, $00 ; envelope_3
-    !byte $04, $0a, $14, $28, $01, $01, $09, $00, $00, $00, $00, $00, $00, $00, $00, $00 ; envelope_4 (melody)
+    !byte $02, $04, $04, $04, $0a, $0a, $0a, $0a, $00, $00, $ec, $5a, $5a, $00, $00, $00 ; ENVELOPE 1, 2, 4, 4, 4, 10, 10, 10, 10, 0,  0, &EC, &5A, &5A
+    !byte $02, $00, $00, $00, $0a, $28, $08, $19, $05, $fb, $f6, $7e, $6e, $00, $00, $00 ; ENVELOPE 2, 2, 0, 0, 0, 10, 40,  8,&19, 5,&FB, &F6, &7E, &6E
+    !byte $01, $00, $00, $00, $01, $04, $08, $04, $05, $fb, $9c, $64, $00, $00, $00, $00 ; ENVELOPE 3, 1, 0, 0, 0,  1,  4,  8,  4, 5,&FB, &9C, &64, &00
+    !byte $01, $00, $00, $00, $00, $00, $0a, $00, $00, $00, $ff, $5e, $00, $00, $00, $00 ; ENVELOPE 4, 1, 0, 0, 0,  0,  0, 10,  0, 0,  0, &FF, &5E, &00
 
 rope_x_delta_table
     !byte $02, $01, $01, $02, $02, $02, $02, $02, $02, $01, $02, $02, $02, $01, $02, $02
@@ -12073,11 +12206,39 @@ items_tile_address_low
 items_tile_address_high
     !byte $6f, $6f, $6f, $6f, $6f, $6f, $6f, $08, $08, $08, $08, $08
 
-screen_address_lookup_table
-    !byte $00, $00, $02, $00, $04, $00, $06, $00, $08, $00, $0a, $00, $0c, $00, $0e, $00
-    !byte $10, $00, $12, $00, $14, $00, $16, $00, $18, $00, $1a, $00, $1c, $00, $1e, $00
-    !byte $20, $00, $22, $00, $24, $00, $26, $00, $28, $00, $2a, $00, $2c, $00, $2e, $00
-    !byte $30, $00, $32, $00, $34, $00, $36, $00, $38, $00, $3a, $00, $3c, $00, $3e, $00
+os_screen_address_lookup_table
+    !be16 $0000
+    !be16 $0200
+    !be16 $0400
+    !be16 $0600
+    !be16 $0800
+    !be16 $0a00
+    !be16 $0c00
+    !be16 $0e00
+    !be16 $1000
+    !be16 $1200
+    !be16 $1400
+    !be16 $1600
+    !be16 $1800
+    !be16 $1a00
+    !be16 $1c00
+    !be16 $1e00
+    !be16 $2000
+    !be16 $2200
+    !be16 $2400
+    !be16 $2600
+    !be16 $2800
+    !be16 $2a00
+    !be16 $2c00
+    !be16 $2e00
+    !be16 $3000
+    !be16 $3200
+    !be16 $3400
+    !be16 $3600
+    !be16 $3800
+    !be16 $3a00
+    !be16 $3c00
+    !be16 $3e00
 }
 
 initial_zero_page_values

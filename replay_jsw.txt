@@ -1,0 +1,61 @@
+; Replay file for JSW
+
+; Include standard key definitions
+#include "replay_definitions.txt"
+
+; Boot Jet Set Willy
+#run "JSW.ssd"
+
+; Name each game action
+Left    = Key_Z
+Right   = Key_X
+Jump    = Key_Colon
+Start   = Key_Space
+Quiet   = Key_Q
+
+;
+; Each line is of the form:
+;   <start time in vsyncs> <name of key to press> <duration of press in vsyncs>
+
+; Allow 5 seconds (250 vsyncs) for the game to load then start the game
+250 Start 5
+
+; Turn off the music
+5 Quiet 5
+
+; The Bathroom
+0 Right 40
+40 Left 180
+150 Jump 5
+50 Right 120
+120 Left 210
+0 Jump 5
+#flush
+
+; Top Landing
+0 Left 400
+225 Jump 5
+75 Jump 5
+70 Jump 5
+70 Right 260
+#flush
+
+; First Landing
+0 Left 246
+
+; The Nightmare Room
+295 Left 100
+152 Left 105
+111 Left 111
+161 Right 43
+24 Jump 12
+#flush
+0 Right 20
+0 Jump 5
+#flush
+0 Left 14
+41 Right 17
+5 Jump 12
+81 Right 10
+45 Right 5
+0 Jump 5
