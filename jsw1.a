@@ -25,7 +25,7 @@ crtcAddressWrite                                    = $fe01     ;
 videoULARegister                                    = $fe20
 videoULAPaletteRegister                             = $fe21     ; Video ULA palette register
 
-ROMSEL                                              = $fe30
+ROMSEL                                              = $fe30     ; ROM Select (Master)
 
 ; ***************************************************************************************
 ; Write to System VIA, register B
@@ -117,6 +117,15 @@ temp2                                               = $0a
 temp3                                               = $0b
 temp4                                               = $0c
 temp5                                               = $0d
+minutes_low                                         = $0e
+minutes_high                                        = $0f
+hours_low                                           = $10
+hours_high                                          = $11
+time_fraction                                       = $12
+items_collected_low                                 = $13
+items_collected_high                                = $14
+first_sound_byte                                    = $15
+second_sound_byte                                   = $16
 
 life_y                                              = $4d
 space_tile                                          = $4e
@@ -1276,10 +1285,12 @@ skip_plot
     jsr check_for_player_leaving_room               ;
     lda player_killed                               ;
     beq leave13                                     ;
-    lda #$10                                        ; sound_2
-    jsr play_sound_number_a                         ; Play sounds for player dying
-    lda #$28                                        ; sound_5
-    jsr play_sound_number_a                         ;
+
+    ldx #4                                          ; player dying sounds
+    jsr start_sound_x                               ;
+    ldx #5                                          ;
+    jsr start_sound_x                               ;
+
     dec player_lives                                ;
     lda entry_horizontal_speed                      ; Set player back to where they entered the room
     sta player_horizontal_speed                     ;
@@ -1742,9 +1753,8 @@ see_if_player_should_start_jump
     sta where_player_fell_from                      ;
     jsr check_player_jump_for_walls                 ;
     beq leave18                                     ;
-    lda #8                                          ; sound_1
-    jsr play_sound_number_a                         ; Play sound for jumping
-;    jsr start_jump_sound
+    ldx #0                                          ;
+    jsr start_sound_x                               ; Player jump sound
     jsr handle_player_jumping                       ;
 leave18
     rts                                             ;
@@ -2342,14 +2352,16 @@ animate_game_over_boot
     sta sprite_address_high2                        ;
     lda #<(unpacked_enemy_sprites + $40)            ;
     sta sprite_address_low2                         ;
+    ldx #3                                          ;
+    jsr start_sound_x                               ;
 animate_game_over_boot_loop
     lda enemies_x + 1                               ;
     ldx enemies_y + 1                               ;
     jsr plot_sprite                                 ; Plot boot
     inc sound_0_pitch                               ;
     inc sound_0_pitch                               ;
-    lda #0                                          ; sound_0
-    jsr play_sound_number_a                         ; Play game over sound
+;    lda #0                                          ; sound_0
+;    jsr play_sound_number_a                         ; Play game over sound
     ldx #$0f                                        ;
     jsr delay                                       ;
     inc enemies_y + 1                               ;
@@ -2591,6 +2603,7 @@ room_data_address_high_table
     !byte >room_3b_data
     !byte >room_3c_data
 
+; ***************************************************************************************
 room_data
 room_01_data                                        ; (Watch Tower)
     !byte $f2, $20, $98, $a1, $c9, $ef, $60, $77, $3f, $62, $67, $fb, $6e, $aa, $81, $8c ; items: 4 (1111)
@@ -7610,6 +7623,7 @@ enemy_sprite_29_frame_1
 
 after_guardians
 
+; ***************************************************************************************
 screen_address_lookup_table
     !byte (>screen_memory_start) + $00
     !byte (>screen_memory_start) + $02
@@ -7762,23 +7776,6 @@ move_to_next_screen_cell
 +
     rts                                         ;
 
-update_sound
-    jsr update_jump_sound                       ;
-    rts                                         ;
-
-jump_pitch_low
-    !byte 0
-jump_pitch_high
-    !byte 0
-jump_sound_counter
-    !byte 0
-jump_volume
-    !byte 11
-first_sound_byte
-    !byte 0
-second_sound_byte
-    !byte 0
-
 ; ***************************************************************************************
 ;
 ; Send byte to sound chip
@@ -7800,7 +7797,7 @@ second_sound_byte
 ;
 ; ***************************************************************************************
 send_to_sound_chip
-    ldy #$FF                                            ; }
+    ldy #$ff                                            ; }
     sty systemVIADataDirectionRegisterA                 ; } set data direction to all outputs
     sta systemVIARegisterANoHandshake                   ; send data byte to sound chip
     iny                                                 ; Y=0
@@ -7854,6 +7851,7 @@ send_to_sound_chip
 ;    ;     0,1,2,3,4,5,6,7, 8, 9
 ;    !byte 0,1,2,3,5,6,7,8,10,11
 
+; ***************************************************************************************
 tile_table                                      ;
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -7888,8 +7886,7 @@ tile_table                                      ;
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
-free_after_guardians = 0
-
+; ***************************************************************************************
 space_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -7900,6 +7897,7 @@ player_background_buffer
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
+; ***************************************************************************************
 sprite_arrow_left                                   ; 2 bits per pixel, 8x8, stored in screen order
     !byte $00, $00                                  ; ........
     !byte $44, $ff                                  ; ........
@@ -7920,6 +7918,7 @@ sprite_arrow_right
     !byte $22, $00                                  ; ........
     !byte $00, $00                                  ; ........
 
+; ***************************************************************************************
 unpacked_conveyor_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -7948,11 +7947,7 @@ clear_screen_loop
     bne clear_screen_loop                           ;
     rts                                             ;
 
-before_player
-
-; align to next page boundary
-;!align 255, 0, 0
-
+; ***************************************************************************************
 unpacked_sprites                                    ; 2 bits per pixel, 16x16, vertically inverted
 player_sprite_left_frame_0
     !byte $33, $11, $cc, $00                        ; ....####........
@@ -7971,12 +7966,6 @@ player_sprite_left_frame_0
     !byte $11, $ff, $88, $00                        ; .#.##.###.......
     !byte $00, $ff, $00, $00                        ; .###....##......
     !byte $00, $ff, $00, $00                        ; ..##...###......
-
-;!if (<unpacked_sprites != 0) {
-;    !error "unpacked_sprites must be on a page boundary ", unpacked_sprites
-;}
-
-free_before_player = unpacked_sprites - before_player
 
 player_sprite_left_frame_1
     !byte $00, $ee, $ee, $00                        ; ......####......
@@ -8104,6 +8093,7 @@ player_sprite_right_frame_3
     !byte $00, $00, $ff, $00                        ; ......##....###.
     !byte $00, $00, $ff, $00                        ; ......###...##..
 
+; ***************************************************************************************
 unpacked_enemy_sprites
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -8186,6 +8176,7 @@ unpacked_enemy_sprites
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
+; ***************************************************************************************
 background_sprite_data                              ; 1 bit per pixel, 8x8
 background_sprite_00
     !byte $ff                                       ; ######## ; The Off Licence PLATFORM
@@ -8196,11 +8187,6 @@ background_sprite_00
     !byte $40                                       ; .#......
     !byte $04                                       ; .....#..
     !byte $00                                       ; ........
-
-;!if (<background_sprite_data != 0) {
-;    !error "background_sprite_data must be aligned to a page ", background_sprite_data
-;}
-
 
 background_sprite_01
     !byte $22                                       ; ..#...#. ; The Off Licence WALL
@@ -10794,9 +10780,32 @@ background_sprite_ff
     !byte $00                                       ; ........
     !byte $00                                       ; ........
 
+game_over_timer
+    !byte 0
+next_index
+    !byte 1, 2, 0
+colour_array
+    !byte $f0, $ff, $0f
+colour_index
+    !byte 0
+
+; ***************************************************************************************
+arrow_timers_table
+    ;      0    1    2    3    4
+    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
+
+; ***************************************************************************************
+paletteLookupTable
+    !byte $00, $20, $80, $a0
+
+
 !if (* > screen_memory_start) {
     !error "Code too long by ", * - screen_memory_start
 }
+
+free_before_screen = screen_memory_start - *
+
+* = screen_memory_start
 
 ; ***************************************************************************************
 ;
@@ -10810,6 +10819,7 @@ initialization_code
 
 !pseudopc $0b00 {
 
+; ***************************************************************************************
 handle_rope_time_and_events
     lda room_contains_rope                          ;
     beq no_rope                                     ;
@@ -10851,6 +10861,7 @@ no_rope
     jsr handle_time                                 ;
     jmp handle_endgame                              ;
 
+; ***************************************************************************************
 update_rope_pixel
     stx rope_pixel_position                         ;
     txa                                             ;
@@ -10886,6 +10897,7 @@ skip_inversion1
     inx                                             ;
     rts                                             ;
 
+; ***************************************************************************************
 plot_rope_pixel
     sta rope_pixel_x                                ;
     jsr calculate_screen_address                    ;
@@ -10905,6 +10917,7 @@ rope_not_touching_player
 rope_pixel_values_table
     !byte $88, $44, $22, $11
 
+; ***************************************************************************************
 unplot_rope
     ldx #$1f                                        ;
     ldy #0                                          ;
@@ -10919,6 +10932,7 @@ unplot_rope_loop
     bpl unplot_rope_loop                            ;
     rts                                             ;
 
+; ***************************************************************************************
 check_for_player_contact_with_rope
     ldx player_rope_pixel                           ;
     bne player_already_on_rope                      ;
@@ -10976,10 +10990,10 @@ remove_player_from_rope
     sta player_y_in_enemies                         ;
     lda #0                                          ;
     sta player_rope_pixel                           ;
-    rts                                             ;
 leave1
     rts                                             ;
 
+; ***************************************************************************************
 write_status_line
     ldx #0                                          ;
     ldy #20                                         ;
@@ -10997,9 +11011,10 @@ write_items_collected_loop
 items_collected_string
     !text "Items collected 000 Time  7:00pm", 0     ;
 
+; ***************************************************************************************
 collect_item
-    lda #$18                                        ; sound_3
-    jsr play_sound_number_a                         ; Play sound for collecting item
+    ldx #2                                          ; Play sound for collecting item
+    jsr start_sound_x                               ;
     inc items_collected_low                         ;
     lda items_collected_low                         ;
     cmp #$0a                                        ;
@@ -11018,11 +11033,7 @@ write_items_collected
     lda items_collected_low                         ;
     jmp write_digit_a                               ;
 
-items_collected_low
-    !byte $00
-items_collected_high
-    !byte $00
-
+; ***************************************************************************************
 write_digit_y_at_status_line_column_x
     sty temp5                                       ;
     ldy #20                                         ;
@@ -11033,6 +11044,7 @@ write_digit_a
     adc #'0'                                        ;
     jmp write_char                                  ;
 
+; ***************************************************************************************
 handle_time
     dec game_timer                                  ;
     bne leave2                                      ;
@@ -11082,17 +11094,7 @@ write_time
 leave2
     rts                                             ;
 
-minutes_low
-    !byte 0
-minutes_high
-    !byte 0
-hours_low
-    !byte 7
-hours_high
-    !byte $f0
-time_fraction
-    !byte 0
-
+; ***************************************************************************************
 reset_game
     lda #0                                          ;
     sta time_fraction                               ;
@@ -11120,9 +11122,9 @@ reset_game
     sta player_x_in_enemies                         ;
     lda #player_start_room                          ; Player starts in "The Bathroom"
     sta player_room                                 ;
-    jsr reset_items                                 ;
-    rts                                             ;
+    jmp reset_items                                 ;
 
+; ***************************************************************************************
 handle_endgame
     lda player_room                                 ;
     cmp #$13                                        ; Master Bedroom
@@ -11169,6 +11171,7 @@ check_for_pillow
     sta house_clear                                 ;
     rts                                             ;
 
+; ***************************************************************************************
 dash_for_toilet
     lda #2                                          ;
     sta player_horizontal_speed                     ; Make the player move right.
@@ -11199,6 +11202,7 @@ not_top_landing
 leave4
     rts                                             ;
 
+; ***************************************************************************************
 mark_enemies_that_overlap_player                    ; Called with tile_address_low1 of the player
     ldy #$20                                        ;
     jsr check_tiles_for_enemy                       ;
@@ -11223,6 +11227,7 @@ check_tile_for_enemy
 leave5
     rts                                             ;
 
+; ***************************************************************************************
 update_arrows
     ldy #1                                          ;
 update_arrows_loop
@@ -11245,13 +11250,14 @@ no_new_arrow
     sta arrow_timer,Y                               ;
     cmp #3                                          ;
     bne consider_next_arrow1                        ;
-    lda #$20                                        ; sound_4
-    jsr play_sound_number_a                         ; Play sound for arrow firing
+    ldx #1                                          ; Play sound for arrow firing
+    jsr start_sound_x                               ;
 consider_next_arrow1
     dey                                             ;
     bpl update_arrows_loop                          ;
     rts                                             ;
 
+; ***************************************************************************************
 update_active_arrow
     jsr plot_arrow                                  ; Unplot arrow
     lda arrow_x,Y                                   ;
@@ -11268,7 +11274,7 @@ arrow_still_active
     ldx #8                                          ; Use enemy slot 8 for arrow
     jsr calculate_tile_address_for_enemy_X          ;
     ldy #$20                                        ;
-    lda (tile_address_low1),Y                           ;
+    lda (tile_address_low1),Y                       ;
     ldy arrow                                       ;
     sta arrow_active,Y                              ;
     jmp consider_next_arrow1                        ;
@@ -11306,6 +11312,7 @@ wipe_arrow_loop
     ldy arrow                                       ;
     rts                                             ;
 
+; ***************************************************************************************
 arrow_sprite_offsets
     !byte <sprite_arrow_right, <sprite_arrow_left
 
@@ -11321,11 +11328,13 @@ arrow_x
 arrow_active
     !byte $00, $00
 
+; ***************************************************************************************
 update_lives
     lda game_timer                                  ;
     and #3                                          ;
     bne leave6                                      ;
-    lda life_sprite_address_low                     ;
+life_sprite_address_low = * + 1
+    lda #$00                                        ;
     clc                                             ;
     adc #64                                         ;
     sta life_sprite_address_low                     ;
@@ -11362,13 +11371,11 @@ skip_floor3
 leave6
     rts                                             ;
 
-life_sprite_address_low
-    !byte 0
-
 life_colours
     ;      KK,  RR,  YY,  WW
     !byte $00, $0f, $f0, $ff
 
+; ***************************************************************************************
 initialise_room_background_tiles_and_title
     ldy #4                                          ; For each of five tiles
 set_tile_colours_loop
@@ -11408,18 +11415,21 @@ write_room_title_loop
     jsr write_letter                                ; $00 to $1a writes "a" to "z"
     jmp write_room_title_loop                       ;
 
+; ***************************************************************************************
 is_1b_1c_1d_1e_or_1f
     bne is_1c_1d_1e_or_1f                           ;
     lda #$27                                        ; "'" ; $1b writes "'"
     jsr write_char                                  ;
     jmp write_room_title_loop                       ;
 
+; ***************************************************************************************
 is_1c_1d_1e_or_1f
     cmp #$1d                                        ;
     beq is_1d                                       ;
     bcs is_1e_or_1f                                 ;
     rts                                             ; $1c ends room title
 
+; ***************************************************************************************
 is_1e_or_1f
     cmp #$1e                                        ;
     bne is_1f                                       ;
@@ -11437,6 +11447,7 @@ is_1f
     jsr write_char                                  ;
     jmp write_room_title_loop                       ;
 
+; ***************************************************************************************
 write_letter
     clc                                             ;
     adc #'a'                                        ;
@@ -11446,31 +11457,9 @@ write_letter
     ldx #0                                          ;
     stx start_of_word                               ;
 lower_case
-    jsr write_char                                  ;
-    rts                                             ;
-
-paletteLookupTable
-    !byte $00, $20, $80, $a0
+    jmp write_char                                  ;
 
 ; ***************************************************************************************
-; Change the appearance of logical colour Y to physical colour A
-set_logical_colour_y_to_a
-    eor #7                                  ;
-    ora paletteLookupTable,Y                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$10                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$50                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$10                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    rts                                     ;
-
-
-arrow_timers_table
-    ;      0    1    2    3    4
-    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
-
 initialise_arrows
     ldy #1                                          ; For each of two arrows
 initialise_arrows_loop
@@ -11544,6 +11533,7 @@ not_nightmare_room
     stx enemies_unpacked_sprite_offset              ; (otherwise use player)
     rts                                             ;
 
+; ***************************************************************************************
 real_entry_point
     jsr title_screen                                ;
     jsr reset_game                                  ;
@@ -11596,9 +11586,6 @@ write_game_over_loop
     bne game_over_loop                              ;
     jmp real_entry_point                            ;
 
-game_over_timer
-    !byte 0
-
 check_for_suicide
     lda $ec                                         ; Internal key number of most recently pressed key
     cmp #$70                                        ; SHIFT-ESCAPE
@@ -11609,96 +11596,129 @@ check_for_suicide
 leave7
     rts                                             ;
 
-next_index
-    !byte 1, 2, 0
-colour_array
-    !byte $f0, $ff, $0f
-colour_index
-    !byte 0
-
+; ***************************************************************************************
 game_over_string
     !text "Game", 9, 9, "Over"                      ;
 game_over_string_end
 
-play_sound_number_a
-    stx tmp_x                                       ;
-    sty tmp_y                                       ;
-    clc                                             ;
-    adc #<sound_definitions                         ;
-    tax                                             ;
-    ldy #>sound_definitions                         ; sound_definitions + A
-    lda #7                                          ; Generate a sound
-    jsr OSWORD                                      ;
-    ldx tmp_x                                       ;
-    ldy tmp_y                                       ;
-    rts                                             ;
-
-tmp_x
-    !byte 0
-tmp_y
-    !byte 0
-
-start_jump_sound
-    lda #<347                                   ;
-    sta jump_pitch_low                          ;
-    lda #>347                                   ;
-    sta jump_pitch_high                         ;
+; ***************************************************************************************
+start_sound_x
+    txa                                         ;
+    tay                                         ; Y = X
+    lda channel_for_sound_x,X                   ;
+    tax                                         ;
+    lda initial_pitch_low_for_sound_x,Y         ;
+    sta pitch_low,X                             ;
+    lda initial_pitch_high_for_sound_x,Y        ;
+    sta pitch_high,X                            ;
     lda #1                                      ;
-    sta jump_sound_counter                      ;
+    sta sound_counters,X                        ;
+    lda duration_for_sound_x,Y                  ;
+    sta sound_duration_for_channel_x,X          ;
+    lda pitch_increment_for_sound_x,Y           ;
+    sta pitch_increment_for_channel_x,X         ;
+return1
     rts                                         ;
 
-update_jump_sound
-    lda jump_sound_counter                      ;
+; ***************************************************************************************
+update_channel_x
+    lda sound_counters,X                        ;
     beq return1                                 ;
-    lda jump_pitch_low                          ;
+    lda pitch_low,X                             ;
     sec                                         ;
-    sbc #10                                     ;
-    sta jump_pitch_low                          ;
+    sbc pitch_increment_for_channel_x,X         ;
+    sta pitch_low,X                             ;
     bcs +                                       ;
-    dec jump_pitch_high                         ;
+    dec pitch_high,X                            ;
 +                                               ;
-    inc jump_sound_counter                      ;
-    lda jump_sound_counter                      ;
-    cmp #29                                     ;
+    inc sound_counters,X                        ;
+    lda sound_counters,X                        ;
+    cmp sound_duration_for_channel_x,X          ;
     bne +                                       ;
     lda #0                                      ;
-    sta jump_sound_counter                      ;
-    jmp return1                                 ;
+    sta sound_counters,X                        ;
+    lda #0                                      ;
+    jmp set_volume                              ;
 +
-    ; send to sound chip
-    lda jump_pitch_high                         ;
+    ; calculate bytes to send to sound chip
+    lda pitch_low,X                             ;
+    and #$0f                                    ;
+    ora first_byte_upper,X                      ; 'OR' in upper nybble of the first byte
     sta first_sound_byte                        ;
 
-    lda jump_pitch_low                          ;
+    lda pitch_high,X                            ;
     asl                                         ;
-    asl first_sound_byte                        ;
     asl                                         ;
-    asl first_sound_byte                        ;
-    lda first_sound_byte                        ;
-    and #$0f                                    ;
-    ora #$c0                                    ;
-    sta first_sound_byte                        ;
-    lda jump_pitch_low                          ;
-    and #$3f                                    ;
+    asl                                         ;
+    asl                                         ;
+    sta temp_sound_byte                         ;
+    lda pitch_low,X                             ;
+    lsr                                         ;
+    lsr                                         ;
+    lsr                                         ;
+    lsr                                         ;
+temp_sound_byte = * + 1
+    ora #$ff                                    ;
     sta second_sound_byte                       ;
 
+    ; send bytes to sound chip
     lda first_sound_byte                        ;
     jsr send_to_sound_chip                      ;
+    cpx #0                                      ;
+    beq +                                       ;
     lda second_sound_byte                       ;
     jsr send_to_sound_chip                      ;
++
 
-    lda jump_volume                             ;
-    eor #$cf                                    ;
-    jsr send_to_sound_chip                      ;
+    ; check for fade in
+    lda sound_counters,X                        ; time sound has been playing
+    asl                                         ;
+    cmp sound_volume_for_channel,X              ;
+    bcc set_volume                              ;
 
-return1
+    ; check for end of sound, to fade out
+    sec                                         ;
+    sbc sound_duration_for_channel_x,X          ;
+    sbc sound_duration_for_channel_x,X          ;
+    clc                                         ;
+    adc #8                                      ;
+    cmp #8                                      ;
+    bcs full_volume                             ;
+    sta diff                                    ;
+    lda sound_volume_for_channel,X              ;
+    sec                                         ;
+diff = * + 1
+    sbc #$ff                                    ;
+set_volume
+    eor volume_byte_for_channel,X               ;
+    jmp send_to_sound_chip                      ;
+
+full_volume
+    lda sound_volume_for_channel,X              ;
+    jmp set_volume                              ;
+
+; ***************************************************************************************
+update_sound
+    ldx #3                                      ;
+-
+    stx temp_channel_x                          ;
+    jsr update_channel_x                        ;
+temp_channel_x = * + 1
+    ldx #$ff                                    ;
+    dex                                         ;
+    bpl -                                       ;
     rts                                         ;
 
 end_of_b00_section
 
+!if (end_of_b00_section > $1100) {
+    !error "Too much code before $1100, by ", end_of_b00_section - $1100
+}
+
 free_after_b00_section = $1100 - end_of_b00_section
 }
 
+; ***************************************************************************************
 entry_point
     lda #140                                        ;
     ldx #12                                         ; *TAPE
@@ -11876,6 +11896,8 @@ move_memory_loop
     bne move_memory_loop                            ;
 
     sei
+    lda #0                                          ;
+    sta irq_counter                                 ;
     lda irq2_vector_low                             ;
     sta previous_irq2_vector_low                    ;
     lda irq2_vector_high                            ;
@@ -11947,6 +11969,7 @@ register_CRTC_array
     !byte 11                                        ; R14 = Cursor position register
     !byte 60                                        ; R15 = Cursor position register
 
+; ***************************************************************************************
 bytes_to_copy
     !byte $00, $00
     !text " GO 4 IT"
@@ -11957,10 +11980,12 @@ bytes_to_copy
     !byte $00, $00, $00, $00, $00, $86
 bytes_to_copy_end
 
+; ***************************************************************************************
 copy_from
 !pseudopc $0400 {
 copy_to
 
+; ***************************************************************************************
 scroll_scrolltext
     ldx #>(text_message_address - $10)              ;
     stx target_address_high                         ;
@@ -12129,9 +12154,11 @@ check_for_space
 leave
     rts                                             ;
 
+; ***************************************************************************************
 change_colour
     dec change_colour_value                         ;
-    lda change_colour_value                         ;
+change_colour_value = * + 1
+    lda #0                                          ;
     and #7                                          ;
     beq change_colour                               ;
 write_change_colour
@@ -12139,9 +12166,7 @@ write_change_colour
     jsr set_logical_colour_y_to_a                   ;
     rts                                             ;
 
-change_colour_value
-    !byte 0
-
+; ***************************************************************************************
 title_screen_scrolltext
     !text "...Jetset Willy was written for the BBC Micro by Chris Robson..."
     !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects and is copyright to Software Projects..."
@@ -12149,6 +12174,7 @@ title_screen_scrolltext
     !text "....Press SPACE to start the game."
     !byte 0
 
+; ***************************************************************************************
 title_screen_logo
     !le32 %....###.###.###..###.###.###....
     !le32 %.....#....#...#...#....#..#.....
@@ -12253,7 +12279,7 @@ irq_routine
     inx                                             ;
     cpx #13                                         ;
     bcc +                                           ;
-;    jsr update_sound                                ;
+    jsr update_sound                                ;
     ldx #0                                          ;
 +
     stx irq_counter                                 ;
@@ -12277,7 +12303,7 @@ irq_routine
 ;+
     cpx #9                                          ;
     bne +                                           ;
-;    jsr update_music                                ;
+    jsr update_music                                ;
     jmp exit_irq                                    ;
 +
     cpx #10                                         ;
@@ -12294,6 +12320,7 @@ exit_irq
     sta irq_accumulator                             ;
     jmp (previous_irq2_vector_low)                  ;
 
+; ***************************************************************************************
 melody_pitch_table
     !byte $70, $68, $70, $68, $64, $54, $64, $68, $70, $68, $70, $68, $64, $68, $70, $78
     !byte $7c, $78, $7c, $78, $70, $84, $80, $78, $70, $68, $64, $68, $70, $64, $74, $70
@@ -12304,12 +12331,141 @@ melody_duration_table
     !byte $08, $08, $08, $08, $40, $20, $10, $10, $08, $08, $08, $08, $10, $10, $08, $08
     !byte $08, $08, $10, $10, $40
 
+; ***************************************************************************************
+play_sound_number_a
+    stx tmp_x                                       ;
+    sty tmp_y                                       ;
+    clc                                             ;
+    adc #<sound_definitions                         ;
+    tax                                             ;
+    ldy #>sound_definitions                         ; sound_definitions + A
+    lda #7                                          ; Generate a sound
+    jsr OSWORD                                      ;
+tmp_x = * + 1
+    ldx #$00                                        ;
+tmp_y = * + 1
+    ldy #$00                                        ;
+    rts                                             ;
+
+; ***************************************************************************************
+; Change the appearance of logical colour Y to physical colour A
+set_logical_colour_y_to_a
+    eor #7                                  ;
+    ora paletteLookupTable,Y                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$10                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$50                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$10                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    rts                                     ;
+
+; ***************************************************************************************
+; per channel information
+pitch_low
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+pitch_high
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+sound_counters
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+sound_volume_for_channel
+    !byte 11
+    !byte 14
+    !byte 11
+    !byte 11
+sound_duration_for_channel_x
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+pitch_increment_for_channel_x
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+
+; constants
+volume_byte_for_channel
+    !byte $ff
+    !byte $df
+    !byte $bf
+    !byte $9f
+first_byte_upper
+    !byte $e0
+    !byte $c0
+    !byte $a0
+    !byte $90
+
+; ***************************************************************************************
+; per sound information
+channel_for_sound_x
+    !byte 1                 ; 0 : jump
+    !byte 0                 ; 1 : arrow
+    !byte 2                 ; 2 : item collection
+    !byte 1                 ; 3 : game over
+    !byte 0                 ; 4 : dying 1
+    !byte 1                 ; 5 : dying 2
+    !byte 3                 ; 6 : melody
+
+initial_pitch_low_for_sound_x
+    !byte <347              ; 0 : jump
+    !byte <5                ; 1 : arrow
+    !byte <85               ; 2 : item collection
+    !byte <600              ; 3 : game over
+    !byte <5                ; 4 : dying 1
+    !byte <100              ; 5 : dying 2
+    !byte <0                ; 6 : melody
+
+initial_pitch_high_for_sound_x
+    !byte >347              ; 0 : jump
+    !byte >5                ; 1 : arrow
+    !byte >85               ; 2 : item collection
+    !byte >600              ; 3 : game over
+    !byte >5                ; 4 : dying 1
+    !byte >100              ; 5 : dying 2
+    !byte >0                ; 6 : melody
+
+duration_for_sound_x
+    !byte 28                ; 0 : jump
+    !byte 6                 ; 1 : arrow
+    !byte 16                ; 2 : item collection
+    !byte 80                ; 3 : game over
+    !byte 10                ; 4 : dying 1
+    !byte 10                ; 5 : dying 2
+    !byte 10                ; 6 : melody
+
+pitch_increment_for_sound_x
+    !byte 10                ; 0 : jump
+    !byte 0                 ; 1 : arrow
+    !byte 0                 ; 2 : item collection
+    !byte 7                 ; 3 : game over
+    !byte 0                 ; 4 : dying 1
+    !byte 10                ; 5 : dying 2
+    !byte 0                 ; 6 : melody
+
+; ***************************************************************************************
 after_0400_segment
 * = $0800
 
-free_after_0400_segment = * - after_0400_segment
+!if (after_0400_segment > *) {
+    !error "Too much code by ", after_0400_segment - *
 }
 
+free_after_0400_segment = * - after_0400_segment
+
+}
+
+; ***************************************************************************************
 copy_to_sound_workspace
 !pseudopc $0800 {
 ; OS sound workspace
@@ -12353,6 +12509,7 @@ unused
     !byte $01, $00, $00, $00, $01, $04, $08, $04, $05, $fb, $9c, $64, $00, $00, $00, $00 ; ENVELOPE 3, 1, 0, 0, 0,  1,  4,  8,  4, 5,&FB, &9C, &64, &00
     !byte $01, $00, $00, $00, $00, $00, $0a, $00, $00, $00, $ff, $5e, $00, $00, $00, $00 ; ENVELOPE 4, 1, 0, 0, 0,  0,  0, 10,  0, 0,  0, &FF, &5E, &00
 
+; ***************************************************************************************
 rope_x_delta_table
     !byte $02, $01, $01, $02, $02, $02, $02, $02, $02, $01, $02, $02, $02, $01, $02, $02
     !byte $02, $02, $01, $02, $02, $01, $01, $02, $01, $01, $03, $02, $02, $03, $02, $03
@@ -12363,6 +12520,7 @@ rope_y_delta_table
     !byte $02, $02, $03, $02, $02, $03, $03, $02, $03, $03, $01, $03, $03, $01, $02, $01
     !byte $02, $01, $02, $02, $02, $02, $03, $03
 
+; ***************************************************************************************
 rope_pixels_screen_address_low_table
     !byte <screen_memory_start + $01
     !byte <screen_memory_start + $b9
@@ -12437,32 +12595,39 @@ rope_pixels_screen_address_high_table
     !byte >screen_memory_start + $00    ; [unused]
     !byte >screen_memory_start + $00    ; [unused]
 
+; ***************************************************************************************
 rope_pixels_x
     !byte $30, $5d, $5f, $60, $62, $64, $66, $68, $6a, $6c, $6d, $6e, $70, $71, $72, $73
     !byte $74, $75, $76, $77, $78, $79, $7a, $7b, $7c, $7d, $7e, $7f, $80, $80, $80, $80
 ; [unused]
     !byte $00, $00
 
+; ***************************************************************************************
 rope_pixels_y
     !byte $00, $59, $57, $54, $52, $50, $4d, $4a, $48, $45, $42, $3f, $3c, $39, $36, $33
     !byte $30, $2d, $2a, $27, $24, $21, $1e, $1b, $18, $15, $12, $0f, $0c, $09, $06, $03
+
+; ***************************************************************************************
 ; [unused]
     !byte $00, $00
 
-; [unused]                              ;  $09d8-$09ef is an unused copy of $0ac0-$0ad7
+; [unused]
     !byte $00, $00, $02, $00, $04, $00, $06, $00, $08, $00, $0a, $00, $0c, $00, $0e, $00
     !byte $10, $00, $12, $00, $14, $00, $16, $00
 ; [unused]
     !byte $00
 
+; ***************************************************************************************
 background_tiles_colours
     !byte $01, $02, $03, $03, $02, $00
 background_tiles_sprites
     !byte $8d, $8e, $03, $90, $40, $91
 
+; ***************************************************************************************
 unused1
     !byte $00, $00, $00                 ; [unused]
 
+; ***************************************************************************************
 enemies_sprite
     !byte $00, $1c, $04, $02, $26, $1c, $0e, $00, $00
 
@@ -12529,6 +12694,7 @@ items_tile_address_low
 items_tile_address_high
     !byte $6f, $6f, $6f, $6f, $6f, $6f, $6f, $08, $08, $08, $08, $08
 
+; ***************************************************************************************
 os_screen_address_lookup_table
     !be16 $0000
     !be16 $0200
@@ -12564,6 +12730,7 @@ os_screen_address_lookup_table
     !be16 $3e00
 }
 
+; ***************************************************************************************
 initial_zero_page_values
 ; $4d
     !byte $8c                                       ; $4d  life_y
@@ -12651,4 +12818,4 @@ initial_zero_page_values
     !byte $00                                       ; $9f  player_rope_pixel
 initial_zero_page_values_end
 
-free_total = free_after_0400_segment + free_after_b00_section + free_before_player + free_after_guardians
+free_total = free_after_0400_segment + free_after_b00_section + free_before_screen
