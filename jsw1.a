@@ -72,18 +72,16 @@ userVIAAuxiliaryControlRegister                     = $fe6b     ; auxiliary cont
 userVIAInterruptFlagRegister                        = $fe6d     ; Interrupt flag register
 userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enable register
 
-OSWORD                                              = $fff1     ; sound effects, melody
-OSBYTE                                              = $fff4     ; (*TAPE, ESCAPE/BREAK effect), read keys
-
+OSBYTE                                              = $fff4     ;  used on initialization only
 
 ; game constants
-;player_start_room                                   = 21        ; 21 = The Bathroom
-;player_start_y                                      = $68       ;
-;player_start_x                                      = $a0       ;
-
-player_start_room                                   = 39        ; 21 = The Bathroom
-player_start_y                                      = $60       ;
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_y                                      = $68       ;
 player_start_x                                      = $a0       ;
+
+;player_start_room                                   = 39        ; 39 = The Hall
+;player_start_y                                      = $60       ;
+;player_start_x                                      = $a0       ;
 
 ;player_start_room                                   = 33        ; 33 = Cold Store
 ;player_start_y                                      = $30       ;
@@ -126,6 +124,42 @@ items_collected_low                                 = $13
 items_collected_high                                = $14
 first_sound_byte                                    = $15
 second_sound_byte                                   = $16
+music_enabled                                       = $17
+game_over_timer                                     = $18
+
+; sound variables
+sound_variables_start                               = $19
+sound_counters                                      = $19
+sound_counters_1                                    = $1a
+sound_counters_2                                    = $1b
+sound_counters_3                                    = $1c
+pitch_low                                           = $1d
+pitch_low_1                                         = $1e
+pitch_low_2                                         = $1f
+pitch_low_3                                         = $20
+pitch_high                                          = $21
+pitch_high_1                                        = $22
+pitch_high_2                                        = $23
+pitch_high_3                                        = $24
+sound_duration_for_channel_x                        = $25
+sound_duration_for_channel_x_1                      = $26
+sound_duration_for_channel_x_2                      = $27
+sound_duration_for_channel_x_3                      = $28
+pitch_increment_for_channel_x                       = $29
+pitch_increment_for_channel_x_1                     = $2a
+pitch_increment_for_channel_x_2                     = $2b
+pitch_increment_for_channel_x_3                     = $2c
+melody_note_volume                                  = $2d
+sound_variables_end                                 = $2e
+
+; player state on entry into the current room (reset to these values on death)
+entry_horizontal_speed                              = $2f
+entry_jump_timer                                    = $30
+entry_x                                             = $31
+entry_y                                             = $32
+entry_is_jumping                                    = $33
+previous_irq2_vector_low                            = $34
+previous_irq2_vector_high                           = $35
 
 life_y                                              = $4d
 space_tile                                          = $4e
@@ -286,18 +320,6 @@ initialise_room
     jsr initialise_enemies                          ;
     jsr initialise_arrows                           ;
     jmp calculate_screen_address_of_conveyor        ;
-
-; player state on entry into the current room (reset to these values on death)
-entry_horizontal_speed
-    !byte 0
-entry_jump_timer
-    !byte 0
-entry_x
-    !byte 0
-entry_y
-    !byte 0
-entry_is_jumping
-    !byte 0
 
 ; ***************************************************************************************
 initialise_room_data
@@ -1054,24 +1076,6 @@ update_position
     rts                                             ;
 
 ; ***************************************************************************************
-plot_enemies
-    ldx enemies_on_screen                           ;
-    beq leave11                                     ;
-    stx enemy_to_consider2                          ;
-plot_enemies_loop
-    dec enemies_need_replot,X                       ;
-    bne skip_enemy                                  ;
-    jsr calculate_enemy_sprite_address              ;
-    jsr plot_enemy                                  ;
-    jsr wipe_space_vacated_by_enemy                 ;
-skip_enemy
-    dec enemy_to_consider2                          ;
-    ldx enemy_to_consider2                          ;
-    bne plot_enemies_loop                           ;
-leave11
-    rts                                             ;
-
-; ***************************************************************************************
 plot_or_unplot_player_sprite
     ldy sprite_address_low2                         ;
     sty sprite_address_for_restore_lda_low          ;
@@ -1133,12 +1137,71 @@ continue_with_next_byte
 leave12
     rts                                             ;
 
+;
+; Keys
+;
+keyCodeZ                           = $61
+keyCodeX                           = $42
+keyCodeReturn                      = $49
+keyCodeSpace                       = $62
+keyCodeS                           = $51
+keyCodeQ                           = $10
+keyCodeEscape                      = $70
+keyCodeShift                       = $01
+keyCodeColon                       = $48
+
 ; ***************************************************************************************
-check_for_keypress
-    ldy #$ff                                        ;
-    lda #$81                                        ; Scan for a particular key (X)
-    jsr OSBYTE                                      ;
-    txa                                             ;
+keysToTest
+    !byte keyCodeZ
+    !byte keyCodeX
+    !byte keyCodeReturn
+    !byte keyCodeSpace
+    !byte keyCodeS
+    !byte keyCodeQ
+    !byte keyCodeEscape
+    !byte keyCodeShift
+keysToTestEnd
+
+; ***************************************************************************************
+; Read keyboard, avoiding the time when the music may update
+read_keys
+    lda irq_counter                                 ;
+    cmp #12                                         ;
+    bcs read_keys                                   ;
+
+    php
+    sei
+    lda #3                                          ;
+    sta systemVIARegisterB                          ; Disable keyboard auto scanning
+    lda #$7F                                        ;
+    sta systemVIADataDirectionRegisterA             ; Set System VIA Port A to output on bits 0-6, and input on bit 7
+
+    ldx #keysToTestEnd - keysToTest - 1             ;
+readKeyLoop
+    lda keyStates,X                                 ; Remember previous key states
+    sta previousKeyStates,X                         ; Remember previous key states
+    lda keysToTest,X                                ;
+    sta systemVIARegisterANoHandshake               ; Say which key we are interested in (write to System VIA Port A)
+    lda systemVIARegisterANoHandshake               ; Read key state (read from System VIA Port A)
+    and #$80                                        ; just the top bit reflects key state
+                                                    ; 0 means up, $80 means down
+    beq +                                           ;
+    lda #$ff                                        ;
++
+    sta keyStates,X                                 ; Record results
+    lda previousKeyStates,X                         ; Remember previous key states
+    eor #$ff                                        ; Remember previous key states
+    and keyStates,X                                 ; Remember previous key states
+    sta justPressedKeyStates,X                      ; Remember previous key states
+    dex                                             ;
+    bpl readKeyLoop                                 ;
+
+    lda #$ff                                        ;
+    sta systemVIADataDirectionRegisterA             ; Set System VIA Port A to output on all bits 0-7
+    lda #11                                         ; Enable keyboard auto scanning
+    sta systemVIARegisterB                          ;
+
+    plp                                             ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -1149,19 +1212,16 @@ handle_player_keys
     sta player_conveyor_direction                   ; Mark player as not being conveyed
     beq check_for_jump                              ;
 player_not_conveyed
-    ldx #$9e                                        ; 'Z'
-    jsr check_for_keypress                          ;
-    and #$fe                                        ;
+    lda keyStateZ
+    and #$fe                                        ; 'Z'
     sta player_horizontal_speed                     ;
-    ldx #$bd                                        ; 'X'
-    jsr check_for_keypress                          ;
+    lda keyStateX                                   ; 'X'
     and #2                                          ;
     clc                                             ;
     adc player_horizontal_speed                     ;
     sta player_horizontal_speed                     ;
 check_for_jump
-    ldx #$b7                                        ; '*'
-    jsr check_for_keypress                          ;
+    lda keyStateReturn                              ; 'Return'
     sta player_started_jump                         ;
     rts                                             ;
 
@@ -1173,6 +1233,7 @@ update_game
     ora player_jump_timer                           ;
     bne skip_keys                                   ; Player can't start jump or move when jumping
 consider_keys
+    jsr read_keys                                   ;
     jsr handle_player_keys                          ;
 skip_keys
     jsr handle_rope_time_and_events                 ;
@@ -1305,11 +1366,6 @@ skip_plot
     jsr remove_collected_items_from_room_data       ;
 leave13
     rts                                             ;
-
-; ***************************************************************************************
-jump_parabola_table
-    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
-    !byte $fc, $fc
 
 ; ***************************************************************************************
 initialise_enemies
@@ -2335,8 +2391,6 @@ rotate_and_store_conveyor_byte
 
 ; ***************************************************************************************
 animate_game_over_boot
-    lda #$28                                        ;
-    sta sound_0_pitch                               ;
     lda #0                                          ;
     sta melody_active                               ; Disable melody
     ldx #0                                          ; Room 0 is the Game Over screen
@@ -2352,16 +2406,12 @@ animate_game_over_boot
     sta sprite_address_high2                        ;
     lda #<(unpacked_enemy_sprites + $40)            ;
     sta sprite_address_low2                         ;
-    ldx #3                                          ;
+    ldx #3                                          ; Play game over sound
     jsr start_sound_x                               ;
 animate_game_over_boot_loop
     lda enemies_x + 1                               ;
     ldx enemies_y + 1                               ;
     jsr plot_sprite                                 ; Plot boot
-    inc sound_0_pitch                               ;
-    inc sound_0_pitch                               ;
-;    lda #0                                          ; sound_0
-;    jsr play_sound_number_a                         ; Play game over sound
     ldx #$0f                                        ;
     jsr delay                                       ;
     inc enemies_y + 1                               ;
@@ -10780,8 +10830,6 @@ background_sprite_ff
     !byte $00                                       ; ........
     !byte $00                                       ; ........
 
-game_over_timer
-    !byte 0
 next_index
     !byte 1, 2, 0
 colour_array
@@ -11371,10 +11419,6 @@ skip_floor3
 leave6
     rts                                             ;
 
-life_colours
-    ;      KK,  RR,  YY,  WW
-    !byte $00, $0f, $f0, $ff
-
 ; ***************************************************************************************
 initialise_room_background_tiles_and_title
     ldy #4                                          ; For each of five tiles
@@ -11587,9 +11631,10 @@ write_game_over_loop
     jmp real_entry_point                            ;
 
 check_for_suicide
-    lda $ec                                         ; Internal key number of most recently pressed key
-    cmp #$70                                        ; SHIFT-ESCAPE
-    bne leave7                                      ;
+    lda keyStateShift                               ;
+    beq leave7                                      ;
+    lda keyStateEscape                              ;
+    beq leave7                                      ;
     pla                                             ; Remove check_for_suicide from stack
     pla                                             ;
     jmp real_entry_point                            ;
@@ -11709,6 +11754,60 @@ temp_channel_x = * + 1
     bpl -                                       ;
     rts                                         ;
 
+; ***************************************************************************************
+keyStates
+keyStateZ
+   !byte 0
+keyStateX
+   !byte 0
+keyStateReturn
+   !byte 0
+keyStateSpace
+   !byte 0
+keyStateS
+   !byte 0
+keyStateQ
+   !byte 0
+keyStateEscape
+   !byte 0
+keyStateShift
+   !byte 0
+
+previousKeyStates
+previousKeyStateZ
+   !byte 0
+previousKeyStateX
+   !byte 0
+previousKeyStateRETURN
+   !byte 0
+previousKeyStateSpace
+   !byte 0
+previousKeyStateS
+   !byte 0
+previousKeyStateQ
+   !byte 0
+previousKeyStateEscape
+   !byte 0
+previousKeyStateShift
+   !byte 0
+
+justPressedKeyStates
+justPressedStateZ
+   !byte 0
+justPressedStateX
+   !byte 0
+justPressedStateRETURN
+   !byte 0
+justPressedStateSpace
+   !byte 0
+justPressedStateS
+   !byte 0
+justPressedStateQ
+   !byte 0
+justPressedStateEscape
+   !byte 0
+justPressedStateShift
+    !byte 0
 end_of_b00_section
 
 !if (end_of_b00_section > $1100) {
@@ -11874,6 +11973,15 @@ copy_zero_page_values_loop                          ;
     sta $4d,X                                       ;
     dex                                             ;
     bpl copy_zero_page_values_loop                  ;
+
+    lda #1                                          ;
+    sta music_enabled                               ;
+    lda #0                                          ;
+    ldx #sound_variables_end - sound_variables_start ;
+-
+    sta sound_variables_start,X                     ;
+    dex                                             ;
+    bpl -                                           ;
 
     ldx #0                                          ;
 move_memory_loop
@@ -12144,8 +12252,8 @@ skip_colour_change
     beq restart_scrolltext                          ;
 
 check_for_space
-    ldx #$9d                                        ; SPACE BAR
-    jsr check_for_keypress                          ;
+    jsr read_keys                                   ;
+    lda keyStateSpace                               ;
     beq leave                                       ;
     lda #$8c                                        ;
     sta life_y                                      ;
@@ -12203,63 +12311,74 @@ play_melody
     lda music_enabled                               ;
     beq +                                           ;
     dec note_length                                 ;
-    bne +                                           ;
+    bne set_melody_vol                              ;
     ldx note_number                                 ;
     lda melody_duration_table,X                     ;
     sta note_length                                 ;
     lda melody_pitch_table,X                        ;
-    sta melody_sound_pitch                          ;
-    ldx #<melody_sound                              ;
-    ldy #>melody_sound                              ; melody_sound
-    lda #7                                          ; Generate a sound
-    jsr OSWORD                                      ;
+
+; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
+; write second byte:  top 6 bits of pitch P
+;
+; To set volume V (0-15) on channel C (0-2, or 3=noise):
+; write volume byte:  128 + 32*C + 16 + volume (0-15, 0 = loudest)
+
+    and #$0f                                        ;
+    ora #$80                                        ; 'OR' in upper nybble for channel 3
+    jsr send_to_sound_chip                          ; first byte
+
+    lda melody_pitch_table,X                        ;
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    jsr send_to_sound_chip                          ; second byte
+
+    lda #10 * 4                                     ;
+    sta melody_note_volume                          ;
+
     inc note_number                                 ;
     lda note_number                                 ;
     cmp #$25                                        ;
-    bne +                                           ;
+    bne set_melody_vol                              ;
     lda #0                                          ;
     sta note_number                                 ;
+set_melody_vol
+    ; set volume of playing note
+    lda melody_note_volume                          ;
+    lsr                                             ;
+    lsr                                             ;
+    eor #$9f                                        ;
+    jsr send_to_sound_chip                          ; volume byte
+
+    ; update volume
+    lda melody_note_volume                          ;
+    beq +                                           ;
+    dec melody_note_volume                          ;
 +
     rts                                             ;
 
 ; ***************************************************************************************
 check_for_q_and_s_keys
-    lda $ec                                         ; Internal key number of most recently pressed key
-    cmp #$d1                                        ; "S"
-    bne s_not_pressed                               ;
+    lda keyStateS                                   ;
+    beq s_not_pressed                               ;
     lda #1                                          ;
     sta music_enabled                               ;
 s_not_pressed
-    cmp #$90                                        ; "Q"
-    bne q_not_pressed                               ;
+    lda keyStateQ                                   ;
+    beq q_not_pressed                               ;
     lda #0                                          ;
     sta music_enabled                               ;
 play_silence
-    ldx #<sound_silence                             ;
-    ldy #>sound_silence                             ; sound_silence
-    lda #7                                          ; Generate a sound
-    jsr OSWORD                                      ;
+    lda #$9f                                        ;
+    jsr send_to_sound_chip                          ; volume byte
 q_not_pressed
     rts                                             ;
-
-music_enabled
-    !byte $01
-
-melody_sound
-melody_sound_pitch = * + 4
-;         channel   volume    pitch     duration
-    !byte $13, $00, $04, $00, $00, $00, $01, $00
-
-    !byte $00
 
 note_length
     !byte $06
 note_number
     !byte $00
-
-sound_silence
-;         channel   volume    pitch     duration
-    !byte $13, $00, $00, $00, $00, $00, $00, $00
 
 ; ***************************************************************************************
 irq_routine
@@ -12308,7 +12427,7 @@ irq_routine
 +
     cpx #10                                         ;
     bne +                                           ;
-;    jsr check_for_q_and_s_keys                      ;
+    jsr check_for_q_and_s_keys                      ;
 +
 
 exit_irq
@@ -12322,30 +12441,15 @@ exit_irq
 
 ; ***************************************************************************************
 melody_pitch_table
-    !byte $70, $68, $70, $68, $64, $54, $64, $68, $70, $68, $70, $68, $64, $68, $70, $78
-    !byte $7c, $78, $7c, $78, $70, $84, $80, $78, $70, $68, $64, $68, $70, $64, $74, $70
-    !byte $68, $70, $74, $68, $84
+    !byte 169, 190, 169, 190, 201, 253
+    !byte 201, 190, 169, 190, 169, 190, 201, 190, 169, 150, 142, 150, 142, 150, 169
+    !byte 127, 134, 150, 169, 190, 201, 190, 169, 201
+    !byte 160, 169, 190, 169, 160, 190, 127
 
 melody_duration_table
     !byte $08, $08, $08, $08, $10, $20, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08
     !byte $08, $08, $08, $08, $40, $20, $10, $10, $08, $08, $08, $08, $10, $10, $08, $08
     !byte $08, $08, $10, $10, $40
-
-; ***************************************************************************************
-play_sound_number_a
-    stx tmp_x                                       ;
-    sty tmp_y                                       ;
-    clc                                             ;
-    adc #<sound_definitions                         ;
-    tax                                             ;
-    ldy #>sound_definitions                         ; sound_definitions + A
-    lda #7                                          ; Generate a sound
-    jsr OSWORD                                      ;
-tmp_x = * + 1
-    ldx #$00                                        ;
-tmp_y = * + 1
-    ldy #$00                                        ;
-    rts                                             ;
 
 ; ***************************************************************************************
 ; Change the appearance of logical colour Y to physical colour A
@@ -12363,38 +12467,12 @@ set_logical_colour_y_to_a
 
 ; ***************************************************************************************
 ; per channel information
-pitch_low
-    !byte 0
-    !byte 0
-    !byte 0
-    !byte 0
-pitch_high
-    !byte 0
-    !byte 0
-    !byte 0
-    !byte 0
-sound_counters
-    !byte 0
-    !byte 0
-    !byte 0
-    !byte 0
+; constants
 sound_volume_for_channel
     !byte 11
+    !byte 15
     !byte 14
     !byte 11
-    !byte 11
-sound_duration_for_channel_x
-    !byte 0
-    !byte 0
-    !byte 0
-    !byte 0
-pitch_increment_for_channel_x
-    !byte 0
-    !byte 0
-    !byte 0
-    !byte 0
-
-; constants
 volume_byte_for_channel
     !byte $ff
     !byte $df
@@ -12404,7 +12482,7 @@ first_byte_upper
     !byte $e0
     !byte $c0
     !byte $a0
-    !byte $90
+    !byte $80
 
 ; ***************************************************************************************
 ; per sound information
@@ -12415,7 +12493,6 @@ channel_for_sound_x
     !byte 1                 ; 3 : game over
     !byte 0                 ; 4 : dying 1
     !byte 1                 ; 5 : dying 2
-    !byte 3                 ; 6 : melody
 
 initial_pitch_low_for_sound_x
     !byte <347              ; 0 : jump
@@ -12424,7 +12501,6 @@ initial_pitch_low_for_sound_x
     !byte <600              ; 3 : game over
     !byte <5                ; 4 : dying 1
     !byte <100              ; 5 : dying 2
-    !byte <0                ; 6 : melody
 
 initial_pitch_high_for_sound_x
     !byte >347              ; 0 : jump
@@ -12433,16 +12509,14 @@ initial_pitch_high_for_sound_x
     !byte >600              ; 3 : game over
     !byte >5                ; 4 : dying 1
     !byte >100              ; 5 : dying 2
-    !byte >0                ; 6 : melody
 
 duration_for_sound_x
     !byte 28                ; 0 : jump
-    !byte 6                 ; 1 : arrow
-    !byte 16                ; 2 : item collection
+    !byte 7                 ; 1 : arrow
+    !byte 20                ; 2 : item collection
     !byte 80                ; 3 : game over
     !byte 10                ; 4 : dying 1
     !byte 10                ; 5 : dying 2
-    !byte 10                ; 6 : melody
 
 pitch_increment_for_sound_x
     !byte 10                ; 0 : jump
@@ -12451,7 +12525,30 @@ pitch_increment_for_sound_x
     !byte 7                 ; 3 : game over
     !byte 0                 ; 4 : dying 1
     !byte 10                ; 5 : dying 2
-    !byte 0                 ; 6 : melody
+
+; ***************************************************************************************
+plot_enemies
+    ldx enemies_on_screen                           ;
+    beq leave11                                     ;
+    stx enemy_to_consider2                          ;
+plot_enemies_loop
+    dec enemies_need_replot,X                       ;
+    bne skip_enemy                                  ;
+    jsr calculate_enemy_sprite_address              ;
+    jsr plot_enemy                                  ;
+    jsr wipe_space_vacated_by_enemy                 ;
+skip_enemy
+    dec enemy_to_consider2                          ;
+    ldx enemy_to_consider2                          ;
+    bne plot_enemies_loop                           ;
+leave11
+    rts                                             ;
+
+; ***************************************************************************************
+jump_parabola_table
+    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
+    !byte $fc, $fc
+
 
 ; ***************************************************************************************
 after_0400_segment
@@ -12479,35 +12576,26 @@ copy_to_sound_workspace
     !byte $e2, $01, $b8, $e4, $01, $b8, $e6, $01, $b8, $e8, $01, $b8, $ea, $01, $01, $b8
     !byte $64, $06, $f8, $00, $00, $f8, $00, $00, $f8, $00, $00, $f8, $00, $00, $00, $90
 
-sound_definitions
-sound_0_pitch = sound_definitions + 4
-
-;         channel   volume    pitch     duration
-    !byte $12, $00, $f8, $ff, $ea, $00, $01, $00    ; sound_0 (game over)
-    !byte $12, $00, $01, $00, $46, $00, $0a, $00    ; sound_1 (player jumping)
-    !byte $11, $00, $01, $00, $c8, $00, $04, $00    ; sound_2 (player death)
-    !byte $12, $00, $02, $00, $aa, $00, $0a, $00    ; sound_3 (item collected)
-    !byte $10, $00, $03, $00, $05, $00, $0a, $00    ; sound_4 (arrow fired)
-    !byte $10, $00, $f3, $ff, $07, $00, $04, $00    ; sound_5 (player death)
-
 unused2
     !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00
-
-previous_irq2_vector_low
-    !byte $89
-previous_irq2_vector_high
-    !byte $de
-
-unused
-    !byte 0                             ; [unused]
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ; $08c0
-; OS envelope storage area
-    !byte $02, $04, $04, $04, $0a, $0a, $0a, $0a, $00, $00, $ec, $5a, $5a, $00, $00, $00 ; ENVELOPE 1, 2, 4, 4, 4, 10, 10, 10, 10, 0,  0, &EC, &5A, &5A
-    !byte $02, $00, $00, $00, $0a, $28, $08, $19, $05, $fb, $f6, $7e, $6e, $00, $00, $00 ; ENVELOPE 2, 2, 0, 0, 0, 10, 40,  8,&19, 5,&FB, &F6, &7E, &6E
-    !byte $01, $00, $00, $00, $01, $04, $08, $04, $05, $fb, $9c, $64, $00, $00, $00, $00 ; ENVELOPE 3, 1, 0, 0, 0,  1,  4,  8,  4, 5,&FB, &9C, &64, &00
-    !byte $01, $00, $00, $00, $00, $00, $0a, $00, $00, $00, $ff, $5e, $00, $00, $00, $00 ; ENVELOPE 4, 1, 0, 0, 0,  0,  0, 10,  0, 0,  0, &FF, &5E, &00
+; OS envelope storage area [unused]
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ***************************************************************************************
 rope_x_delta_table
@@ -12728,6 +12816,17 @@ os_screen_address_lookup_table
     !be16 $3a00
     !be16 $3c00
     !be16 $3e00
+
+life_colours
+    ;      KK,  RR,  YY,  WW
+    !byte $00, $0f, $f0, $ff
+
+end_of_800_section
+free_after_0800_segment = $b00 - end_of_800_section
+
+!if (* > $0b00) {
+    !error "Code too long by ", * - $0b00
+}
 }
 
 ; ***************************************************************************************
@@ -12818,4 +12917,4 @@ initial_zero_page_values
     !byte $00                                       ; $9f  player_rope_pixel
 initial_zero_page_values_end
 
-free_total = free_after_0400_segment + free_after_b00_section + free_before_screen
+free_total = free_after_0400_segment + free_after_0800_segment + free_after_b00_section + free_before_screen
