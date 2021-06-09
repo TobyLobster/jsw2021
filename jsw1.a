@@ -4,8 +4,6 @@
 ;
 
 ; os variables
-;os_row_multiplication_table_low                     = $e0
-;os_row_multiplication_table_high                    = $e1
 irq_accumulator                                     = $fc
 irq1_vector_low                                     = $0204
 irq1_vector_high                                    = $0205
@@ -103,8 +101,8 @@ FramePeriod     = 312*64-2
 ; Calculate here the timer value to interrupt at the desired line
 Timer1Value      = 76*64 + 39
 
-; This is the delay between interrupts (three character rows = 24 pixel rows)
-ShortTimerValue  = 24*64 - 2
+; This is the delay between interrupts (one character row = 8 pixel rows)
+ShortTimerValue  = 8*64 - 2
 
 ; game variables (memory locations)
 irq_counter                                         = $00
@@ -306,16 +304,13 @@ bit_for_item                                        = $97
 rope_pixel_x                                        = $97
 packed_byte2                                        = $97
 seven                                               = $98
-
-; $99 unused
-
+melody_active                                       = $99
 player_entered_room_falling_too_far                 = $9a
 player_lives                                        = $9b
 player_not_plotted                                  = $9c
 out_of_time                                         = $9d
 house_clear                                         = $9e
 player_rope_pixel                                   = $9f
-melody_active                                       = $028a
 
 screen_memory_start                                 = $5600
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
@@ -1155,7 +1150,7 @@ keyCodeSpace                       = $62
 keyCodeS                           = $51
 keyCodeQ                           = $10
 keyCodeEscape                      = $70
-keyCodeShift                       = $01
+keyCodeShift                       = $00
 keyCodeColon                       = $48
 
 ; ***************************************************************************************
@@ -1184,8 +1179,8 @@ read_keys
 
     ldx #keysToTestEnd - keysToTest - 1             ;
 readKeyLoop
-    lda keyStates,X                                 ; Remember previous key states
-    sta previousKeyStates,X                         ; Remember previous key states
+;    lda keyStates,X                                 ; Remember previous key states
+;    sta previousKeyStates,X                         ; Remember previous key states
     lda keysToTest,X                                ;
     sta systemVIARegisterANoHandshake               ; Say which key we are interested in (write to System VIA Port A)
     lda systemVIARegisterANoHandshake               ; Read key state (read from System VIA Port A)
@@ -1195,10 +1190,10 @@ readKeyLoop
     lda #$ff                                        ;
 +
     sta keyStates,X                                 ; Record results
-    lda previousKeyStates,X                         ; Remember previous key states
-    eor #$ff                                        ; Remember previous key states
-    and keyStates,X                                 ; Remember previous key states
-    sta justPressedKeyStates,X                      ; Remember previous key states
+;    lda previousKeyStates,X                         ; Remember previous key states
+;    eor #$ff                                        ; Remember previous key states
+;    and keyStates,X                                 ; Remember previous key states
+;    sta justPressedKeyStates,X                      ; Remember previous key states
     dex                                             ;
     bpl readKeyLoop                                 ;
 
@@ -11780,41 +11775,41 @@ keyStateEscape
 keyStateShift
    !byte 0
 
-previousKeyStates
-previousKeyStateZ
-   !byte 0
-previousKeyStateX
-   !byte 0
-previousKeyStateRETURN
-   !byte 0
-previousKeyStateSpace
-   !byte 0
-previousKeyStateS
-   !byte 0
-previousKeyStateQ
-   !byte 0
-previousKeyStateEscape
-   !byte 0
-previousKeyStateShift
-   !byte 0
-
-justPressedKeyStates
-justPressedStateZ
-   !byte 0
-justPressedStateX
-   !byte 0
-justPressedStateRETURN
-   !byte 0
-justPressedStateSpace
-   !byte 0
-justPressedStateS
-   !byte 0
-justPressedStateQ
-   !byte 0
-justPressedStateEscape
-   !byte 0
-justPressedStateShift
-    !byte 0
+;previousKeyStates
+;previousKeyStateZ
+;   !byte 0
+;previousKeyStateX
+;   !byte 0
+;previousKeyStateRETURN
+;   !byte 0
+;previousKeyStateSpace
+;   !byte 0
+;previousKeyStateS
+;   !byte 0
+;previousKeyStateQ
+;   !byte 0
+;previousKeyStateEscape
+;   !byte 0
+;previousKeyStateShift
+;   !byte 0
+;
+;justPressedKeyStates
+;justPressedStateZ
+;   !byte 0
+;justPressedStateX
+;   !byte 0
+;justPressedStateRETURN
+;   !byte 0
+;justPressedStateSpace
+;   !byte 0
+;justPressedStateS
+;   !byte 0
+;justPressedStateQ
+;   !byte 0
+;justPressedStateEscape
+;   !byte 0
+;justPressedStateShift
+;    !byte 0
 end_of_b00_section
 
 !if (end_of_b00_section > $1100) {
@@ -12342,7 +12337,7 @@ play_melody
     lsr                                             ;
     jsr send_to_sound_chip                          ; second byte
 
-    lda #10 * 4                                     ;
+    lda #11 * 4                                     ;
     sta melody_note_volume                          ;
 
     inc note_number                                 ;
@@ -12401,29 +12396,29 @@ irq_routine
 
     ldx irq_counter                                 ;
     inx                                             ;
-    cpx #13                                         ;
+    cpx #13*3                                       ;
     bcc +                                           ;
     jsr update_sound                                ;
     ldx #0                                          ;
 +
     stx irq_counter                                 ;
-    cpx #8                                          ;
+    cpx #8*3                                        ;
     bne +                                           ;
     inc vsync_counter                               ;
 +
 
     ; debug to show colour changes over the frame
-    cpx #5
+    cpx #3
     bne +
-    ldy #0                                          ;
-    lda #1                                          ;
+    ldy #2                                          ;
+    lda #2                                          ;
     jsr set_logical_colour_y_to_a                   ;
     jmp exit_irq                                    ;
 +
-    cpx #6                                          ;
+    cpx #5                                          ;
     bne +                                           ;
-    ldy #0                                          ;
-    lda #0                                          ;
+    ldy #2                                          ;
+    lda #6                                          ;
     jsr set_logical_colour_y_to_a                   ;
     jmp exit_irq                                    ;
 
