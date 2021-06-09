@@ -4,13 +4,11 @@
 ;
 
 ; os variables
-os_row_multiplication_table_low                     = $e0
-os_row_multiplication_table_high                    = $e1
+;os_row_multiplication_table_low                     = $e0
+;os_row_multiplication_table_high                    = $e1
 irq_accumulator                                     = $fc
-irq2_vector_low                                     = $0206
-irq2_vector_high                                    = $0207
-event_interrupt_vector_low                          = $0220
-event_interrupt_vector_high                         = $0221
+irq1_vector_low                                     = $0204
+irq1_vector_high                                    = $0205
 
 crtcAddressRegister                                 = $fe00     ;
 crtcAddressWrite                                    = $fe01     ;
@@ -63,16 +61,24 @@ systemVIARegisterANoHandshake                       = $fe4f     ; System VIA Reg
 systemVIARegisterB                                  = $fe40     ;
 systemVIAInterruptFlagRegister                      = $fe4d     ;
 
+systemVIATimer1CounterLow                           = $fe44     ;
+systemVIATimer1CounterHigh                          = $fe45     ;
+systemVIATimer1LatchLow                             = $fe46     ;
+systemVIATimer1LatchHigh                            = $fe47     ;
+systemVIAAuxiliaryControlRegister                   = $fe4b     ;
+systemVIAInterruptFlagRegister                      = $fe4d     ;
+systemVIAInterruptEnableRegister                    = $fe4e     ;
+
+
 userVIATimer1CounterLow                             = $fe64     ; Timer 1 counter (low)
 userVIATimer1CounterHigh                            = $fe65     ; Timer 1 counter (high)
 userVIATimer1LatchLow                               = $fe66     ; Timer 1 latch (low)
 userVIATimer1LatchHigh                              = $fe67     ; Timer 1 latch (high)
-
 userVIAAuxiliaryControlRegister                     = $fe6b     ; auxiliary control register
 userVIAInterruptFlagRegister                        = $fe6d     ; Interrupt flag register
 userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enable register
 
-OSBYTE                                              = $fff4     ;  used on initialization only
+OSBYTE                                              = $fff4     ; used on initialization only
 
 ; game constants
 player_start_room                                   = 21        ; 21 = The Bathroom
@@ -95,7 +101,7 @@ player_start_x                                      = $a0       ;
 FramePeriod     = 312*64-2
 
 ; Calculate here the timer value to interrupt at the desired line
-Timer1Value      = 76*64 + 25
+Timer1Value      = 76*64 + 39
 
 ; This is the delay between interrupts (three character rows = 24 pixel rows)
 ShortTimerValue  = 24*64 - 2
@@ -158,8 +164,10 @@ entry_jump_timer                                    = $30
 entry_x                                             = $31
 entry_y                                             = $32
 entry_is_jumping                                    = $33
-previous_irq2_vector_low                            = $34
-previous_irq2_vector_high                           = $35
+previous_irq1_vector_low                            = $34
+previous_irq1_vector_high                           = $35
+note_number                                         = $36
+
 
 life_y                                              = $4d
 space_tile                                          = $4e
@@ -1169,8 +1177,6 @@ read_keys
     cmp #12                                         ;
     bcs read_keys                                   ;
 
-    php
-    sei
     lda #3                                          ;
     sta systemVIARegisterB                          ; Disable keyboard auto scanning
     lda #$7F                                        ;
@@ -1200,8 +1206,6 @@ readKeyLoop
     sta systemVIADataDirectionRegisterA             ; Set System VIA Port A to output on all bits 0-7
     lda #11                                         ; Enable keyboard auto scanning
     sta systemVIARegisterB                          ;
-
-    plp                                             ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -2312,7 +2316,7 @@ check_if_tile_is_conveyor
     pla                                             ; tile table
     rts                                             ;
 compare_tile_with_four
-    lda (tile_address_low1),Y                           ;
+    lda (tile_address_low1),Y                       ;
     cmp #4                                          ; CONVEYOR
     rts                                             ;
 
@@ -7745,7 +7749,6 @@ write_char
 +
     cmp #32                                     ;
     bcc finish_up_write_char                    ;
-    sei                                         ; disable interrupts
     ldx #$bf                                    ;
     lda is_master                               ;
     beq +                                       ; if (bbc b) then branch
@@ -10834,8 +10837,6 @@ next_index
     !byte 1, 2, 0
 colour_array
     !byte $f0, $ff, $0f
-colour_index
-    !byte 0
 
 ; ***************************************************************************************
 arrow_timers_table
@@ -10845,6 +10846,11 @@ arrow_timers_table
 ; ***************************************************************************************
 paletteLookupTable
     !byte $00, $20, $80, $a0
+
+; ***************************************************************************************
+jump_parabola_table
+    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
+    !byte $fc, $fc
 
 
 !if (* > screen_memory_start) {
@@ -11614,7 +11620,8 @@ game_over_loop
 
     ldy #0                                          ; loop counter
 write_game_over_loop
-    ldx colour_index                                ;
+colour_index = * + 1
+    ldx #0                                          ;
     lda next_index,x                                ;
     sta colour_index                                ;
     tax                                             ;
@@ -11930,7 +11937,7 @@ entry_point
     lda #%11011000                                  ;
     sei                                             ;
     sta $0248                                       ; videoULAVideoControlRegisterCopy
-    sta $fe20                                       ; videoULAControlRegister
+    sta videoULARegister                            ;
     lda $0253                                       ; videoULASecondFlashingColourInterval
     sta $0251                                       ; videoULAFlashingColourIntervalCount
     cli                                             ;
@@ -11953,14 +11960,14 @@ write_CRTC_loop
     sta $034b                                       ; vduTextCursorCRTCAddressHigh
     sta $d9                                         ; vduWriteCursorScreenAddressHigh
 
-    ldy #14                                         ;
-    sty $fe00                                       ; crtcAddressRegister
-    lda #15                                         ;
-    sta $fe01                                       ; crtcAddressWrite
-    iny                                             ;
-    sty $fe00                                       ; crtcAddressRegister
-    lda #$80                                        ;
-    sta $fe01                                       ; crtcAddressWrite
+;    ldy #14                                         ;
+;    sty $fe00                                       ; crtcAddressRegister
+;    lda #15                                         ;
+;    sta $fe01                                       ; crtcAddressWrite
+;    iny                                             ;
+;    sty $fe00                                       ; crtcAddressRegister
+;    lda #$80                                        ;
+;    sta $fe01                                       ; crtcAddressWrite
 
     lda #0                                          ;
     sta $0269                                       ; pagedModeCounter
@@ -12003,26 +12010,26 @@ move_memory_loop
     dex                                             ;
     bne move_memory_loop                            ;
 
-    sei
-    lda #0                                          ;
-    sta irq_counter                                 ;
-    lda irq2_vector_low                             ;
-    sta previous_irq2_vector_low                    ;
-    lda irq2_vector_high                            ;
-    sta previous_irq2_vector_high                   ;
+    LDA #$7f                                        ; }
+    STA systemVIAInterruptEnableRegister            ; } Disable all interrupts
+
+    lda irq1_vector_low                             ;
+    sta previous_irq1_vector_low                    ;
+    lda irq1_vector_high                            ;
+    sta previous_irq1_vector_high                   ;
 
     lda #<irq_routine                               ;
-    sta irq2_vector_low                             ;
+    sta irq1_vector_low                             ;
     lda #>irq_routine                               ;
-    sta irq2_vector_high                            ;
+    sta irq1_vector_high                            ;
 
     lda #$c0                                        ; Enable timer 1
-    sta userVIAInterruptEnableRegister              ; User VIA Interrupt control register
+    sta systemVIAInterruptEnableRegister            ; Interrupt enable register
     lda #$c0                                        ; Enable free run mode
-    sta userVIAAuxiliaryControlRegister             ; Auxiliary control register
+    sta systemVIAAuxiliaryControlRegister           ; Auxiliary control register
 
     lda #<Timer1Value                               ;
-    sta userVIATimer1CounterLow                     ;
+    sta systemVIATimer1CounterLow                   ;
     ; Get high byte ready so we can write it as quickly as possible at the right moment
     ldx #>Timer1Value                               ;
 
@@ -12033,29 +12040,30 @@ move_memory_loop
     bit systemVIAInterruptFlagRegister              ;
     beq -                                           ; poll VSync flag
 
-    stx userVIATimer1CounterHigh                    ; start User VIA Timer 1 counting
-    sta userVIAInterruptFlagRegister                ; clear VSync flag
+    stx systemVIATimer1CounterHigh                  ; start Timer 1 counting
+    sta systemVIAInterruptFlagRegister              ; clear VSync flag
 
     ; Set timer to fire every 'short time' (set latch)
     lda #<ShortTimerValue                           ;
-    sta userVIATimer1LatchLow                       ;
+    sta systemVIATimer1LatchLow                     ;
     lda #>ShortTimerValue                           ;
-    sta userVIATimer1LatchHigh                      ;
+    sta systemVIATimer1LatchHigh                    ;
 
-    cli                                             ;
+    lda #0                                          ;
+    sta irq_counter                                 ;
 
     lda #1                                          ;
     sta melody_active                               ;
 
-    lda #6                                          ; R6: Vertical displayed register
-    sta crtcAddressRegister                         ; Write to video controller (register number)
-    lda #$15                                        ;
-    sta crtcAddressWrite                            ; Write to video controller (register value)
+;    lda #6                                          ; R6: Vertical displayed register
+;    sta crtcAddressRegister                         ; Write to video controller (register number)
+;    lda #$15                                        ;
+;    sta crtcAddressWrite                            ; Write to video controller (register value)
 
-    lda #<os_screen_address_lookup_table            ;
-    sta os_row_multiplication_table_low             ;
-    lda #>os_screen_address_lookup_table            ;
-    sta os_row_multiplication_table_high            ;
+;    lda #<os_screen_address_lookup_table            ;
+;    sta os_row_multiplication_table_low             ;
+;    lda #>os_screen_address_lookup_table            ;
+;    sta os_row_multiplication_table_high            ;
     jmp real_entry_point                            ;
 
 ; ***************************************************************************************
@@ -12074,8 +12082,8 @@ register_CRTC_array
     !byte 0                                         ; R11 = The cursor end register
     !byte >(screen_memory_start / 8)                ; R12 = Displayed screen start address/8 register (High)
     !byte <(screen_memory_start / 8)                ; R13 = Displayed screen start address/8 register (low)
-    !byte 11                                        ; R14 = Cursor position register
-    !byte 60                                        ; R15 = Cursor position register
+    !byte 15                                        ; R14 = Cursor position register
+    !byte 80                                        ; R15 = Cursor position register
 
 ; ***************************************************************************************
 bytes_to_copy
@@ -12377,22 +12385,19 @@ q_not_pressed
 
 note_length
     !byte $06
-note_number
-    !byte $00
 
 ; ***************************************************************************************
 irq_routine
-    lda irq_accumulator                             ;
-    pha                                             ;
+;    sta irq_accumulator                             ;
     txa                                             ;
     pha                                             ;
     tya                                             ;
-    pha                                             ;
-    lda userVIAInterruptFlagRegister                ; get User VIA interrupt flag register
+    pha
+    lda systemVIAInterruptFlagRegister              ; get interrupt flag register
     and #$c0                                        ;
     cmp #$c0                                        ;
     bne exit_irq                                    ; unknown interrupt
-    sta userVIAInterruptFlagRegister                ; clear interrupt
+    sta systemVIAInterruptFlagRegister              ; clear interrupt
 
     ldx irq_counter                                 ;
     inx                                             ;
@@ -12406,20 +12411,24 @@ irq_routine
     bne +                                           ;
     inc vsync_counter                               ;
 +
-;    cpx #5
-;    bne +
 
-;    ; debug to show colour changes over the frame
-;    lda #1
-;    jsr changePalette
-;    jmp exit_irq
-;+
-;    cpx #6
-;    bne +
-;    lda #7
-;    jsr changePalette
-;    jmp exit_irq
-;+
+    ; debug to show colour changes over the frame
+    cpx #5
+    bne +
+    ldy #0                                          ;
+    lda #1                                          ;
+    jsr set_logical_colour_y_to_a                   ;
+    jmp exit_irq                                    ;
++
+    cpx #6                                          ;
+    bne +                                           ;
+    ldy #0                                          ;
+    lda #0                                          ;
+    jsr set_logical_colour_y_to_a                   ;
+    jmp exit_irq                                    ;
+
+
++
     cpx #9                                          ;
     bne +                                           ;
     jsr update_music                                ;
@@ -12435,9 +12444,9 @@ exit_irq
     tay                                             ;
     pla                                             ;
     tax                                             ;
-    pla                                             ;
-    sta irq_accumulator                             ;
-    jmp (previous_irq2_vector_low)                  ;
+    lda irq_accumulator                             ;
+    rti                                             ;
+;    jmp (previous_irq1_vector_low)                  ;
 
 ; ***************************************************************************************
 melody_pitch_table
@@ -12543,12 +12552,6 @@ skip_enemy
     bne plot_enemies_loop                           ;
 leave11
     rts                                             ;
-
-; ***************************************************************************************
-jump_parabola_table
-    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
-    !byte $fc, $fc
-
 
 ; ***************************************************************************************
 after_0400_segment
