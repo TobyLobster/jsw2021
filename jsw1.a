@@ -83,6 +83,10 @@ player_start_room                                   = 21        ; 21 = The Bathr
 player_start_y                                      = $68       ;
 player_start_x                                      = $a0       ;
 
+;player_start_room                                   = 31        ; 31 = Back Door
+;player_start_y                                      = $40       ;
+;player_start_x                                      = $a0       ;
+
 ;player_start_room                                   = 39        ; 39 = The Hall
 ;player_start_y                                      = $60       ;
 ;player_start_x                                      = $a0       ;
@@ -162,9 +166,9 @@ entry_jump_timer                                    = $30
 entry_x                                             = $31
 entry_y                                             = $32
 entry_is_jumping                                    = $33
-previous_irq1_vector_low                            = $34
-previous_irq1_vector_high                           = $35
-note_number                                         = $36
+
+temp_high                                           = $34
+note_number                                         = $35
 
 
 life_y                                              = $4d
@@ -317,6 +321,7 @@ text_message_address                                = screen_memory_start + 20 *
 
 * = $1100
 
+!pseudopc $0208 {
 ; ***************************************************************************************
 initialise_room
     jsr initialise_room_data                        ;
@@ -1169,7 +1174,7 @@ keysToTestEnd
 ; Read keyboard, avoiding the time when the music may update
 read_keys
     lda irq_counter                                 ;
-    cmp #12                                         ;
+    cmp #12*3                                       ;
     bcs read_keys                                   ;
 
     lda #3                                          ;
@@ -2274,13 +2279,16 @@ calculate_screen_address_of_conveyor
     sty tile_address_low1                           ;
     lda #>tile_table                                ;
     sta tile_address_high1                          ;
+    lda #0                                          ;
+    sta temp_high                                   ;
     lda #2                                          ;
     sta pages_of_tile_table_remaining_when_finding_conveyor ;
+    ldy #0                                          ;
 find_start_of_conveyor_loop
     jsr check_if_tile_is_conveyor                   ;
     bne find_start_of_conveyor_loop                 ;
     sty conveyor_screen_address_low                 ;
-    lda tile_address_high1                          ;
+    lda temp_high                                   ;
     and #1                                          ;
     asl conveyor_screen_address_low                 ;
     rol                                             ;
@@ -2305,6 +2313,7 @@ check_if_tile_is_conveyor
     iny                                             ;
     bne compare_tile_with_four                      ;
     inc tile_address_high1                          ;
+    inc temp_high                                   ;
     dec pages_of_tile_table_remaining_when_finding_conveyor ;
     bne compare_tile_with_four                      ;
     pla                                             ; Leave calculate_screen_address_of_conveyor at end of
@@ -10847,27 +10856,6 @@ jump_parabola_table
     !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
     !byte $fc, $fc
 
-
-!if (* > screen_memory_start) {
-    !error "Code too long by ", * - screen_memory_start
-}
-
-free_before_screen = screen_memory_start - *
-
-* = screen_memory_start
-
-; ***************************************************************************************
-;
-; everything from here on is initialisation code run only once, then becomes part of the
-; screen memory.
-;
-; ***************************************************************************************
-initialization_code
-
-; This first section is copied to $0b00
-
-!pseudopc $0b00 {
-
 ; ***************************************************************************************
 handle_rope_time_and_events
     lda room_contains_rope                          ;
@@ -11810,291 +11798,6 @@ keyStateShift
 ;   !byte 0
 ;justPressedStateShift
 ;    !byte 0
-end_of_b00_section
-
-!if (end_of_b00_section > $1100) {
-    !error "Too much code before $1100, by ", end_of_b00_section - $1100
-}
-
-free_after_b00_section = $1100 - end_of_b00_section
-}
-
-; ***************************************************************************************
-entry_point
-    lda #140                                        ;
-    ldx #12                                         ; *TAPE
-    jsr OSBYTE                                      ;
-
-    lda #$c8                                        ; Write BREAK/ESCAPE effect
-    ldx #3                                          ; Normal ESCAPE effect, Memory cleared on next reset
-    jsr OSBYTE                                      ;
-
-    lda #0                                          ;
-    ldx #$ff                                        ; Check for Master
-    jsr OSBYTE                                      ;
-
-    lda #0                                          ; }
-    cpx #3                                          ; }
-    bcc +                                           ; } Make is_master $00 if executing on a BBC B/B+
-    lda #$ff                                        ; }             or $ff on a Master
-+                                                   ; }
-    sta is_master                                   ; }
-
-    ; relocate code
-    ldy #<initialization_code                       ;
-    sty $70                                         ;
-    ldx #>initialization_code                       ;
-    stx $71                                         ; Copy from initialization_code to $0b00
-
-    ldy #0
-    sty $72                                         ;
-    ldx #$0b                                        ;
-    stx $73                                         ;
-
-    ldx #6                                          ; loop counter (copy 6 pages)
--
-    lda ($70),y                                     ;
-    sta ($72),y                                     ; copy a page of memory
-    iny                                             ;
-    bne -                                           ;
-
-    inc $71                                         ;
-    inc $73                                         ; increment high byte of source and destination
-
-    dex                                             ; decrement loop counter
-    bne -                                           ; if (not done yet) then branch back
-
-    ldx #0                                          ;
--
-    lda bytes_to_copy,x                             ;
-    sta $03b0,x                                     ;
-    inx                                             ;
-    cpx #bytes_to_copy_end - bytes_to_copy          ;
-    bne -                                           ;
-
-    ; set custom mode 1
-    ; Set hardware scrolling value
-    lda #4                                          ; Set C0=0
-    sta systemVIARegisterB                          ; Setting the address for hardware scrolling
-    lda #13                                         ; Set C1=1
-    sta systemVIARegisterB                          ; Set Hardware scrolling address (C0=1,C1=1 i.e. $3000)
-
-    ; Set Video ULA register
-    lda #%11011000                                  ;
-    sta videoULARegister                            ; write to control register
-
-    ; Set 'MODE'
-    lda #1                                          ; MODE 1
-    sta $0355                                       ; vduCurrentScreenMODE
-    lda #3                                          ; 4 colours - 1
-    sta $0360                                       ; vduNumberOfLogicalColoursMinusOne
-    lda #16                                         ; bytes per character
-    sta $034f                                       ; vduBytesPerCharacter
-    lda #3                                          ; pixels per byte - 1
-    sta $0361                                       ; vduPixelsPerByteMinusOne
-    lda #%00010001                                  ; mask right
-    sta $0363                                       ; vduColourMaskRight
-    lda #%10001000                                  ; mask left
-    sta $0362                                       ; vduColourMaskLeft
-    lda #0                                          ; MODE group 0
-    sta $0356                                       ; vduCurrentScreenMODEGroup
-    sta $0352                                       ; vduBytesPerCharacterRowLow
-    lda #2                                          ;
-    sta $0353                                       ; vduBytesPerCharacterRowHigh
-
-    lda #$50                                        ;
-    sta $0354                                       ; vduScreenSizeHighByte
-    lda #$30                                        ;
-    sta $034e                                       ; vduStartScreenAddressHighByte
-
-    lda #$00                                        ;
-    sta $e0                                         ; vduMultiplicationTableLow
-    lda #$09                                        ;
-    sta $e1                                         ; vduMultiplicationTableHigh
-    ldy #0                                          ;
-    lda #0                                          ;
--
-    tya
-    sta ($e0),y                                     ;
-    iny                                             ;
-    lda #0                                          ;
-    sta ($e0),y                                     ;
-    iny                                             ;
-    cpy #$40                                        ;
-    bne -                                           ;
-
-    ; clearVDUStatusByteFlags
-    lda #%01000011                                  ;
-    and $d0                                         ; vduStatusByte
-    sta $d0                                         ; vduStatusByte
-
-    ; set video ULA
-    lda #%11011000                                  ;
-    sei                                             ;
-    sta $0248                                       ; videoULAVideoControlRegisterCopy
-    sta videoULARegister                            ;
-    lda $0253                                       ; videoULASecondFlashingColourInterval
-    sta $0251                                       ; videoULAFlashingColourIntervalCount
-    cli                                             ;
-
-    ; Write to all 16 registers of the CRTC
-    ldy #15                                         ;
-write_CRTC_loop
-    lda register_CRTC_array,Y                       ; A = value to write
-    sty crtcAddressRegister                         ; Set CRTC address register to write into (0-15)
-    sta crtcAddressWrite                            ; Write new value into register
-    dey                                             ;
-    bpl write_CRTC_loop                             ;
-
-    lda #0                                          ;
-    sta $0350                                       ; vduScreenTopLeftAddressLow
-    sta $034a                                       ; vduTextCursorCRTCAddressLow
-    sta $d8                                         ; vduWriteCursorScreenAddressLow
-    lda #$56                                        ;
-    sta $0351                                       ; vduScreenTopLeftAddressHigh
-    sta $034b                                       ; vduTextCursorCRTCAddressHigh
-    sta $d9                                         ; vduWriteCursorScreenAddressHigh
-
-;    ldy #14                                         ;
-;    sty $fe00                                       ; crtcAddressRegister
-;    lda #15                                         ;
-;    sta $fe01                                       ; crtcAddressWrite
-;    iny                                             ;
-;    sty $fe00                                       ; crtcAddressRegister
-;    lda #$80                                        ;
-;    sta $fe01                                       ; crtcAddressWrite
-
-    lda #0                                          ;
-    sta $0269                                       ; pagedModeCounter
-    sta $0318                                       ; vduTextCursorXPosition
-    sta $0319                                       ; vduTextCursorYPosition
-
-    ldx #initial_zero_page_values_end - initial_zero_page_values - 1 ; Copy initial_zero_page_values to zero page
-copy_zero_page_values_loop                          ;
-    lda initial_zero_page_values,X                  ;
-    sta $4d,X                                       ;
-    dex                                             ;
-    bpl copy_zero_page_values_loop                  ;
-
-    lda #1                                          ;
-    sta music_enabled                               ;
-    lda #0                                          ;
-    ldx #sound_variables_end - sound_variables_start ;
--
-    sta sound_variables_start,X                     ;
-    dex                                             ;
-    bpl -                                           ;
-
-    ldx #0                                          ;
-move_memory_loop
-    lda copy_from,X                                 ; Copy $4e00-$51ff to $0400-$07ff
-    sta copy_to,X                                   ;
-    lda copy_from + $0100,X                         ;
-    sta copy_to   + $0100,X                         ;
-    lda copy_from + $0200,X                         ;
-    sta copy_to   + $0200,X                         ;
-    lda copy_from + $0300,X                         ;
-    sta copy_to   + $0300,X                         ;
-
-    lda copy_to_sound_workspace,X                   ;  and $5300-$55ff to $0800-$0aff
-    sta $0800,X                                     ;
-    lda copy_to_sound_workspace + $0100,X           ;
-    sta $0900,X                                     ;
-    lda copy_to_sound_workspace + $0200,X           ;
-    sta enemies_sprite,X                            ;
-    dex                                             ;
-    bne move_memory_loop                            ;
-
-    LDA #$7f                                        ; }
-    STA systemVIAInterruptEnableRegister            ; } Disable all interrupts
-
-    lda irq1_vector_low                             ;
-    sta previous_irq1_vector_low                    ;
-    lda irq1_vector_high                            ;
-    sta previous_irq1_vector_high                   ;
-
-    lda #<irq_routine                               ;
-    sta irq1_vector_low                             ;
-    lda #>irq_routine                               ;
-    sta irq1_vector_high                            ;
-
-    lda #$c0                                        ; Enable timer 1
-    sta systemVIAInterruptEnableRegister            ; Interrupt enable register
-    lda #$c0                                        ; Enable free run mode
-    sta systemVIAAuxiliaryControlRegister           ; Auxiliary control register
-
-    lda #<Timer1Value                               ;
-    sta systemVIATimer1CounterLow                   ;
-    ; Get high byte ready so we can write it as quickly as possible at the right moment
-    ldx #>Timer1Value                               ;
-
-    ; Wait for VSync without having to catch it from its IRQ
-    lda #2                                          ;
-    sta systemVIAInterruptFlagRegister              ; clear VSync flag
--
-    bit systemVIAInterruptFlagRegister              ;
-    beq -                                           ; poll VSync flag
-
-    stx systemVIATimer1CounterHigh                  ; start Timer 1 counting
-    sta systemVIAInterruptFlagRegister              ; clear VSync flag
-
-    ; Set timer to fire every 'short time' (set latch)
-    lda #<ShortTimerValue                           ;
-    sta systemVIATimer1LatchLow                     ;
-    lda #>ShortTimerValue                           ;
-    sta systemVIATimer1LatchHigh                    ;
-
-    lda #0                                          ;
-    sta irq_counter                                 ;
-
-    lda #1                                          ;
-    sta melody_active                               ;
-
-;    lda #6                                          ; R6: Vertical displayed register
-;    sta crtcAddressRegister                         ; Write to video controller (register number)
-;    lda #$15                                        ;
-;    sta crtcAddressWrite                            ; Write to video controller (register value)
-
-;    lda #<os_screen_address_lookup_table            ;
-;    sta os_row_multiplication_table_low             ;
-;    lda #>os_screen_address_lookup_table            ;
-;    sta os_row_multiplication_table_high            ;
-    jmp real_entry_point                            ;
-
-; ***************************************************************************************
-register_CRTC_array
-    !byte 127                                       ; R0 = Horizontal total register
-    !byte 64                                        ; R1 = Horizontal displayed register
-    !byte 86                                        ; R2 = Horizontal sync position register
-    !byte 40                                        ; R3 = The sync width register
-    !byte 38                                        ; R4 = Vertical total register
-    !byte 0                                         ; R5 = Vertical total adjust register
-    !byte 32 - 11                                   ; R6 = Vertical displayed register (number of visible character rows)
-    !byte 35 - 5                                    ; R7 = Vertical sync position (*TV)
-    !byte 0                                         ; R8 = Interlace and delay register
-    !byte 7                                         ; R9 = Scan lines per character
-    !byte $20                                       ; R10 = Cursor start register
-    !byte 0                                         ; R11 = The cursor end register
-    !byte >(screen_memory_start / 8)                ; R12 = Displayed screen start address/8 register (High)
-    !byte <(screen_memory_start / 8)                ; R13 = Displayed screen start address/8 register (low)
-    !byte 15                                        ; R14 = Cursor position register
-    !byte 80                                        ; R15 = Cursor position register
-
-; ***************************************************************************************
-bytes_to_copy
-    !byte $00, $00
-    !text " GO 4 IT"
-    !byte $00, $00, $00, $00, $00, $4e
-    !byte $00, $00, $00, $52, $00, $00, $31, $00, $ff, $00, $86, $00, $00, $00, $00, $67
-    !byte $42, $19
-    !text " GO 4 IT"
-    !byte $00, $00, $00, $00, $00, $86
-bytes_to_copy_end
-
-; ***************************************************************************************
-copy_from
-!pseudopc $0400 {
-copy_to
 
 ; ***************************************************************************************
 scroll_scrolltext
@@ -12211,22 +11914,16 @@ wait_for_vsyncs
     lda vsync_counter                               ;
     cmp #2                                          ;
     bcs +                                           ;
-    jsr check_for_space                             ;
+    jsr check_for_space_bar                         ;
     jmp wait_for_vsyncs                             ;
 +
     lda #0                                          ;
     sta vsync_counter                               ;
 
     ; --- delay ---
-    ldy #2                                          ;
-    ldx #0                                          ;
--
-    inx                                             ;
-    bne -                                           ;
-    dey                                             ;
-    bne -                                           ;
+    ldx #2                                          ;
+    jsr delay                                       ;
 
-temp
     lda game_timer                                  ;
     and #3                                          ;
     bne +                                           ;
@@ -12235,9 +11932,10 @@ temp
     jsr scroll_scrolltext                           ;
     inc game_timer                                  ;
     jsr update_lives                                ; Animate lives
-    jsr check_for_space                             ;
+    jsr check_for_space_bar                         ;
     jmp title_screen_loop                           ;
 
+; ***************************************************************************************
 end_of_scrolltext
     lda #$80                                        ;
     sta timer_one                                   ;
@@ -12247,14 +11945,14 @@ end_of_scrolltext_loop
     bne skip_colour_change                          ;
     jsr change_colour                               ;
 skip_colour_change
-    jsr check_for_space                             ;
+    jsr check_for_space_bar                         ;
     dec timer_two                                   ;
     bne end_of_scrolltext_loop                      ;
     dec timer_one                                   ;
     bne end_of_scrolltext_loop                      ;
     beq restart_scrolltext                          ;
 
-check_for_space
+check_for_space_bar
     jsr read_keys                                   ;
     lda keyStateSpace                               ;
     beq leave                                       ;
@@ -12383,7 +12081,6 @@ note_length
 
 ; ***************************************************************************************
 irq_routine
-;    sta irq_accumulator                             ;
     txa                                             ;
     pha                                             ;
     tya                                             ;
@@ -12398,18 +12095,21 @@ irq_routine
     inx                                             ;
     cpx #13*3                                       ;
     bcc +                                           ;
-    jsr update_sound                                ;
+    jsr update_sound                                ; update all audio
+    jsr update_music                                ;
     ldx #0                                          ;
 +
     stx irq_counter                                 ;
-    cpx #8*3                                        ;
+    cpx #16                                         ;
     bne +                                           ;
     inc vsync_counter                               ;
+    jsr check_for_q_and_s_keys                      ;
+    jmp exit_irq                                    ;
 +
 
     ; debug to show colour changes over the frame
-    cpx #3
-    bne +
+    cpx #3                                          ;
+    bne +                                           ;
     ldy #2                                          ;
     lda #2                                          ;
     jsr set_logical_colour_y_to_a                   ;
@@ -12421,17 +12121,6 @@ irq_routine
     lda #6                                          ;
     jsr set_logical_colour_y_to_a                   ;
     jmp exit_irq                                    ;
-
-
-+
-    cpx #9                                          ;
-    bne +                                           ;
-    jsr update_music                                ;
-    jmp exit_irq                                    ;
-+
-    cpx #10                                         ;
-    bne +                                           ;
-    jsr check_for_q_and_s_keys                      ;
 +
 
 exit_irq
@@ -12441,7 +12130,6 @@ exit_irq
     tax                                             ;
     lda irq_accumulator                             ;
     rti                                             ;
-;    jmp (previous_irq1_vector_low)                  ;
 
 ; ***************************************************************************************
 melody_pitch_table
@@ -12518,7 +12206,7 @@ duration_for_sound_x
     !byte 28                ; 0 : jump
     !byte 7                 ; 1 : arrow
     !byte 20                ; 2 : item collection
-    !byte 80                ; 3 : game over
+    !byte 70                ; 3 : game over
     !byte 10                ; 4 : dying 1
     !byte 10                ; 5 : dying 2
 
@@ -12526,7 +12214,7 @@ pitch_increment_for_sound_x
     !byte 10                ; 0 : jump
     !byte 0                 ; 1 : arrow
     !byte 0                 ; 2 : item collection
-    !byte 7                 ; 3 : game over
+    !byte 8                 ; 3 : game over
     !byte 0                 ; 4 : dying 1
     !byte 10                ; 5 : dying 2
 
@@ -12547,53 +12235,6 @@ skip_enemy
     bne plot_enemies_loop                           ;
 leave11
     rts                                             ;
-
-; ***************************************************************************************
-after_0400_segment
-* = $0800
-
-!if (after_0400_segment > *) {
-    !error "Too much code by ", after_0400_segment - *
-}
-
-free_after_0400_segment = * - after_0400_segment
-
-}
-
-; ***************************************************************************************
-copy_to_sound_workspace
-!pseudopc $0800 {
-; OS sound workspace
-    !byte $12, $00, $00, $00, $00, $00, $00, $00, $c0, $c0, $c0, $c0, $04, $04, $04, $04
-    !byte $07, $5a, $ea, $64, $ff, $02, $ff, $ff, $00, $04, $00, $00, $00, $00, $00, $00
-    !byte $05, $05, $05, $05, $ff, $30, $ff, $ff, $00, $02, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $e6, $00, $00, $ff, $ff, $c1, $00, $00, $f0, $00, $0e
-; OS sound buffers
-    !byte $90, $07, $04, $90, $07, $04, $90, $07, $04, $90, $07, $04, $90, $07, $04, $04
-    !byte $08, $18, $5a, $08, $18, $5a, $08, $08, $18, $5a, $08, $18, $5a, $08, $18, $5a
-    !byte $e2, $01, $b8, $e4, $01, $b8, $e6, $01, $b8, $e8, $01, $b8, $ea, $01, $01, $b8
-    !byte $64, $06, $f8, $00, $00, $f8, $00, $00, $f8, $00, $00, $f8, $00, $00, $00, $90
-
-unused2
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-
-; $08c0
-; OS envelope storage area [unused]
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ***************************************************************************************
 rope_x_delta_table
@@ -12818,14 +12459,170 @@ os_screen_address_lookup_table
 life_colours
     ;      KK,  RR,  YY,  WW
     !byte $00, $0f, $f0, $ff
+end_of_real_code
 
-end_of_800_section
-free_after_0800_segment = $b00 - end_of_800_section
-
-!if (* > $0b00) {
-    !error "Code too long by ", * - $0b00
+!if (* > screen_memory_start) {
+    !error "Code too long by ", * - screen_memory_start
 }
 }
+free_before_screen = screen_memory_start - end_of_real_code
+
+; ***************************************************************************************
+;
+; everything from here on is initialisation code run only once, then becomes part of the
+; screen memory.
+;
+; ***************************************************************************************
+
+
+; ***************************************************************************************
+entry_point
+    lda #140                                        ;
+    ldx #12                                         ; *TAPE
+    jsr OSBYTE                                      ;
+
+    lda #$c8                                        ; Write BREAK/ESCAPE effect
+    ldx #3                                          ; Normal ESCAPE effect, Memory cleared on next reset
+    jsr OSBYTE                                      ;
+
+    lda #0                                          ;
+    ldx #$ff                                        ; Check for Master
+    jsr OSBYTE                                      ;
+
+    lda #0                                          ; }
+    cpx #3                                          ; }
+    bcc +                                           ; } Make is_master $00 if executing on a BBC B/B+
+    lda #$ff                                        ; }             or $ff on a Master
++                                                   ; }
+    sta is_master                                   ; }
+
+    ; relocate code
+    sei
+    ldy #<$1100                                     ;
+    sty $70                                         ;
+    ldx #>$1100                                     ;
+    stx $71                                         ; Copy code from $1100 to $0208
+
+    ldy #<$0208                                     ;
+    sty $72                                         ;
+    ldx #>$0208                                     ;
+    stx $73                                         ;
+
+    ldx #>(end_of_real_code - $0208 + $ff)          ; loop counter (copy as many pages as we need)
+    ldy #0                                          ;
+-
+    lda ($70),y                                     ;
+    sta ($72),y                                     ; copy a page of memory
+    iny                                             ;
+    bne -                                           ;
+
+    inc $71                                         ;
+    inc $73                                         ; increment high byte of source and destination
+
+    dex                                             ; decrement loop counter
+    bne -                                           ; if (not done yet) then branch back
+
+    ; set custom mode 1
+    ; Set hardware scrolling value
+    lda #4                                          ; Set C0=0
+    sta systemVIARegisterB                          ; Setting the address for hardware scrolling
+    lda #13                                         ; Set C1=1
+    sta systemVIARegisterB                          ; Set Hardware scrolling address (C0=1,C1=1 i.e. $3000)
+
+    ; Set Video ULA register
+    lda #%11011000                                  ;
+    sta videoULARegister                            ; write to control register
+
+    ; set video ULA
+    lda #%11011000                                  ;
+    sta videoULARegister                            ;
+
+    ; Write to all 16 registers of the CRTC
+    ldy #15                                         ;
+write_CRTC_loop
+    lda register_CRTC_array,Y                       ; A = value to write
+    sty crtcAddressRegister                         ; Set CRTC address register to write into (0-15)
+    sta crtcAddressWrite                            ; Write new value into register
+    dey                                             ;
+    bpl write_CRTC_loop                             ;
+
+    ldx #initial_zero_page_values_end - initial_zero_page_values - 1 ; Copy initial_zero_page_values to zero page
+copy_zero_page_values_loop                          ;
+    lda initial_zero_page_values,X                  ;
+    sta $4d,X                                       ;
+    dex                                             ;
+    bpl copy_zero_page_values_loop                  ;
+
+    lda #1                                          ;
+    sta music_enabled                               ;
+    lda #0                                          ;
+    ldx #sound_variables_end - sound_variables_start ;
+-
+    sta sound_variables_start,X                     ;
+    dex                                             ;
+    bpl -                                           ;
+
+    LDA #$7f                                        ; }
+    STA systemVIAInterruptEnableRegister            ; } Disable all interrupts
+    cli                                             ;
+
+    lda #<irq_routine                               ;
+    sta irq1_vector_low                             ;
+    lda #>irq_routine                               ;
+    sta irq1_vector_high                            ;
+
+    lda #$c0                                        ; Enable timer 1
+    sta systemVIAInterruptEnableRegister            ; Interrupt enable register
+    lda #$c0                                        ; Enable free run mode
+    sta systemVIAAuxiliaryControlRegister           ; Auxiliary control register
+
+    lda #<Timer1Value                               ;
+    sta systemVIATimer1CounterLow                   ;
+    ; Get high byte ready so we can write it as quickly as possible at the right moment
+    ldx #>Timer1Value                               ;
+
+    ; Wait for VSync without having to catch it from its IRQ
+    lda #2                                          ;
+    sta systemVIAInterruptFlagRegister              ; clear VSync flag
+-
+    bit systemVIAInterruptFlagRegister              ;
+    beq -                                           ; poll VSync flag
+
+    stx systemVIATimer1CounterHigh                  ; start Timer 1 counting
+    sta systemVIAInterruptFlagRegister              ; clear VSync flag
+
+    ; Set timer to fire every 'short time' (set latch)
+    lda #<ShortTimerValue                           ;
+    sta systemVIATimer1LatchLow                     ;
+    lda #>ShortTimerValue                           ;
+    sta systemVIATimer1LatchHigh                    ;
+
+    lda #0                                          ;
+    sta irq_counter                                 ;
+
+    lda #1                                          ;
+    sta melody_active                               ;
+
+    jmp real_entry_point                            ;
+
+; ***************************************************************************************
+register_CRTC_array
+    !byte 127                                       ; R0 = Horizontal total register
+    !byte 64                                        ; R1 = Horizontal displayed register
+    !byte 86                                        ; R2 = Horizontal sync position register
+    !byte 40                                        ; R3 = The sync width register
+    !byte 38                                        ; R4 = Vertical total register
+    !byte 0                                         ; R5 = Vertical total adjust register
+    !byte 32 - 11                                   ; R6 = Vertical displayed register (number of visible character rows)
+    !byte 35 - 5                                    ; R7 = Vertical sync position (*TV)
+    !byte 0                                         ; R8 = Interlace and delay register
+    !byte 7                                         ; R9 = Scan lines per character
+    !byte $20                                       ; R10 = Cursor start register
+    !byte 0                                         ; R11 = The cursor end register
+    !byte >(screen_memory_start / 8)                ; R12 = Displayed screen start address/8 register (High)
+    !byte <(screen_memory_start / 8)                ; R13 = Displayed screen start address/8 register (low)
+    !byte 15                                        ; R14 = Cursor position register
+    !byte 80                                        ; R15 = Cursor position register
 
 ; ***************************************************************************************
 initial_zero_page_values
@@ -12915,4 +12712,4 @@ initial_zero_page_values
     !byte $00                                       ; $9f  player_rope_pixel
 initial_zero_page_values_end
 
-free_total = free_after_0400_segment + free_after_0800_segment + free_after_b00_section + free_before_screen
+free_total = free_before_screen
