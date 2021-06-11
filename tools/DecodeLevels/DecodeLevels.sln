@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.809.6
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DecodeLevels", "DecodeLevels.csproj", "{7A763F8A-D808-4009-8625-199FCF9AC573}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|anycpu = Debug|anycpu
+		Release|anycpu = Release|anycpu
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7A763F8A-D808-4009-8625-199FCF9AC573}.Debug|anycpu.ActiveCfg = Debug|anycpu
+		{7A763F8A-D808-4009-8625-199FCF9AC573}.Debug|anycpu.Build.0 = Debug|anycpu
+		{7A763F8A-D808-4009-8625-199FCF9AC573}.Release|anycpu.ActiveCfg = Release|anycpu
+		{7A763F8A-D808-4009-8625-199FCF9AC573}.Release|anycpu.Build.0 = Release|anycpu
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {375B1DC2-19EC-4348-B43A-39C207711760}
+	EndGlobalSection
+EndGlobal

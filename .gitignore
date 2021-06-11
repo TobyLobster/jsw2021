@@ -13,4 +13,8 @@ new/jsw1.5.INF
 new/loader
 new/LOADER.INF
 screenshots/
+screens_jsw2/
 jsw2021.bbprojectd
+tools/DecodeLevels/.vs/
+tools/DecodeLevels/bin/
+tools/DecodeLevels/obj/

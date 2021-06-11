@@ -76,12 +76,16 @@ userVIAAuxiliaryControlRegister                     = $fe6b     ; auxiliary cont
 userVIAInterruptFlagRegister                        = $fe6d     ; Interrupt flag register
 userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enable register
 
-OSBYTE                                              = $fff4     ; used on initialization only
+OSBYTE                                              = $fff4     ; used during program initialization only
 
 ; game constants
 player_start_room                                   = 21        ; 21 = The Bathroom
 player_start_y                                      = $68       ;
 player_start_x                                      = $a0       ;
+
+;player_start_room                                   = 22        ; 22 = Halfway up the East Wall
+;player_start_y                                      = $68       ;
+;player_start_x                                      = $a0       ;
 
 ;player_start_room                                   = 31        ; 31 = Back Door
 ;player_start_y                                      = $40       ;
@@ -158,7 +162,9 @@ pitch_increment_for_channel_x_1                     = $2a
 pitch_increment_for_channel_x_2                     = $2b
 pitch_increment_for_channel_x_3                     = $2c
 melody_note_volume                                  = $2d
-sound_variables_end                                 = $2e
+sound_variables_end                                 = $2d
+
+; $2e unused
 
 ; player state on entry into the current room (reset to these values on death)
 entry_horizontal_speed                              = $2f
@@ -170,7 +176,7 @@ entry_is_jumping                                    = $33
 temp_high                                           = $34
 note_number                                         = $35
 
-
+; initialised values
 life_y                                              = $4d
 space_tile                                          = $4e
 swimming_pool_item_collected                        = $4f
@@ -395,7 +401,7 @@ calculate_routine_number_loop                       ; Reading two bits at a time
 
 background_initialisation_routine_address_low = * + 1
 background_initialisation_routine_address_high = * + 2
-    jsr $1111                                       ; [overwritten before use] JSR background_initialisation_routine_address
+    jsr $ffff                                       ; [overwritten before use] JSR background_initialisation_routine_address
     jmp initialise_background_scenery_loop          ;
 null_routine
 leave8
@@ -642,6 +648,21 @@ add_triangle_of_tiles_loop
     rts                                             ;
 
 ; ***************************************************************************************
+;
+; On Entry:
+;   X is the base direction
+;
+; Directions are:
+;   0 = right
+;   1 = up
+;   2 = left
+;   3 = down
+;   8 = right and up diagonal
+;   9 = left and up diagonal
+;  10 = right and down diagonal
+;  11 = left and down diagonal
+;
+; ***************************************************************************************
 add_line_of_tiles
     sta add_first_and_last                          ;
     stx direction_base                              ;
@@ -714,13 +735,13 @@ add_background_tile
     rts                                             ;
 
 directions_x
-    !byte $01, $00, $ff, $00                        ; [Last two bytes of all four tables are unused?]
+    !byte $01, $00, $ff, $00                        ;
 directions_y
-    !byte $00, $01, $00, $ff
+    !byte $00, $01, $00, $ff                        ;
 diagonal_directions_x
-    !byte $01, $ff, $01, $ff
+    !byte $01, $ff, $01, $ff                        ;
 diagonal_directions_y
-    !byte $01, $01, $ff, $ff
+    !byte $01, $01, $ff, $ff                        ;
 
 ; ***************************************************************************************
 unpack_enemy_sprites
@@ -4763,6 +4784,7 @@ room_00_data                                        ; (Game Over screen)
                                                     ; $02 (1) @ (15,14), range (15,15), moving d 0
                                                     ; $02 (3) @ (15,12), range (0,0), moving l 0
                                                     ; $01 (2) @ (15,0), range (0,0), moving r 2
+room_data_end
 
 ; ***************************************************************************************
 ; Sprites:
@@ -7870,46 +7892,8 @@ send_to_sound_chip
 +
     rts                                                 ;
 
-
-    ; pitches, as sent to the sound chip. Top nybble is the index into the jump_volumes table
-;jump_pitches
-;    !word $015b + $1000 * 1         ; 347
-;    !word $0148 + $1000 * 2         ; 328
-;    !word $0135 + $1000 * 3         ; 309
-;    !word $0124 + $1000 * 4         ; 292
-;    !word $0113 + $1000 * 5         ; 275
-;    !word $0105 + $1000 * 6         ; 261
-;    !word $00f6 + $1000 * 7         ; 246
-;    !word $00e8 + $1000 * 8         ; 232
-;    !word $00db + $1000 * 9         ; 219
-;    !word $00ce + $1000 * 9         ; 206
-;    !word $00c3 + $1000 * 9         ; 195
-;    !word $00b8 + $1000 * 9         ; 184
-;    !word $00ae + $1000 * 9         ; 174
-;    !word $00a4 + $1000 * 9         ; 164
-;    !word $009b + $1000 * 9         ; 155
-;    !word $0092 + $1000 * 9         ; 146
-;    !word $008a + $1000 * 9         ; 138
-;    !word $0083 + $1000 * 9         ; 131
-;    !word $007b + $1000 * 9         ; 123
-;    !word $0074 + $1000 * 9         ; 116
-;    !word $006e + $1000 * 9         ; 110
-;    !word $0067 + $1000 * 9         ; 103
-;    !word $0062 + $1000 * 9         ;  98
-;    !word $005c + $1000 * 9         ;  92
-;    !word $0057 + $1000 * 9         ;  87
-;    !word $0052 + $1000 * 7         ;  82
-;    !word $004e + $1000 * 5         ;  78
-;    !word $0049 + $1000 * 3         ;  73
-;    !word $0045 + $1000 * 1         ;  69
-;    !word $0042 + $1000 * 0         ;  66
-
-;jump_volumes
-;    ;     0,1,2,3,4,5,6,7, 8, 9
-;    !byte 0,1,2,3,5,6,7,8,10,11
-
 ; ***************************************************************************************
-tile_table                                      ;
+tile_table
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -12282,9 +12266,6 @@ rope_pixels_screen_address_low_table
     !byte <screen_memory_start + $06
     !byte <screen_memory_start + $03
 
-    !byte <screen_memory_start + $03    ; [unused]
-    !byte <screen_memory_start + $6c    ; [unused]
-
 rope_pixels_screen_address_high_table
     !byte >screen_memory_start + $00
     !byte >screen_memory_start + $16
@@ -12319,8 +12300,6 @@ rope_pixels_screen_address_high_table
     !byte >screen_memory_start + $01
     !byte >screen_memory_start + $01
 
-    !byte >screen_memory_start + $00    ; [unused]
-    !byte >screen_memory_start + $00    ; [unused]
 
 ; ***************************************************************************************
 rope_pixels_x
@@ -12540,7 +12519,7 @@ copy_zero_page_values_loop                          ;
     lda #1                                          ;
     sta music_enabled                               ;
     lda #0                                          ;
-    ldx #sound_variables_end - sound_variables_start ;
+    ldx #sound_variables_end - sound_variables_start + 1 ;
 -
     sta sound_variables_start,X                     ;
     dex                                             ;
