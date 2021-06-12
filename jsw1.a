@@ -843,17 +843,6 @@ unpack_enemy_sprite_loop
     rts                                             ;
 
 ; ***************************************************************************************
-enemy_sprites_frames
-    !byte $08, $01, $01, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $02 ; [Slot 0 is unused]
-    !byte $02, $02, $02, $04, $04, $08, $08, $08, $02, $02, $04, $08, $04, $04, $04, $01 ;
-    !byte $01, $02, $04, $04, $08, $08, $04, $04, $04, $02, $02, $02                     ; Last two slots, for sprites $2a and $2b, aren't used
-
-enemy_sprites_frame_offsets
-    !byte $00, $00, $01, $02, $06, $0a, $0e, $12, $16, $1a, $1e, $22, $26, $2a, $2e, $32
-    !byte $34, $36, $38, $3a, $3e, $42, $4a, $52, $5a, $5c, $5e, $62, $6a, $6e, $72, $76
-    !byte $77, $78, $7a, $7e, $82, $8a, $92, $96, $9a, $9e, $a0, $a2
-
-; ***************************************************************************************
 unpack_byte_of_sprite_data
     sta packed_byte1                                ;
     and #$f0                                        ;
@@ -2473,6 +2462,291 @@ handle_player_jumping
     and #$fc                                        ;
     sta player_y_in_enemies                         ;
 leave27
+    rts                                             ;
+
+; ***************************************************************************************
+screen_address_lookup_table
+    !byte (>screen_memory_start) + $00
+    !byte (>screen_memory_start) + $02
+    !byte (>screen_memory_start) + $04
+    !byte (>screen_memory_start) + $06
+    !byte (>screen_memory_start) + $08
+    !byte (>screen_memory_start) + $0a
+    !byte (>screen_memory_start) + $0c
+    !byte (>screen_memory_start) + $0e
+    !byte (>screen_memory_start) + $10
+    !byte (>screen_memory_start) + $12
+    !byte (>screen_memory_start) + $14
+    !byte (>screen_memory_start) + $16
+    !byte (>screen_memory_start) + $18
+    !byte (>screen_memory_start) + $1a
+    !byte (>screen_memory_start) + $1c
+    !byte (>screen_memory_start) + $1e
+    !byte (>screen_memory_start) + $20
+    !byte (>screen_memory_start) + $22
+    !byte (>screen_memory_start) + $24
+    !byte (>screen_memory_start) + $26
+    !byte (>screen_memory_start) + $28
+    !byte (>screen_memory_start) + $2a
+    !byte (>screen_memory_start) + $2c
+    !byte (>screen_memory_start) + $2e
+    !byte (>screen_memory_start) + $30
+    !byte (>screen_memory_start) + $32
+    !byte (>screen_memory_start) + $34
+    !byte (>screen_memory_start) + $36
+    !byte (>screen_memory_start) + $38
+    !byte (>screen_memory_start) + $3a
+    !byte (>screen_memory_start) + $3c
+    !byte (>screen_memory_start) + $3e
+
+; ***************************************************************************************
+set_text_position
+    ; Screen address = screen_start + (Y * 512 + 16 * X)
+    lda #0                                      ;
+    sta text_screen_high                        ;
+    txa                                         ;
+    asl                                         ;
+    asl                                         ;
+    asl                                         ;
+    asl                                         ;
+    rol text_screen_high                        ;
+    sta text_screen_low                         ;
+    tya                                         ;
+    asl                                         ;
+    clc                                         ;
+    adc text_screen_high                        ;
+    adc #>screen_memory_start                   ;
+    sta text_screen_high                        ;
+    rts                                         ;
+
+; ***************************************************************************************
+; Write character A at current character position
+; Text Source address = character_set_definitions_start + (8 * A)
+; Preserves A,X,Y and flags
+write_char
+    php                                         ;
+    sta temp3                                   ;
+    stx temp4                                   ;
+    sty temp5                                   ;
+    cmp #9                                      ;
+    bne +                                       ;
+    jsr move_to_next_screen_cell                ;
+    jsr move_to_next_screen_cell                ;
+    jmp finish_up_write_char                    ;
++
+    cmp #32                                     ;
+    bcc finish_up_write_char                    ;
+    ldx #$bf                                    ;
+    lda is_master                               ;
+    beq +                                       ; if (bbc b) then branch
+    lda ROMSEL                                  ;
+    sta old_romsel                              ;
+    lda #128                                    ;
+    sta ROMSEL                                  ;
+    ldx #$88                                    ;
++
+    stx origin_of_character_definitions_high    ;
+    lda temp3                                   ;
+    asl                                         ;
+    asl                                         ;
+    rol character_definitions_high              ;
+    asl                                         ;
+    rol character_definitions_high              ;
+    sta character_definitions_low               ;
+    lda character_definitions_high              ;
+    and #3                                      ;
+    clc                                         ;
+origin_of_character_definitions_high = * + 1
+    adc #$bf                                    ; $bf => $c000 for BBC B, $88 => $8900 for Master
+    sta character_definitions_high              ;
+
+    ; leftmost four pixels of character
+    ldy #7                                      ;
+-
+    lda (character_definitions_low), Y          ;
+
+    and #$f0                                    ; }
+    sta temp2                                   ; }
+    lsr                                         ; }
+    lsr                                         ; }
+    lsr                                         ; } adjust colour to white
+    lsr                                         ; }
+    clc                                         ; }
+    adc temp2                                   ; }
+    and text_colour_mask                        ; set colour
+    sta (text_screen_low), Y                    ; store byte to screen
+    dey                                         ;
+    bpl -                                       ;
+
+    jsr move_to_next_screen_cell                ; move to right hand side of character
+
+    ; do rightmost four pixels of each character
+    ldy #7                                      ;
+-
+    lda (character_definitions_low), Y          ;
+
+    and #15                                     ; }
+    sta temp2                                   ; }
+    asl                                         ; }
+    asl                                         ; }
+    asl                                         ; } adjust colour to white
+    asl                                         ; }
+    clc                                         ; }
+    adc temp2                                   ; }
+    and text_colour_mask                        ; set colour
+    sta (text_screen_low), Y                    ; store byte to screen
+    dey                                         ;
+    bpl -                                       ;
+
+    jsr move_to_next_screen_cell                ; move to next cell
+finish_up_write_char
+    lda temp3                                   ;
+    ldx temp4                                   ;
+    ldy temp5                                   ;
+    plp                                         ; restore interrupts as needed
+    rts                                         ;
+
+move_to_next_screen_cell
+    lda text_screen_low                         ;
+    clc                                         ;
+    adc #8                                      ;
+    sta text_screen_low                         ; move to next character cell
+    bcc +                                       ;
+    inc text_screen_high                        ;
++
+    rts                                         ;
+
+; ***************************************************************************************
+;
+; Send byte to sound chip
+;
+; On Entry:
+;   A = byte to send
+;
+; On Exit:
+;   Preserves X
+;
+; Notes:
+; To write pitch P (10 bit integer) to channel C (0-2, or 3=noise) and set volume V:
+;
+; write first byte:   128 + 32*C + top four bits of pitch P (0-15)
+; write second byte:  lower 6 bits of pitch P
+;
+; To set volume V (0-15) on channel C (0-2, or 3=noise):
+; write volume byte:  128 + 32*C + 16 + volume (0-15, 0 = loudest)
+;
+; ***************************************************************************************
+send_to_sound_chip
+    ldy #$ff                                            ; }
+    sty systemVIADataDirectionRegisterA                 ; } set data direction to all outputs
+    sta systemVIARegisterANoHandshake                   ; send data byte to sound chip
+    iny                                                 ; Y=0
+    sty systemVIARegisterB                              ; set the write enable line low (active)
+                                                        ; to let the sound chip know there
+                                                        ; is data
+    jsr +                                               ; execute a short delay (this is to
+                                                        ; keep the write enable line low for
+                                                        ; at least 8 us, 16 cycles. This is
+                                                        ; required by the sound chip hardware)
+    ldy #8                                              ; }
+    sty systemVIARegisterB                              ; } pull the write enable line high (inactive)
++
+    rts                                                 ;
+
+; ***************************************************************************************
+tile_table
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+; ***************************************************************************************
+space_sprite
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+player_background_buffer
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+; ***************************************************************************************
+sprite_arrow_left                                   ; 2 bits per pixel, 8x8, stored in screen order
+    !byte $00, $00                                  ; ........
+    !byte $44, $ff                                  ; ........
+    !byte $44, $00                                  ; .#....##
+    !byte $00, $00                                  ; #######.
+    !byte $00, $00                                  ; .#....##
+    !byte $33, $ee                                  ; ........
+    !byte $33, $00                                  ; ........
+    !byte $00, $00                                  ; ........
+
+sprite_arrow_right
+    !byte $00, $00                                  ; ........
+    !byte $cc, $77                                  ; ........
+    !byte $cc, $00                                  ; ##....#.
+    !byte $00, $00                                  ; .#######
+    !byte $00, $00                                  ; ##....#.
+    !byte $22, $ff                                  ; ........
+    !byte $22, $00                                  ; ........
+    !byte $00, $00                                  ; ........
+
+; ***************************************************************************************
+unpacked_conveyor_sprite
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+unpacked_background_sprite
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+
+; ***************************************************************************************
+;
+; clear screen memory from $5600-$7fff
+;
+; ***************************************************************************************
+clear_screen
+    ldy #>($8000-screen_memory_start)               ;
+clear_screen_y
+    lda #>screen_memory_start                       ;
+    sta clear_screen_loop + 2                       ;
+    ldx #0                                          ;
+    lda #0                                          ;
+clear_screen_loop
+    sta screen_memory_start,x                       ;
+    inx                                             ;
+    bne clear_screen_loop                           ;
+    inc clear_screen_loop + 2                       ;
+    dey                                             ;
+    bne clear_screen_loop                           ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -7700,522 +7974,22 @@ enemy_sprite_29_frame_1
     !byte $0a, $84                                  ; #.#.#.#.#....#..
     !byte $05, $00                                  ; .#...#.#.....#..
     !byte $02, $00                                  ; ...###.###...#..
-
-after_guardians
-
-; ***************************************************************************************
-screen_address_lookup_table
-    !byte (>screen_memory_start) + $00
-    !byte (>screen_memory_start) + $02
-    !byte (>screen_memory_start) + $04
-    !byte (>screen_memory_start) + $06
-    !byte (>screen_memory_start) + $08
-    !byte (>screen_memory_start) + $0a
-    !byte (>screen_memory_start) + $0c
-    !byte (>screen_memory_start) + $0e
-    !byte (>screen_memory_start) + $10
-    !byte (>screen_memory_start) + $12
-    !byte (>screen_memory_start) + $14
-    !byte (>screen_memory_start) + $16
-    !byte (>screen_memory_start) + $18
-    !byte (>screen_memory_start) + $1a
-    !byte (>screen_memory_start) + $1c
-    !byte (>screen_memory_start) + $1e
-    !byte (>screen_memory_start) + $20
-    !byte (>screen_memory_start) + $22
-    !byte (>screen_memory_start) + $24
-    !byte (>screen_memory_start) + $26
-    !byte (>screen_memory_start) + $28
-    !byte (>screen_memory_start) + $2a
-    !byte (>screen_memory_start) + $2c
-    !byte (>screen_memory_start) + $2e
-    !byte (>screen_memory_start) + $30
-    !byte (>screen_memory_start) + $32
-    !byte (>screen_memory_start) + $34
-    !byte (>screen_memory_start) + $36
-    !byte (>screen_memory_start) + $38
-    !byte (>screen_memory_start) + $3a
-    !byte (>screen_memory_start) + $3c
-    !byte (>screen_memory_start) + $3e
+packed_enemy_sprites_end
 
 ; ***************************************************************************************
-set_text_position
-    ; Screen address = screen_start + (Y * 512 + 16 * X)
-    lda #0
-    sta text_screen_high
-    txa
-    asl
-    asl
-    asl
-    asl
-    rol text_screen_high
-    sta text_screen_low
-    tya
-    asl
-    clc
-    adc text_screen_high
-    adc #>screen_memory_start
-    sta text_screen_high
-    rts
+; number of frames for each enemy sprite
+enemy_sprites_frames
+    !byte $08, $01, $01, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $02 ; [Slot 0 is unused]
+    !byte $02, $02, $02, $04, $04, $08, $08, $08, $02, $02, $04, $08, $04, $04, $04, $01 ;
+    !byte $01, $02, $04, $04, $08, $08, $04, $04, $04, $02, $02, $02                     ; Last two slots, for sprites $2a and $2b, aren't used
+enemy_sprites_frames_end
 
-; ***************************************************************************************
-; Write character A at current character position
-; Text Source address = character_set_definitions_start + (8 * A)
-; Preserves A,X,Y and flags
-write_char
-    php                                         ;
-    sta temp3                                   ;
-    stx temp4                                   ;
-    sty temp5                                   ;
-    cmp #9                                      ;
-    bne +                                       ;
-    jsr move_to_next_screen_cell                ;
-    jsr move_to_next_screen_cell                ;
-    jmp finish_up_write_char                    ;
-+
-    cmp #32                                     ;
-    bcc finish_up_write_char                    ;
-    ldx #$bf                                    ;
-    lda is_master                               ;
-    beq +                                       ; if (bbc b) then branch
-    lda ROMSEL                                  ;
-    sta old_romsel                              ;
-    lda #128                                    ;
-    sta ROMSEL                                  ;
-    ldx #$88                                    ;
-+
-    stx origin_of_character_definitions_high    ;
-    lda temp3                                   ;
-    asl                                         ;
-    asl                                         ;
-    rol character_definitions_high              ;
-    asl                                         ;
-    rol character_definitions_high              ;
-    sta character_definitions_low               ;
-    lda character_definitions_high              ;
-    and #3                                      ;
-    clc                                         ;
-origin_of_character_definitions_high = * + 1
-    adc #$bf                                    ; $bf => $c000 for BBC B, $88 => $8900 for Master
-    sta character_definitions_high              ;
-
-    ; leftmost four pixels of character
-    ldy #7                                      ;
--
-    lda (character_definitions_low), Y          ;
-
-    and #$f0                                    ; }
-    sta temp2                                   ; }
-    lsr                                         ; }
-    lsr                                         ; }
-    lsr                                         ; } adjust colour to white
-    lsr                                         ; }
-    clc                                         ; }
-    adc temp2                                   ; }
-    and text_colour_mask                        ; set colour
-    sta (text_screen_low), Y                    ; store byte to screen
-    dey                                         ;
-    bpl -                                       ;
-
-    jsr move_to_next_screen_cell                ; move to right hand side of character
-
-    ; do rightmost four pixels of each character
-    ldy #7                                      ;
--
-    lda (character_definitions_low), Y          ;
-
-    and #15                                     ; }
-    sta temp2                                   ; }
-    asl                                         ; }
-    asl                                         ; }
-    asl                                         ; } adjust colour to white
-    asl                                         ; }
-    clc                                         ; }
-    adc temp2                                   ; }
-    and text_colour_mask                        ; set colour
-    sta (text_screen_low), Y                    ; store byte to screen
-    dey                                         ;
-    bpl -                                       ;
-
-    jsr move_to_next_screen_cell                ; move to next cell
-finish_up_write_char
-    lda temp3                                   ;
-    ldx temp4                                   ;
-    ldy temp5                                   ;
-    plp                                         ; restore interrupts as needed
-    rts                                         ;
-
-move_to_next_screen_cell
-    lda text_screen_low                         ;
-    clc                                         ;
-    adc #8                                      ;
-    sta text_screen_low                         ; move to next character cell
-    bcc +                                       ;
-    inc text_screen_high                        ;
-+
-    rts                                         ;
-
-; ***************************************************************************************
-;
-; Send byte to sound chip
-;
-; On Entry:
-;   A = byte to send
-;
-; On Exit:
-;   Preserves X
-;
-; Notes:
-; To write pitch P (10 bit integer) to channel C (0-2, or 3=noise) and set volume V:
-;
-; write first byte:   128 + 32*C + top four bits of pitch P (0-15)
-; write second byte:  lower 6 bits of pitch P
-;
-; To set volume V (0-15) on channel C (0-2, or 3=noise):
-; write volume byte:  128 + 32*C + 16 + volume (0-15, 0 = loudest)
-;
-; ***************************************************************************************
-send_to_sound_chip
-    ldy #$ff                                            ; }
-    sty systemVIADataDirectionRegisterA                 ; } set data direction to all outputs
-    sta systemVIARegisterANoHandshake                   ; send data byte to sound chip
-    iny                                                 ; Y=0
-    sty systemVIARegisterB                              ; set the write enable line low (active)
-                                                        ; to let the sound chip know there
-                                                        ; is data
-    jsr +                                               ; execute a short delay (this is to
-                                                        ; keep the write enable line low for
-                                                        ; at least 8 us, 16 cycles. This is
-                                                        ; required by the sound chip hardware)
-    ldy #8                                              ; }
-    sty systemVIARegisterB                              ; } pull the write enable line high (inactive)
-+
-    rts                                                 ;
-
-; ***************************************************************************************
-tile_table
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-; ***************************************************************************************
-space_sprite
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-player_background_buffer
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-; ***************************************************************************************
-sprite_arrow_left                                   ; 2 bits per pixel, 8x8, stored in screen order
-    !byte $00, $00                                  ; ........
-    !byte $44, $ff                                  ; ........
-    !byte $44, $00                                  ; .#....##
-    !byte $00, $00                                  ; #######.
-    !byte $00, $00                                  ; .#....##
-    !byte $33, $ee                                  ; ........
-    !byte $33, $00                                  ; ........
-    !byte $00, $00                                  ; ........
-
-sprite_arrow_right
-    !byte $00, $00                                  ; ........
-    !byte $cc, $77                                  ; ........
-    !byte $cc, $00                                  ; ##....#.
-    !byte $00, $00                                  ; .#######
-    !byte $00, $00                                  ; ##....#.
-    !byte $22, $ff                                  ; ........
-    !byte $22, $00                                  ; ........
-    !byte $00, $00                                  ; ........
-
-; ***************************************************************************************
-unpacked_conveyor_sprite
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-unpacked_background_sprite
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-; ***************************************************************************************
-;
-; clear screen memory from $5600-$7fff
-;
-; ***************************************************************************************
-clear_screen
-    ldy #>($8000-screen_memory_start)               ;
-clear_screen_y
-    lda #>screen_memory_start                       ;
-    sta clear_screen_loop + 2                       ;
-    ldx #0                                          ;
-    lda #0                                          ;
-clear_screen_loop
-    sta screen_memory_start,x                       ;
-    inx                                             ;
-    bne clear_screen_loop                           ;
-    inc clear_screen_loop + 2                       ;
-    dey                                             ;
-    bne clear_screen_loop                           ;
-    rts                                             ;
-
-; ***************************************************************************************
-unpacked_sprites                                    ; 2 bits per pixel, 16x16, vertically inverted
-player_sprite_left_frame_0
-    !byte $33, $11, $cc, $00                        ; ....####........
-    !byte $77, $00, $cc, $00                        ; ....####........
-    !byte $55, $bb, $88, $00                        ; ...######.......
-    !byte $11, $ff, $00, $00                        ; ....#.##........
-    !byte $66, $ff, $66, $00                        ; ...#####........
-    !byte $77, $ff, $ee, $00                        ; ....####........
-    !byte $33, $ff, $cc, $00                        ; .....##.........
-    !byte $11, $ff, $88, $00                        ; ....####........
-    !byte $00, $ff, $00, $00                        ; ...######.......
-    !byte $00, $66, $00, $00                        ; ..########......
-    !byte $00, $ff, $00, $00                        ; .##########.....
-    !byte $11, $ff, $00, $00                        ; .##.####.##.....
-    !byte $00, $bb, $00, $00                        ; ...#####........
-    !byte $11, $ff, $88, $00                        ; .#.##.###.......
-    !byte $00, $ff, $00, $00                        ; .###....##......
-    !byte $00, $ff, $00, $00                        ; ..##...###......
-
-player_sprite_left_frame_1
-    !byte $00, $ee, $ee, $00                        ; ......####......
-    !byte $00, $77, $66, $00                        ; ......####......
-    !byte $00, $66, $ee, $00                        ; .....######.....
-    !byte $00, $33, $cc, $00                        ; ......#.##......
-    !byte $00, $dd, $ff, $00                        ; .....#####......
-    !byte $00, $ee, $ff, $00                        ; ......####......
-    !byte $00, $77, $ee, $00                        ; .......##.......
-    !byte $00, $77, $ee, $00                        ; ......####......
-    !byte $00, $33, $cc, $00                        ; .....######.....
-    !byte $00, $11, $88, $00                        ; .....######.....
-    !byte $00, $33, $cc, $00                        ; ....###.####....
-    !byte $00, $77, $cc, $00                        ; ....##.#####....
-    !byte $00, $22, $cc, $00                        ; ......####......
-    !byte $00, $77, $ee, $00                        ; .....##.###.....
-    !byte $00, $33, $cc, $00                        ; .....###.##.....
-    !byte $00, $33, $cc, $00                        ; ....###.###.....
-
-player_sprite_left_frame_2
-    !byte $00, $00, $ee, $00                        ; ........####....
-    !byte $00, $00, $66, $00                        ; ........####....
-    !byte $00, $00, $66, $00                        ; .......######...
-    !byte $00, $00, $ff, $00                        ; ........#.##....
-    !byte $00, $11, $bb, $88                        ; .......#####....
-    !byte $00, $11, $dd, $88                        ; ........####....
-    !byte $00, $11, $dd, $88                        ; .........##.....
-    !byte $00, $11, $dd, $88                        ; ........####....
-    !byte $00, $00, $ff, $00                        ; .......###.##...
-    !byte $00, $00, $66, $00                        ; .......###.##...
-    !byte $00, $00, $ff, $00                        ; .......###.##...
-    !byte $00, $11, $ff, $00                        ; .......##.###...
-    !byte $00, $00, $bb, $00                        ; ........####....
-    !byte $00, $11, $ff, $88                        ; .........##.....
-    !byte $00, $00, $ff, $00                        ; .........##.....
-    !byte $00, $00, $ff, $00                        ; ........###.....
-
-player_sprite_left_frame_3
-    !byte $00, $00, $ee, $ee                        ; ..........####..
-    !byte $00, $00, $77, $66                        ; ..........####..
-    !byte $00, $00, $66, $ee                        ; .........######.
-    !byte $00, $00, $33, $cc                        ; ..........#.##..
-    !byte $00, $00, $dd, $ff                        ; .........#####..
-    !byte $00, $00, $ee, $ff                        ; ..........####..
-    !byte $00, $00, $77, $ee                        ; ...........##...
-    !byte $00, $00, $77, $ee                        ; ..........####..
-    !byte $00, $00, $33, $cc                        ; .........######.
-    !byte $00, $00, $11, $88                        ; .........######.
-    !byte $00, $00, $33, $cc                        ; ........###.####
-    !byte $00, $00, $77, $cc                        ; ........##.#####
-    !byte $00, $00, $22, $cc                        ; ..........####..
-    !byte $00, $00, $77, $ee                        ; .........##.###.
-    !byte $00, $00, $33, $cc                        ; .........###.##.
-    !byte $00, $00, $33, $cc                        ; ........###.###.
-
-player_sprite_right_frame_0
-    !byte $77, $77, $00, $00                        ; ..####..........
-    !byte $66, $ee, $00, $00                        ; ..####..........
-    !byte $77, $66, $00, $00                        ; .######.........
-    !byte $33, $cc, $00, $00                        ; ..##.#..........
-    !byte $ff, $bb, $00, $00                        ; ..#####.........
-    !byte $ff, $77, $00, $00                        ; ..####..........
-    !byte $77, $ee, $00, $00                        ; ...##...........
-    !byte $77, $ee, $00, $00                        ; ..####..........
-    !byte $33, $cc, $00, $00                        ; .######.........
-    !byte $11, $88, $00, $00                        ; .######.........
-    !byte $33, $cc, $00, $00                        ; ####.###........
-    !byte $33, $ee, $00, $00                        ; #####.##........
-    !byte $33, $44, $00, $00                        ; ..####..........
-    !byte $77, $ee, $00, $00                        ; .###.##.........
-    !byte $33, $cc, $00, $00                        ; .##.###.........
-    !byte $33, $cc, $00, $00                        ; .###.###........
-
-player_sprite_right_frame_1
-    !byte $00, $77, $00, $00                        ; ....####........
-    !byte $00, $66, $00, $00                        ; ....####........
-    !byte $00, $66, $00, $00                        ; ...######.......
-    !byte $00, $ff, $00, $00                        ; ....##.#........
-    !byte $11, $dd, $88, $00                        ; ....#####.......
-    !byte $11, $bb, $88, $00                        ; ....####........
-    !byte $11, $bb, $88, $00                        ; .....##.........
-    !byte $11, $bb, $88, $00                        ; ....####........
-    !byte $00, $ff, $00, $00                        ; ...##.###.......
-    !byte $00, $66, $00, $00                        ; ...##.###.......
-    !byte $00, $ff, $00, $00                        ; ...##.###.......
-    !byte $00, $ff, $88, $00                        ; ...###.##.......
-    !byte $00, $dd, $00, $00                        ; ....####........
-    !byte $11, $ff, $88, $00                        ; .....##.........
-    !byte $00, $ff, $00, $00                        ; .....##.........
-    !byte $00, $ff, $00, $00                        ; .....###........
-
-player_sprite_right_frame_2
-    !byte $00, $77, $77, $00                        ; ......####......
-    !byte $00, $66, $ee, $00                        ; ......####......
-    !byte $00, $77, $66, $00                        ; .....######.....
-    !byte $00, $33, $cc, $00                        ; ......##.#......
-    !byte $00, $ff, $bb, $00                        ; ......#####.....
-    !byte $00, $ff, $77, $00                        ; ......####......
-    !byte $00, $77, $ee, $00                        ; .......##.......
-    !byte $00, $77, $ee, $00                        ; ......####......
-    !byte $00, $33, $cc, $00                        ; .....######.....
-    !byte $00, $11, $88, $00                        ; .....######.....
-    !byte $00, $33, $cc, $00                        ; ....####.###....
-    !byte $00, $33, $ee, $00                        ; ....#####.##....
-    !byte $00, $33, $44, $00                        ; ......####......
-    !byte $00, $77, $ee, $00                        ; .....###.##.....
-    !byte $00, $33, $cc, $00                        ; .....##.###.....
-    !byte $00, $33, $cc, $00                        ; .....###.###....
-
-player_sprite_right_frame_3
-    !byte $00, $33, $88, $cc                        ; ........####....
-    !byte $00, $33, $00, $ee                        ; ........####....
-    !byte $00, $11, $dd, $aa                        ; .......######...
-    !byte $00, $00, $ff, $88                        ; ........##.#....
-    !byte $00, $66, $ff, $66                        ; ........#####...
-    !byte $00, $77, $ff, $ee                        ; ........####....
-    !byte $00, $33, $ff, $cc                        ; .........##.....
-    !byte $00, $11, $ff, $88                        ; ........####....
-    !byte $00, $00, $ff, $00                        ; .......######...
-    !byte $00, $00, $66, $00                        ; ......########..
-    !byte $00, $00, $ff, $00                        ; .....##########.
-    !byte $00, $00, $ff, $88                        ; .....##.####.##.
-    !byte $00, $00, $dd, $00                        ; ........#####...
-    !byte $00, $11, $ff, $88                        ; .......###.##.#.
-    !byte $00, $00, $ff, $00                        ; ......##....###.
-    !byte $00, $00, $ff, $00                        ; ......###...##..
-
-; ***************************************************************************************
-unpacked_enemy_sprites
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+; offset to start frame for each enemy sprite
+enemy_sprites_frame_offsets
+    !byte $00, $00, $01, $02, $06, $0a, $0e, $12, $16, $1a, $1e, $22, $26, $2a, $2e, $32
+    !byte $34, $36, $38, $3a, $3e, $42, $4a, $52, $5a, $5c, $5e, $62, $6a, $6e, $72, $76
+    !byte $77, $78, $7a, $7e, $82, $8a, $92, $96, $9a, $9e, $a0, $a2
+enemy_sprites_frame_offsets_end
 
 ; ***************************************************************************************
 background_sprite_data                              ; 1 bit per pixel, 8x8
@@ -10820,6 +10594,237 @@ background_sprite_ff
     !byte $00                                       ; ........
     !byte $00                                       ; ........
     !byte $00                                       ; ........
+background_sprite_data_end
+
+
+; ***************************************************************************************
+unpacked_sprites                                    ; 2 bits per pixel, 16x16, vertically inverted
+player_sprite_left_frame_0
+    !byte $33, $11, $cc, $00                        ; ....####........
+    !byte $77, $00, $cc, $00                        ; ....####........
+    !byte $55, $bb, $88, $00                        ; ...######.......
+    !byte $11, $ff, $00, $00                        ; ....#.##........
+    !byte $66, $ff, $66, $00                        ; ...#####........
+    !byte $77, $ff, $ee, $00                        ; ....####........
+    !byte $33, $ff, $cc, $00                        ; .....##.........
+    !byte $11, $ff, $88, $00                        ; ....####........
+    !byte $00, $ff, $00, $00                        ; ...######.......
+    !byte $00, $66, $00, $00                        ; ..########......
+    !byte $00, $ff, $00, $00                        ; .##########.....
+    !byte $11, $ff, $00, $00                        ; .##.####.##.....
+    !byte $00, $bb, $00, $00                        ; ...#####........
+    !byte $11, $ff, $88, $00                        ; .#.##.###.......
+    !byte $00, $ff, $00, $00                        ; .###....##......
+    !byte $00, $ff, $00, $00                        ; ..##...###......
+
+player_sprite_left_frame_1
+    !byte $00, $ee, $ee, $00                        ; ......####......
+    !byte $00, $77, $66, $00                        ; ......####......
+    !byte $00, $66, $ee, $00                        ; .....######.....
+    !byte $00, $33, $cc, $00                        ; ......#.##......
+    !byte $00, $dd, $ff, $00                        ; .....#####......
+    !byte $00, $ee, $ff, $00                        ; ......####......
+    !byte $00, $77, $ee, $00                        ; .......##.......
+    !byte $00, $77, $ee, $00                        ; ......####......
+    !byte $00, $33, $cc, $00                        ; .....######.....
+    !byte $00, $11, $88, $00                        ; .....######.....
+    !byte $00, $33, $cc, $00                        ; ....###.####....
+    !byte $00, $77, $cc, $00                        ; ....##.#####....
+    !byte $00, $22, $cc, $00                        ; ......####......
+    !byte $00, $77, $ee, $00                        ; .....##.###.....
+    !byte $00, $33, $cc, $00                        ; .....###.##.....
+    !byte $00, $33, $cc, $00                        ; ....###.###.....
+
+player_sprite_left_frame_2
+    !byte $00, $00, $ee, $00                        ; ........####....
+    !byte $00, $00, $66, $00                        ; ........####....
+    !byte $00, $00, $66, $00                        ; .......######...
+    !byte $00, $00, $ff, $00                        ; ........#.##....
+    !byte $00, $11, $bb, $88                        ; .......#####....
+    !byte $00, $11, $dd, $88                        ; ........####....
+    !byte $00, $11, $dd, $88                        ; .........##.....
+    !byte $00, $11, $dd, $88                        ; ........####....
+    !byte $00, $00, $ff, $00                        ; .......###.##...
+    !byte $00, $00, $66, $00                        ; .......###.##...
+    !byte $00, $00, $ff, $00                        ; .......###.##...
+    !byte $00, $11, $ff, $00                        ; .......##.###...
+    !byte $00, $00, $bb, $00                        ; ........####....
+    !byte $00, $11, $ff, $88                        ; .........##.....
+    !byte $00, $00, $ff, $00                        ; .........##.....
+    !byte $00, $00, $ff, $00                        ; ........###.....
+
+player_sprite_left_frame_3
+    !byte $00, $00, $ee, $ee                        ; ..........####..
+    !byte $00, $00, $77, $66                        ; ..........####..
+    !byte $00, $00, $66, $ee                        ; .........######.
+    !byte $00, $00, $33, $cc                        ; ..........#.##..
+    !byte $00, $00, $dd, $ff                        ; .........#####..
+    !byte $00, $00, $ee, $ff                        ; ..........####..
+    !byte $00, $00, $77, $ee                        ; ...........##...
+    !byte $00, $00, $77, $ee                        ; ..........####..
+    !byte $00, $00, $33, $cc                        ; .........######.
+    !byte $00, $00, $11, $88                        ; .........######.
+    !byte $00, $00, $33, $cc                        ; ........###.####
+    !byte $00, $00, $77, $cc                        ; ........##.#####
+    !byte $00, $00, $22, $cc                        ; ..........####..
+    !byte $00, $00, $77, $ee                        ; .........##.###.
+    !byte $00, $00, $33, $cc                        ; .........###.##.
+    !byte $00, $00, $33, $cc                        ; ........###.###.
+
+player_sprite_right_frame_0
+    !byte $77, $77, $00, $00                        ; ..####..........
+    !byte $66, $ee, $00, $00                        ; ..####..........
+    !byte $77, $66, $00, $00                        ; .######.........
+    !byte $33, $cc, $00, $00                        ; ..##.#..........
+    !byte $ff, $bb, $00, $00                        ; ..#####.........
+    !byte $ff, $77, $00, $00                        ; ..####..........
+    !byte $77, $ee, $00, $00                        ; ...##...........
+    !byte $77, $ee, $00, $00                        ; ..####..........
+    !byte $33, $cc, $00, $00                        ; .######.........
+    !byte $11, $88, $00, $00                        ; .######.........
+    !byte $33, $cc, $00, $00                        ; ####.###........
+    !byte $33, $ee, $00, $00                        ; #####.##........
+    !byte $33, $44, $00, $00                        ; ..####..........
+    !byte $77, $ee, $00, $00                        ; .###.##.........
+    !byte $33, $cc, $00, $00                        ; .##.###.........
+    !byte $33, $cc, $00, $00                        ; .###.###........
+
+player_sprite_right_frame_1
+    !byte $00, $77, $00, $00                        ; ....####........
+    !byte $00, $66, $00, $00                        ; ....####........
+    !byte $00, $66, $00, $00                        ; ...######.......
+    !byte $00, $ff, $00, $00                        ; ....##.#........
+    !byte $11, $dd, $88, $00                        ; ....#####.......
+    !byte $11, $bb, $88, $00                        ; ....####........
+    !byte $11, $bb, $88, $00                        ; .....##.........
+    !byte $11, $bb, $88, $00                        ; ....####........
+    !byte $00, $ff, $00, $00                        ; ...##.###.......
+    !byte $00, $66, $00, $00                        ; ...##.###.......
+    !byte $00, $ff, $00, $00                        ; ...##.###.......
+    !byte $00, $ff, $88, $00                        ; ...###.##.......
+    !byte $00, $dd, $00, $00                        ; ....####........
+    !byte $11, $ff, $88, $00                        ; .....##.........
+    !byte $00, $ff, $00, $00                        ; .....##.........
+    !byte $00, $ff, $00, $00                        ; .....###........
+
+player_sprite_right_frame_2
+    !byte $00, $77, $77, $00                        ; ......####......
+    !byte $00, $66, $ee, $00                        ; ......####......
+    !byte $00, $77, $66, $00                        ; .....######.....
+    !byte $00, $33, $cc, $00                        ; ......##.#......
+    !byte $00, $ff, $bb, $00                        ; ......#####.....
+    !byte $00, $ff, $77, $00                        ; ......####......
+    !byte $00, $77, $ee, $00                        ; .......##.......
+    !byte $00, $77, $ee, $00                        ; ......####......
+    !byte $00, $33, $cc, $00                        ; .....######.....
+    !byte $00, $11, $88, $00                        ; .....######.....
+    !byte $00, $33, $cc, $00                        ; ....####.###....
+    !byte $00, $33, $ee, $00                        ; ....#####.##....
+    !byte $00, $33, $44, $00                        ; ......####......
+    !byte $00, $77, $ee, $00                        ; .....###.##.....
+    !byte $00, $33, $cc, $00                        ; .....##.###.....
+    !byte $00, $33, $cc, $00                        ; .....###.###....
+
+player_sprite_right_frame_3
+    !byte $00, $33, $88, $cc                        ; ........####....
+    !byte $00, $33, $00, $ee                        ; ........####....
+    !byte $00, $11, $dd, $aa                        ; .......######...
+    !byte $00, $00, $ff, $88                        ; ........##.#....
+    !byte $00, $66, $ff, $66                        ; ........#####...
+    !byte $00, $77, $ff, $ee                        ; ........####....
+    !byte $00, $33, $ff, $cc                        ; .........##.....
+    !byte $00, $11, $ff, $88                        ; ........####....
+    !byte $00, $00, $ff, $00                        ; .......######...
+    !byte $00, $00, $66, $00                        ; ......########..
+    !byte $00, $00, $ff, $00                        ; .....##########.
+    !byte $00, $00, $ff, $88                        ; .....##.####.##.
+    !byte $00, $00, $dd, $00                        ; ........#####...
+    !byte $00, $11, $ff, $88                        ; .......###.##.#.
+    !byte $00, $00, $ff, $00                        ; ......##....###.
+    !byte $00, $00, $ff, $00                        ; ......###...##..
+
+; ***************************************************************************************
+unpacked_enemy_sprites
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 next_index
     !byte 1, 2, 0
@@ -11307,8 +11312,10 @@ plot_arrow
     ldx arrow_y,Y                                   ;
     stx enemies_y + 8                               ;
     jsr calculate_screen_address                    ;
-    lda arrow_sprite_offsets,Y                      ;
+    lda arrow_sprite_offsets_low,Y                  ;
     sta arrow_sprite_address_low                    ;
+    lda arrow_sprite_offsets_high,Y                 ;
+    sta arrow_sprite_address_high                   ;
     lda arrow_active,Y                              ;
     bmi unplot_arrow                                ;
     ldy #$0f                                        ;
@@ -11334,8 +11341,10 @@ wipe_arrow_loop
     rts                                             ;
 
 ; ***************************************************************************************
-arrow_sprite_offsets
+arrow_sprite_offsets_low
     !byte <sprite_arrow_right, <sprite_arrow_left
+arrow_sprite_offsets_high
+    !byte >sprite_arrow_right, >sprite_arrow_left
 
 arrow_initial_x_positions
     !byte $00, $f8
@@ -12116,6 +12125,7 @@ exit_irq
     rti                                             ;
 
 ; ***************************************************************************************
+
 melody_pitch_table
     !byte 169, 190, 169, 190, 201, 253
     !byte 201, 190, 169, 190, 169, 190, 201, 190, 169, 150, 142, 150, 142, 150, 169
@@ -12123,9 +12133,10 @@ melody_pitch_table
     !byte 160, 169, 190, 169, 160, 190, 127
 
 melody_duration_table
-    !byte $08, $08, $08, $08, $10, $20, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08
-    !byte $08, $08, $08, $08, $40, $20, $10, $10, $08, $08, $08, $08, $10, $10, $08, $08
-    !byte $08, $08, $10, $10, $40
+    !byte  8,  8,  8,  8, 16, 32
+    !byte  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8, 64
+    !byte 32, 16, 16,  8,  8,  8,  8, 16, 16
+    !byte  8,  8,  8,  8, 16, 16, 64
 
 ; ***************************************************************************************
 ; Change the appearance of logical colour Y to physical colour A
