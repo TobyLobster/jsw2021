@@ -1029,6 +1029,10 @@ namespace EncodeLevels
                 {
                     var room = rooms[i];
                     string message = "; " + room.room_number.ToString().PadLeft(3) + "  " + room.room_number.ToString("X2").ToLowerInvariant() + "  " + room.title.name;
+                    if (string.IsNullOrEmpty(room.title.name))
+                    {
+                        message += "Game Over screen";
+                    }
                     WriteLine(outputFile, 0, message);
                 }
                 WriteLine(outputFile, 0, "; ");
@@ -1041,14 +1045,14 @@ namespace EncodeLevels
                 for(int i = 0; i < rooms.Count; i++)
                 {
                     var room = rooms[i];
-                    WriteLine(outputFile, 4, "!byte <room_" + room.room_number.ToString("X2").ToLowerInvariant() + "_data");
+                    WriteLine(outputFile, 4, "!byte <room_" + i.ToString("X2").ToLowerInvariant() + "_data");
                 }
                 WriteLine(outputFile, 0, "");
                 WriteLine(outputFile, 0, "room_data_address_high_table");
                 for(int i = 0; i < rooms.Count; i++)
                 {
                     var room = rooms[i];
-                    WriteLine(outputFile, 4, "!byte >room_" + room.room_number.ToString("X2").ToLowerInvariant() + "_data");
+                    WriteLine(outputFile, 4, "!byte >room_" + i.ToString("X2").ToLowerInvariant() + "_data");
                 }
                 WriteLine(outputFile, 0, "");
                 WriteLine(outputFile, 0, "; ***************************************************************************************");
@@ -1094,10 +1098,10 @@ namespace EncodeLevels
                     foreach(var sprite in enemy.sprites)
                     {
                         WriteLine(outputFile, 0, "enemy_sprite_" + enemyNum.ToString("x2") + "_frame_" + frame);
-                        for(int i = sprite.bytes.Count - 1; i >= 0; i --)
+                        for(int i = 0; i < sprite.bytes.Count; i++)
                         {
                             var binary = Convert.ToString(sprite.bytes[i], 2).PadLeft(16, '0').Replace('0','.').Replace('1','#');
-                            WriteLine(outputFile, 4, "!be16 %" + binary);
+                            WriteLine(outputFile, 4, "!word %" + binary);
                         }
                         frame++;
                         WriteLine(outputFile, 0, "");
