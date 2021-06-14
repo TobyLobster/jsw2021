@@ -48,11 +48,18 @@ namespace EncodeLevels
 
     class Arrow
     {
+        public bool valid;
         public int y;
         public int timing;
 
+        public Arrow()
+        {
+            valid = false;
+        }
+
         public Arrow(int y_val, int timing_val)
         {
+            valid = true;
             y = y_val;
             timing = timing_val;
         }
@@ -188,6 +195,7 @@ namespace EncodeLevels
     // ************************************************************************
     class Room
     {
+        public int room_number = -1;
         public List<bool> itemsCollected = new List<bool>();
         public List<int> exits = new List<int>();
         public bool conveyorDir = false;
@@ -215,143 +223,154 @@ namespace EncodeLevels
         {
             processor.StartBits();
 
-            // items collected
-            processor.AddBits(4, itemsCollected.Count);
-            foreach(var item in itemsCollected)
-            {
-                processor.AddBit(item);
-            }
-
-            // exits
-            foreach(var exit in exits)
+            if (!string.IsNullOrEmpty(title.name))
             { 
-                processor.AddBits(6, exit);
-            }
-
-            processor.AddBit(conveyorDir);
-            processor.AddBit(slopeDir);
-            processor.AddBit(ropePresent);
-
-            processor.AddBits(2, deadlyTile.colour);
-            processor.AddBits(2, conveyorTile.colour);
-            processor.AddBits(2, slopeTile.colour);
-            processor.AddBits(2, wallTile.colour);
-            processor.AddBits(2, platformTile.colour);
-
-            processor.AddBits(8, processor.GetBackgroundSpriteIndex(itemTile.spriteName));
-            processor.AddBits(8, processor.GetBackgroundSpriteIndex(deadlyTile.spriteName));
-            processor.AddBits(8, processor.GetBackgroundSpriteIndex(conveyorTile.spriteName));
-            processor.AddBits(8, processor.GetBackgroundSpriteIndex(slopeTile.spriteName));
-            processor.AddBits(8, processor.GetBackgroundSpriteIndex(wallTile.spriteName));
-            processor.AddBits(8, processor.GetBackgroundSpriteIndex(platformTile.spriteName));
-
-            // Palette
-            palette.Reverse();
-            foreach(var entry in palette)
-            {
-                processor.AddBits(3, entry);
-            }
-            palette.Reverse();
-
-            processor.AddBits(4, title.tab);
-
-            // Title
-            for(int i = 0; i < title.name.Length; i++)
-            {
-                if (i < title.name.Length - 3)
+                // items collected
+                processor.AddBits(4, itemsCollected.Count);
+                foreach(var item in itemsCollected)
                 {
-                    if (title.name.Substring(i, 3).ToLowerInvariant() == "the")
+                    processor.AddBit(item);
+                }
+
+                // exits
+                foreach(var exit in exits)
+                { 
+                    processor.AddBits(6, exit);
+                }
+
+                processor.AddBit(conveyorDir);
+                processor.AddBit(slopeDir);
+                processor.AddBit(ropePresent);
+
+                processor.AddBits(2, deadlyTile.colour);
+                processor.AddBits(2, conveyorTile.colour);
+                processor.AddBits(2, slopeTile.colour);
+                processor.AddBits(2, wallTile.colour);
+                processor.AddBits(2, platformTile.colour);
+
+                processor.AddBits(8, processor.GetBackgroundSpriteIndex(itemTile.spriteName));
+                processor.AddBits(8, processor.GetBackgroundSpriteIndex(deadlyTile.spriteName));
+                processor.AddBits(8, processor.GetBackgroundSpriteIndex(conveyorTile.spriteName));
+                processor.AddBits(8, processor.GetBackgroundSpriteIndex(slopeTile.spriteName));
+                processor.AddBits(8, processor.GetBackgroundSpriteIndex(wallTile.spriteName));
+                processor.AddBits(8, processor.GetBackgroundSpriteIndex(platformTile.spriteName));
+
+                // Palette
+                palette.Reverse();
+                foreach(var entry in palette)
+                {
+                    processor.AddBits(3, entry);
+                }
+                palette.Reverse();
+
+                processor.AddBits(4, title.tab);
+
+                // Title
+                for(int i = 0; i < title.name.Length; i++)
+                {
+                    if (i < title.name.Length - 3)
                     {
-                        processor.AddBits(5, 0x1f);
-                        i = i + 2;
-                        continue;
-                    }
-                }
-                int c = (int) title.name[i];
-                if ((c >= 'a') && (c <= 'z'))
-                {
-                    processor.AddBits(5, c - 'a');
-                    continue;
-                }
-                if ((c >= 'A') && (c <= 'Z'))
-                {
-                    processor.AddBits(5, c - 'A');
-                    continue;
-                }
-                if (c == ' ')
-                {
-                    if (i < (title.name.Length - 1))
-                    {
-                        char nextC = title.name[i + 1];
-                        if (char.IsUpper(nextC))
+                        if (title.name.Substring(i, 3).ToLowerInvariant() == "the")
                         {
-                            processor.AddBits(5, 0x1e);
+                            processor.AddBits(5, 0x1f);
+                            i = i + 2;
                             continue;
                         }
                     }
-                    processor.AddBits(5, 0x1d);
-                }
-            }
-            processor.AddBits(5, 0x1c);     // Terminator
-
-            foreach(var command in commands)
-            {
-                if (command is UseTileCommand use)
-                {
-                    processor.AddBits(2, 0);
-                    processor.AddBits(3, use.tileType);
-                }
-                else if (command is XYTileCommand move)
-                {
-                    processor.AddBits(2, 1);
-                    processor.AddBits(5, move.X);
-                    processor.AddBits(4, move.Y);
-                }
-                else if (command is StripTileCommand strip)
-                {
-                    processor.AddBits(2, 2);
-                    processor.AddBits(1, strip.dir ? 1 : 0);
-                    processor.AddBits(5, strip.extent);
-                }
-                else if (command is BlockTileCommand block)
-                {
-                    processor.AddBits(2, 3);
-                    processor.AddBits(2, 0);
-                    processor.AddBits(5, block.extentX);
-                    processor.AddBits(4, block.finalY);
-                }
-                else if (command is ListTileCommand list)
-                {
-                    processor.AddBits(2, 3);
-                    processor.AddBits(2, 1);
-                    processor.AddBits(4, list.points.Count - 1);
-                    foreach(var point in list.points)
+                    int c = (int) title.name[i];
+                    if ((c >= 'a') && (c <= 'z'))
                     {
-                        processor.AddBits(5, point.X);
-                        processor.AddBits(4, point.Y);
+                        processor.AddBits(5, c - 'a');
+                        continue;
+                    }
+                    if ((c >= 'A') && (c <= 'Z'))
+                    {
+                        processor.AddBits(5, c - 'A');
+                        continue;
+                    }
+                    if (c == '\'')
+                    {
+                        processor.AddBits(5, 0x1b);
+                        continue;
+                    }
+                    if (c == ' ')
+                    {
+                        if (i < (title.name.Length - 1))
+                        {
+                            string left = title.name.Substring(i + 1).TrimStart();
+                            if (left.Length > 0)
+                            {
+                                char nextC = left[0];
+                                if (char.IsUpper(nextC))
+                                {
+                                    processor.AddBits(5, 0x1e);
+                                    continue;
+                                }
+                            }
+                        }
+                        processor.AddBits(5, 0x1d);
                     }
                 }
-                else if (command is SlopeTileCommand slope)
+                processor.AddBits(5, 0x1c);     // Terminator
+
+                foreach(var command in commands)
                 {
-                    processor.AddBits(2, 3);
-                    processor.AddBits(2, 2);
-                    processor.AddBits(1, slope.dir ? 1 : 0);
-                    processor.AddBits(4, slope.finalY);
+                    if (command is UseTileCommand use)
+                    {
+                        processor.AddBits(2, 0);
+                        processor.AddBits(3, use.tileType);
+                    }
+                    else if (command is XYTileCommand move)
+                    {
+                        processor.AddBits(2, 1);
+                        processor.AddBits(5, move.X);
+                        processor.AddBits(4, move.Y);
+                    }
+                    else if (command is StripTileCommand strip)
+                    {
+                        processor.AddBits(2, 2);
+                        processor.AddBits(1, strip.dir ? 1 : 0);
+                        processor.AddBits(5, strip.extent);
+                    }
+                    else if (command is BlockTileCommand block)
+                    {
+                        processor.AddBits(2, 3);
+                        processor.AddBits(2, 0);
+                        processor.AddBits(5, block.extentX);
+                        processor.AddBits(4, block.finalY);
+                    }
+                    else if (command is ListTileCommand list)
+                    {
+                        processor.AddBits(2, 3);
+                        processor.AddBits(2, 1);
+                        processor.AddBits(4, list.points.Count - 1);
+                        foreach(var point in list.points)
+                        {
+                            processor.AddBits(5, point.X);
+                            processor.AddBits(4, point.Y);
+                        }
+                    }
+                    else if (command is SlopeTileCommand slope)
+                    {
+                        processor.AddBits(2, 3);
+                        processor.AddBits(2, 2);
+                        processor.AddBits(1, slope.dir ? 1 : 0);
+                        processor.AddBits(4, slope.finalY);
+                    }
+                    else if (command is TriangleTileCommand tri)
+                    {
+                        processor.AddBits(2, 3);
+                        processor.AddBits(2, 3);
+                        processor.AddBits(2, 2);
+                        processor.AddBits(1, tri.dir ? 1 : 0);
+                        processor.AddBits(4, tri.final_y);
+                    }
                 }
-                else if (command is TriangleTileCommand tri)
-                {
-                    processor.AddBits(2, 3);
-                    processor.AddBits(2, 3);
-                    processor.AddBits(2, 2);
-                    processor.AddBits(1, tri.dir ? 1 : 0);
-                    processor.AddBits(4, tri.final_y);
-                }
+
+                processor.AddBits(2, 3);        // End of tile data
+                processor.AddBits(2, 3);
+                processor.AddBits(2, 0);
             }
-
-            processor.AddBits(2, 3);        // End of tile data
-            processor.AddBits(2, 3);
-            processor.AddBits(2, 0);
-
             // Enemies
             processor.AddBits(3, enemies.Count);
             foreach(var enemy in enemies)
@@ -368,13 +387,13 @@ namespace EncodeLevels
             }
 
             // Arrows
-            for(int i = 0; i < 2; i++)
+            foreach(var arrow in arrows)
             {
-                processor.AddBit(i < arrows.Count);
-                if (i < arrows.Count)
-                { 
-                    processor.AddBits(4, arrows[i].y);
-                    processor.AddBits(3, arrows[i].timing);
+                processor.AddBit(arrow.valid);
+                if (arrow.valid)
+                {
+                    processor.AddBits(4, arrow.y);
+                    processor.AddBits(3, arrow.timing);
                 }
             }
 
@@ -422,10 +441,12 @@ namespace EncodeLevels
             if (bits_within_byte > 7)
             {
                 // DEBUG
+                /*
                 if (bytes.Count > 0)
                 { 
                     Console.WriteLine(bytes.Last().ToString("X2"));
                 }
+                */
                 bytes.Add(0);
                 bits_within_byte = 0;
             }
@@ -468,10 +489,7 @@ namespace EncodeLevels
         // ********************************************************************
         public void LeaveState(State state)
         {
-            switch(state)
-            {
-                case State.Room: LeaveRoomState(); break;
-            }
+            LeaveRoomState();
         }
 
         // ********************************************************************
@@ -491,10 +509,7 @@ namespace EncodeLevels
             this.state = state;
             this.stateName = name;
 
-            switch(state)
-            {
-                case State.Room: EnterRoomState(); break;
-            }
+            EnterState(this.state);
         }
 
         // ********************************************************************
@@ -554,6 +569,7 @@ namespace EncodeLevels
         public void EnterRoomState()
         {
             currentRoom = new Room();
+            currentRoom.room_number = int.Parse(stateName);
         }
 
         // ********************************************************************
@@ -757,7 +773,13 @@ namespace EncodeLevels
                 var final_y = int.Parse(results[1]);
                 currentRoom.commands.Add(new SlopeTileCommand(dir, final_y));
             }
-            if (IsMatch(line, @"Draw (\d+) single tiles at (.*)$", out results))
+            if (IsMatch(line, @"Draw triangle moving (left|right) until Y=(\d+)", out results))
+            {
+                var dir = (results[0] == "left");
+                var final_y = int.Parse(results[1]);
+                currentRoom.commands.Add(new TriangleTileCommand(dir, final_y));
+            }
+            if (IsMatch(line, @"Draw (\d+) single tiles? at (.*)$", out results))
             {
                 var list = new ListTileCommand();
 
@@ -832,7 +854,11 @@ namespace EncodeLevels
                 return;
             }
 
-            if (IsMatch(line, @"Arrow *: *(\d+) *, *timing +index *(\d+)", out results))
+            if (IsMatch(line, @"Arrow *: *no", out results))
+            {
+                currentRoom.arrows.Add(new Arrow());
+            }
+            if (IsMatch(line, @"Arrow *: *Y *(\d+) *, *timing +index *(\d+)", out results))
             {
                 currentRoom.arrows.Add(new Arrow(int.Parse(results[0]), int.Parse(results[1])));
             }
@@ -998,12 +1024,11 @@ namespace EncodeLevels
                 WriteLine(outputFile, 0, "");
                 WriteLine(outputFile, 0, "; Dec Hex  Name");
                 WriteLine(outputFile, 0, "; ---------------------------------------------------------------------------------------");
-                WriteLine(outputFile, 0, ";   0  00  Game Over screen");
 
                 for(int i = 0; i < rooms.Count; i++)
                 {
                     var room = rooms[i];
-                    string message = "; " + (i+1).ToString().PadLeft(3) + "  " + (i+1).ToString("X2").ToLowerInvariant() + "  " + room.title.name;
+                    string message = "; " + room.room_number.ToString().PadLeft(3) + "  " + room.room_number.ToString("X2").ToLowerInvariant() + "  " + room.title.name;
                     WriteLine(outputFile, 0, message);
                 }
                 WriteLine(outputFile, 0, "; ");
@@ -1012,17 +1037,18 @@ namespace EncodeLevels
 
                 // output tables
                 WriteLine(outputFile, 0, "room_data_address_low_table");
+
                 for(int i = 0; i < rooms.Count; i++)
                 {
                     var room = rooms[i];
-                    WriteLine(outputFile, 4, "!byte <room_" + i.ToString("X2").ToLowerInvariant() + "_data");
+                    WriteLine(outputFile, 4, "!byte <room_" + room.room_number.ToString("X2").ToLowerInvariant() + "_data");
                 }
                 WriteLine(outputFile, 0, "");
                 WriteLine(outputFile, 0, "room_data_address_high_table");
                 for(int i = 0; i < rooms.Count; i++)
                 {
                     var room = rooms[i];
-                    WriteLine(outputFile, 4, "!byte >room_" + i.ToString("X2").ToLowerInvariant() + "_data");
+                    WriteLine(outputFile, 4, "!byte >room_" + room.room_number.ToString("X2").ToLowerInvariant() + "_data");
                 }
                 WriteLine(outputFile, 0, "");
                 WriteLine(outputFile, 0, "; ***************************************************************************************");
@@ -1032,7 +1058,7 @@ namespace EncodeLevels
                 {
                     var room = rooms[i];
 
-                    WriteLine(outputFile, 0, "room_" + (i+1).ToString("X2").ToLowerInvariant() + "_data");
+                    WriteLine(outputFile, 0, "room_" + room.room_number.ToString("X2").ToLowerInvariant() + "_data");
                     var bytes = room.GetBytes(this);
                     var offset_in_line = 0;
                     var lines = "";
@@ -1049,7 +1075,7 @@ namespace EncodeLevels
                         lines += "$" + bytes[j].ToString("X2").ToLowerInvariant();
 
                         offset_in_line++;
-                        if (offset_in_line == 8)
+                        if (offset_in_line == 16)
                         {
                             lines += Environment.NewLine;
                             offset_in_line = 0;
@@ -1058,6 +1084,94 @@ namespace EncodeLevels
                     WriteLine(outputFile, 0, lines);
                     WriteLine(outputFile, 0, "");
                 }
+
+                WriteLine(outputFile, 0, "; ***************************************************************************************");
+                WriteLine(outputFile, 0, "packed_enemy_sprites");
+                int enemyNum = 1;
+                foreach(var enemy in enemies)
+                {
+                    int frame = 0;
+                    foreach(var sprite in enemy.sprites)
+                    {
+                        WriteLine(outputFile, 0, "enemy_sprite_" + enemyNum.ToString("x2") + "_frame_" + frame);
+                        for(int i = sprite.bytes.Count - 1; i >= 0; i --)
+                        {
+                            var binary = Convert.ToString(sprite.bytes[i], 2).PadLeft(16, '0').Replace('0','.').Replace('1','#');
+                            WriteLine(outputFile, 4, "!be16 %" + binary);
+                        }
+                        frame++;
+                        WriteLine(outputFile, 0, "");
+                    }
+                    enemyNum++;
+                }
+                WriteLine(outputFile, 0, "packed_enemy_sprites_end");
+                WriteLine(outputFile, 0, "");
+                WriteLine(outputFile, 0, "; ***************************************************************************************");
+                WriteLine(outputFile, 0, "; number of frames for each enemy sprite");
+                WriteLine(outputFile, 0, "enemy_sprites_frames");
+                string enemy_frames = "!byte $08";
+                int items_on_line = 1;
+
+                foreach(var enemy in enemies)
+                {
+                    var val = enemy.sprites.Count;
+                    if (items_on_line > 0)
+                    { 
+                        enemy_frames += ", ";
+                    }
+                    enemy_frames += "$" + val.ToString("x2");
+                    items_on_line++;
+                    if (items_on_line > 15)
+                    {
+                        enemy_frames += Environment.NewLine + "    !byte ";
+                        items_on_line = 0;
+                    }
+                }
+                WriteLine(outputFile, 4, enemy_frames);
+                WriteLine(outputFile, 0, "enemy_sprites_frames_end");
+                WriteLine(outputFile, 0, "");
+
+                WriteLine(outputFile, 0, "; offset to start frame for each enemy sprite");
+                WriteLine(outputFile, 0, "enemy_sprites_frame_offsets");
+                enemy_frames = "!byte $00";
+                items_on_line = 1;
+
+                int running_total = 0;
+                foreach(var enemy in enemies)
+                {
+                    if (items_on_line > 0)
+                    { 
+                        enemy_frames += ", ";
+                    }
+                    enemy_frames += "$" + running_total.ToString("x2");
+                    running_total += enemy.sprites.Count;
+                    items_on_line++;
+                    if (items_on_line > 15)
+                    {
+                        enemy_frames += Environment.NewLine + "    !byte ";
+                        items_on_line = 0;
+                    }
+                }
+                WriteLine(outputFile, 4, enemy_frames);
+                WriteLine(outputFile, 0, "enemy_sprites_frame_offsets_end");
+                WriteLine(outputFile, 0, "");
+
+                // Background sprites
+                WriteLine(outputFile, 0, "; ***************************************************************************************");
+                WriteLine(outputFile, 0, "background_sprite_data");
+                int spriteIndex = 0;
+                foreach(var sprite in backgroundSprites)
+                {
+                    WriteLine(outputFile, 0, "background_sprite_" + spriteIndex);
+                    foreach(var by in sprite.bytes)
+                    { 
+                        var binary = Convert.ToString(by, 2).PadLeft(8, '0').Replace('0','.').Replace('1','#');
+                        WriteLine(outputFile, 4, "!byte %" + binary);
+                    }
+                    WriteLine(outputFile, 0, "");
+                    spriteIndex++;
+                }
+                WriteLine(outputFile, 0, "background_sprite_data_end");
             }
 
         }

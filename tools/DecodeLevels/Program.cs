@@ -41,11 +41,20 @@ namespace DecodeLevels
 
     class Arrow
     {
+        public bool valid;
         public int y;
         public int timing;
 
+        public Arrow()
+        {
+            valid = false;
+            y = -1;
+            timing = -1;
+        }
+
         public Arrow(int y_val, int timing_val)
         {
+            valid = true;
             y = y_val;
             timing = timing_val;
         }
@@ -322,10 +331,17 @@ namespace DecodeLevels
 
                 // Arrows
 
-                MainClass.WriteLine(outputFile, 4, "Arrows: " + arrows.Count);
+                MainClass.WriteLine(outputFile, 4, "Arrows: " + arrows.Where((x) => x.valid).Count());
                 foreach (var arrow in arrows)
                 {
-                    MainClass.WriteLine(outputFile, 8, "Arrow: Y " + arrow.y + ", timing index " + arrow.timing);
+                    if (arrow.valid)
+                    {
+                        MainClass.WriteLine(outputFile, 8, "Arrow: Y " + arrow.y + ", timing index " + arrow.timing);
+                    }
+                    else
+                    {
+                        MainClass.WriteLine(outputFile, 8, "Arrow: no");
+                    }
                 }
 
                 // Write blank line after last room
@@ -695,6 +711,10 @@ namespace DecodeLevels
                     int timing = GetBits(3);
 
                     room.arrows.Add(new Arrow(y, timing));
+                }
+                else
+                {
+                    room.arrows.Add(new Arrow());
                 }
             }
 

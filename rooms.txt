@@ -56,6 +56,8 @@ Room 1
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 2
     Number of items: 0
@@ -127,6 +129,8 @@ Room 2
             Speed: 4
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 3
     Number of items: 1 (collected)
@@ -176,6 +180,8 @@ Room 3
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 4
     Number of items: 1 (collected)
@@ -258,6 +264,7 @@ Room 4
             Logical colour: 1
     Arrows: 1
         Arrow: Y 7, timing index 0
+        Arrow: no
 
 Room 5
     Number of items: 1 (collected)
@@ -302,6 +309,8 @@ Room 5
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 6
     Number of items: 1 (collected)
@@ -482,6 +491,8 @@ Room 7
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 8
     Number of items: 1 (collected)
@@ -530,6 +541,8 @@ Room 8
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 9
     Number of items: 4 (collected, collected, collected, collected)
@@ -586,6 +599,8 @@ Room 9
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 10
     Number of items: 0
@@ -651,6 +666,7 @@ Room 10
             Speed: 2
             Logical colour: 2
     Arrows: 1
+        Arrow: no
         Arrow: Y 3, timing index 1
 
 Room 11
@@ -813,6 +829,8 @@ Room 12
             Speed: 4
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 13
     Number of items: 0
@@ -869,6 +887,8 @@ Room 13
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 14
     Number of items: 1 (collected)
@@ -936,6 +956,8 @@ Room 14
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 15
     Number of items: 1 (collected)
@@ -992,6 +1014,8 @@ Room 15
             Speed: 7
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 16
     Number of items: 4 (collected, collected, collected, collected)
@@ -1046,6 +1070,7 @@ Room 16
             Speed: 2
             Logical colour: 3
     Arrows: 1
+        Arrow: no
         Arrow: Y 10, timing index 1
 
 Room 17
@@ -1105,6 +1130,7 @@ Room 17
             Speed: 4
             Logical colour: 3
     Arrows: 1
+        Arrow: no
         Arrow: Y 7, timing index 1
 
 Room 18
@@ -1160,6 +1186,7 @@ Room 18
             Logical colour: 1
     Arrows: 1
         Arrow: Y 6, timing index 0
+        Arrow: no
 
 Room 19
     Number of items: 0
@@ -1209,6 +1236,8 @@ Room 19
             Speed: 0
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 20
     Number of items: 1 (collected)
@@ -1283,6 +1312,8 @@ Room 20
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 21
     Number of items: 1 (collected)
@@ -1345,6 +1376,8 @@ Room 21
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 22
     Number of items: 0
@@ -1391,6 +1424,8 @@ Room 22
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 23
     Number of items: 0
@@ -1447,6 +1482,8 @@ Room 23
             Speed: 1
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 24
     Number of items: 0
@@ -1508,6 +1545,8 @@ Room 24
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 25
     Number of items: 0
@@ -1547,6 +1586,8 @@ Room 25
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 26
     Number of items: 1 (collected)
@@ -1636,6 +1677,8 @@ Room 26
             Speed: 1
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 27
     Number of items: 1 (collected)
@@ -1729,6 +1772,8 @@ Room 27
             Speed: 1
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 28
     Number of items: 0
@@ -1776,6 +1821,8 @@ Room 28
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 29
     Number of items: 1 (collected)
@@ -1862,6 +1909,8 @@ Room 29
             Speed: 1
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 30
     Number of items: 0
@@ -1909,6 +1958,8 @@ Room 30
             Speed: 1
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 31
     Number of items: 0
@@ -1944,6 +1995,8 @@ Room 31
         Draw horizontal strip until X=18                 ; 'Draw strip' moves the cursor to the end tile
     Enemies: 0
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 32
     Number of items: 0
@@ -2008,6 +2061,8 @@ Room 32
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 33
     Number of items: 4 (collected, collected, collected, collected)
@@ -2082,6 +2137,8 @@ Room 33
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 34
     Number of items: 0
@@ -2162,6 +2219,8 @@ Room 34
             Speed: 4
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 35
     Number of items: 0
@@ -2243,6 +2302,8 @@ Room 35
             Speed: 4
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 36
     Number of items: 2 (collected, collected)
@@ -2341,6 +2402,8 @@ Room 36
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 37
     Number of items: 7 (collected, collected, collected, collected, collected, collected, collected)
@@ -2408,6 +2471,8 @@ Room 37
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 38
     Number of items: 0
@@ -2489,6 +2554,8 @@ Room 38
             Speed: 1
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 39
     Number of items: 0
@@ -2578,6 +2645,8 @@ Room 40
         Draw 1 single tile at (11,11)
     Enemies: 0
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 41
     Number of items: 2 (collected, collected)
@@ -2643,6 +2712,8 @@ Room 41
             Speed: 4
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 42
     Number of items: 3 (collected, collected, collected)
@@ -2715,6 +2786,7 @@ Room 42
             Logical colour: 3
     Arrows: 1
         Arrow: Y 7, timing index 0
+        Arrow: no
 
 Room 43
     Number of items: 1 (collected)
@@ -2796,6 +2868,7 @@ Room 43
             Speed: 2
             Logical colour: 2
     Arrows: 1
+        Arrow: no
         Arrow: Y 11, timing index 2
 
 Room 44
@@ -2900,6 +2973,8 @@ Room 44
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 45
     Number of items: 1 (collected)
@@ -2953,6 +3028,7 @@ Room 45
             Speed: 2
             Logical colour: 1
     Arrows: 1
+        Arrow: no
         Arrow: Y 6, timing index 2
 
 Room 46
@@ -3010,6 +3086,8 @@ Room 46
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 47
     Number of items: 1 (collected)
@@ -3072,6 +3150,8 @@ Room 47
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 48
     Number of items: 1 (collected)
@@ -3109,6 +3189,8 @@ Room 48
         Draw 1 single tile at (22,2)
     Enemies: 0
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 49
     Number of items: 1 (collected)
@@ -3177,6 +3259,8 @@ Room 49
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 50
     Number of items: 6 (collected, collected, collected, collected, collected, collected)
@@ -3270,6 +3354,8 @@ Room 50
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 51
     Number of items: 1 (collected)
@@ -3371,6 +3457,8 @@ Room 51
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 52
     Number of items: 0
@@ -3460,6 +3548,8 @@ Room 52
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 53
     Number of items: 0
@@ -3541,6 +3631,8 @@ Room 53
             Speed: 2
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 54
     Number of items: 3 (collected, collected, collected)
@@ -3627,6 +3719,8 @@ Room 54
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 55
     Number of items: 1 (collected)
@@ -3695,6 +3789,8 @@ Room 55
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 56
     Number of items: 0
@@ -3757,6 +3853,8 @@ Room 56
             Speed: 7
             Logical colour: 1
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 57
     Number of items: 12 (collected, collected, collected, collected, collected, collected, collected, collected, collected, collected, collected, collected)
@@ -3824,6 +3922,8 @@ Room 57
             Speed: 2
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 58
     Number of items: 0
@@ -3908,6 +4008,8 @@ Room 58
             Speed: 1
             Logical colour: 3
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 59
     Number of items: 0
@@ -3975,6 +4077,8 @@ Room 59
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 60
     Number of items: 2 (collected, collected)
@@ -4057,6 +4161,8 @@ Room 60
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 Room 0
     Enemies: 3
@@ -4085,6 +4191,8 @@ Room 0
             Speed: 2
             Logical colour: 2
     Arrows: 0
+        Arrow: no
+        Arrow: no
 
 BackgroundSprite 0
     ########                                             ; The Off Licence PLATFORM [x6]
