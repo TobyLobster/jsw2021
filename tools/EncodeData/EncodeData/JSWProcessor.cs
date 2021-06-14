@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace EncodeLevels
+namespace EncodeData
 {
     enum State
     {
@@ -219,7 +219,7 @@ namespace EncodeLevels
         }
 
         // ********************************************************************
-        public List<int> GetBytes(Processor processor)
+        public List<int> GetBytes(JSWProcessor processor)
         {
             processor.StartBits();
 
@@ -398,12 +398,12 @@ namespace EncodeLevels
             }
 
             processor.EndBits();
-            return new List<int>(Processor.bytes);
+            return new List<int>(JSWProcessor.bytes);
         }
     }
 
     // ************************************************************************
-    class Processor
+    class JSWProcessor
     {
         // For input
         State state = State.None;
@@ -1178,29 +1178,19 @@ namespace EncodeLevels
                 WriteLine(outputFile, 0, "background_sprite_data_end");
             }
 
+            Console.WriteLine("Encoding finished");
         }
 
         // ********************************************************************
         public void Process(string inputFilepath, string outputFilepath)
         {
+            if (!File.Exists(inputFilepath))
+            {
+                JSWMessage.Error("Could not open input file {0}", inputFilepath);
+                return;
+            }
             ReadInput(inputFilepath);
             WriteOutput(outputFilepath);
-        }
-    }
-
-    // ************************************************************************
-    class MainClass
-    {
-        static string inputFilepath = "/Users/tobynelson/Code/6502/jsw2021/rooms.txt";
-        static string outputFilepath = "/Users/tobynelson/Code/6502/jsw2021/rooms.a";
-
-        // ********************************************************************
-        public static void Main(string[] args)
-        {
-            Console.WriteLine("Encode Levels");
-
-            var processor = new Processor();
-            processor.Process(inputFilepath, outputFilepath);
         }
     }
 }

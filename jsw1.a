@@ -807,12 +807,10 @@ consider_next_enemy1
 leave9
     rts                                             ;
 
-tempY
-    !byte 0
 ; ***************************************************************************************
 unpack_enemy_sprite
-    ldy #0                                          ;
-    ldx #31                                         ;
+    ldy #0                                          ; loop counter for target (incrementing)
+    ldx #31                                         ; loop counter for source (decrementing)
 unpack_enemy_sprite_loop
     sty tempY                                       ;
     txa                                             ;
@@ -822,7 +820,8 @@ unpack_enemy_sprite_loop
     ldy unpacked_byte_two                           ;
     sta unpacked_byte_two                           ;
     tya                                             ;
-    ldy tempY                                       ;
+tempY = * + 1
+    ldy #$ff                                        ;
     sta (unpacked_sprite_address_low),Y             ;
     iny                                             ;
     lda unpacked_byte_two                           ;
@@ -2766,7 +2765,7 @@ clear_screen_loop
 ; $2E $2F $30 $31 $32                         $33 $34 $35 $36 $37 $38 $39
 ;                                                 $3A $3B $3C
 ;
-!src "rooms.a"
+!src "definitions.a"
 
 ; ***************************************************************************************
 unpacked_sprites                                    ; 2 bits per pixel, 16x16, vertically inverted

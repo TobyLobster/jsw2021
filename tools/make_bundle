@@ -1,0 +1,12 @@
+#
+# Ensure that when double click this script that it makes the current
+# working directory the directory where the script is located
+#
+cd -- "$(dirname "$BASH_SOURCE")"
+cd ..
+
+cd Tools/EncodeData
+dotnet publish -c Release --framework netcoreapp3.1 --runtime osx-x64 -p:PublishSingleFile=true --self-contained true -p:PublishTrimmed=true
+cp ./EncodeData/bin/Release/netcoreapp3.1/osx-x64/publish/EncodeData ../bin/EncodeData
+
+cd ../../..

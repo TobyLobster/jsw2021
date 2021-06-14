@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.809.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncodeLevels", "EncodeLevels.csproj", "{478FC5AF-2754-47DD-AD60-E78347B8796F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncodeData", "EncodeData\EncodeData.csproj", "{BD669677-8AA0-473A-A2B8-A53EEDA4CEDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|anycpu = Release|anycpu
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{478FC5AF-2754-47DD-AD60-E78347B8796F}.Debug|anycpu.ActiveCfg = Debug|anycpu
-		{478FC5AF-2754-47DD-AD60-E78347B8796F}.Debug|anycpu.Build.0 = Debug|anycpu
-		{478FC5AF-2754-47DD-AD60-E78347B8796F}.Release|anycpu.ActiveCfg = Release|anycpu
-		{478FC5AF-2754-47DD-AD60-E78347B8796F}.Release|anycpu.Build.0 = Release|anycpu
+		{BD669677-8AA0-473A-A2B8-A53EEDA4CEDA}.Debug|anycpu.ActiveCfg = Debug|Any CPU
+		{BD669677-8AA0-473A-A2B8-A53EEDA4CEDA}.Debug|anycpu.Build.0 = Debug|Any CPU
+		{BD669677-8AA0-473A-A2B8-A53EEDA4CEDA}.Release|anycpu.ActiveCfg = Release|Any CPU
+		{BD669677-8AA0-473A-A2B8-A53EEDA4CEDA}.Release|anycpu.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

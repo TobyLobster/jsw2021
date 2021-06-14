@@ -1,5 +1,7 @@
 set -e
 
+./tools/bin/EncodeData --inputfile definitions.txt --outputfile definitions.a
+
 mkdir -p new
 ../tools/acme -o new/jsw1 -r jsw1.txt --vicelabels jsw1.sym jsw1.a
 
