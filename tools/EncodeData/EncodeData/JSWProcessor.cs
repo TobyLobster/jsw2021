@@ -218,6 +218,7 @@ namespace EncodeData
         public bool slopeDir = false;
         public bool ropePresent = false;
         public TileType itemTile = new TileType();
+        public TileType sceneryTile = new TileType();
         public TileType deadlyTile = new TileType();
         public TileType conveyorTile = new TileType();
         public TileType slopeTile = new TileType();
@@ -259,6 +260,8 @@ namespace EncodeData
                 processor.AddBit(slopeDir);
                 processor.AddBit(ropePresent);
 
+                processor.AddBits(2, sceneryTile.fg_colour);
+                processor.AddBits(2, sceneryTile.bg_colour);
                 processor.AddBits(2, deadlyTile.fg_colour);
                 processor.AddBits(2, deadlyTile.bg_colour);
                 processor.AddBits(2, conveyorTile.fg_colour);
@@ -271,6 +274,7 @@ namespace EncodeData
                 processor.AddBits(2, platformTile.bg_colour);
 
                 processor.AddBits(8, processor.GetBackgroundSpriteIndex(itemTile.spriteName));
+                processor.AddBits(8, processor.GetBackgroundSpriteIndex(sceneryTile.spriteName));
                 processor.AddBits(8, processor.GetBackgroundSpriteIndex(deadlyTile.spriteName));
                 processor.AddBits(8, processor.GetBackgroundSpriteIndex(conveyorTile.spriteName));
                 processor.AddBits(8, processor.GetBackgroundSpriteIndex(slopeTile.spriteName));
@@ -667,6 +671,13 @@ namespace EncodeData
                 return;
             }
 
+            if (IsMatch(line, @"Scenery tile logical colours *: (.*)", out results))
+            {
+                currentRoom.sceneryTile.bg_colour = int.Parse(results[0].Split(new char[] { ' ' })[0]);
+                currentRoom.sceneryTile.fg_colour = int.Parse(results[0].Split(new char[] { ' ' })[1]);
+                return;
+            }
+
             if (IsMatch(line, @"Deadly tile logical colours *: (.*)", out results))
             {
                 currentRoom.deadlyTile.bg_colour = int.Parse(results[0].Split(new char[] { ' ' })[0]);
@@ -702,6 +713,12 @@ namespace EncodeData
                 return;
             }
 
+
+            if (IsMatch(line, @"Scenery tile sprite *: (.*)", out results))
+            {
+                currentRoom.sceneryTile.spriteName = results[0];
+                return;
+            }
 
             if (IsMatch(line, @"Item tile sprite *: (.*)", out results))
             {
@@ -783,7 +800,8 @@ namespace EncodeData
                     case "SLOPE":    use = 2; break;
                     case "CONVEYOR": use = 3; break;
                     case "DEADLY":   use = 4; break;
-                    case "ITEM":     use = 5; break;
+                    case "SCENERY":  use = 5; break;
+                    case "ITEM":     use = 6; break;
                 }
 
                 currentRoom.commands.Add(new UseTileCommand(use));

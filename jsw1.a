@@ -79,9 +79,14 @@ userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enab
 OSBYTE                                              = $fff4     ; used during program initialization only
 
 ; game constants
-player_start_room                                   = 21        ; 21 = The Bathroom
-player_start_y                                      = $68       ;
-player_start_x                                      = $a0       ;
+player_start_room                                   = 25       ;
+player_start_y                                      = 10 * 8    ;
+player_start_x                                      = 30 * 8     ;
+
+; game constants
+;player_start_room                                   = 21        ; 21 = The Bathroom
+;player_start_y                                      = $68       ;
+;player_start_x                                      = $a0       ;
 
 ;player_start_room                                   = 22        ; 22 = Halfway up the East Wall
 ;player_start_y                                      = $68       ;
@@ -233,9 +238,7 @@ scrolltext_address_high                             = $71
 timer_two                                           = $71
 tile_type                                           = $72
 scrolltext_offset                                   = $72
-
-; $73 unused
-
+conveyor_colour_eor                                 = $73
 length2                                             = $74
 start_x                                             = $75
 previous_x                                          = $75
@@ -2380,6 +2383,11 @@ prepare_conveyor_sprites
     ldx background_tiles_colours_fg + 3             ;
     lda colour_mask_values,X                        ;
     sta conveyor_colour                             ;
+    ldx background_tiles_colours_bg + 3             ;
+    lda colour_mask_values,X                        ;
+    sta conveyor_colour_eor                         ;
+    eor conveyor_colour                             ;
+    sta conveyor_colour                             ;
     ldy #0                                          ;
     lda conveyor_direction                          ;
     bmi prepare_top_of_left_conveyor                ;
@@ -2440,9 +2448,11 @@ rotate_and_store_conveyor_byte
     sta packed_byte2                                ;
     jsr unpack_byte_of_sprite_data                  ;
     and conveyor_colour                             ;
+    eor conveyor_colour_eor                         ;
     sta unpacked_conveyor_sprite,X                  ;
     lda unpacked_byte_two                           ;
     and conveyor_colour                             ;
+    eor conveyor_colour_eor                         ;
     sta unpacked_conveyor_sprite + 16,X             ;
     rts                                             ;
 
@@ -3607,23 +3617,6 @@ leave6
     rts                                             ;
 
 ; ***************************************************************************************
-room_palette
-    !byte black                                     ; logical colour 0
-    !byte black                                     ; logical colour 1
-    !byte black                                     ; logical colour 2
-    !byte black                                     ; logical colour 3
-footer_palette
-    !byte black                                     ; logical colour 0
-    !byte red                                       ; logical colour 1
-    !byte cyan                                      ; logical colour 2
-    !byte yellow                                    ; logical colour 3
-title_palette
-    !byte black                                     ; logical colour 0
-    !byte red                                       ; logical colour 1
-    !byte green                                     ; logical colour 2
-    !byte white                                     ; logical colour 3
-
-; ***************************************************************************************
 palette_changes
     !byte $ff                                       ; row 0
     !byte $ff                                       ; row 1
@@ -3646,8 +3639,25 @@ palette_loop_counter
     !byte 0
 
 ; ***************************************************************************************
+room_palette
+    !byte black                                     ; logical colour 0
+    !byte black                                     ; logical colour 1
+    !byte black                                     ; logical colour 2
+    !byte black                                     ; logical colour 3
+footer_palette
+    !byte black                                     ; logical colour 0
+    !byte red                                       ; logical colour 1
+    !byte cyan                                      ; logical colour 2
+    !byte yellow                                    ; logical colour 3
+title_palette
+    !byte black                                     ; logical colour 0
+    !byte red                                       ; logical colour 1
+    !byte green                                     ; logical colour 2
+    !byte white                                     ; logical colour 3
+
+; ***************************************************************************************
 initialise_room_background_tiles_and_title
-    ldy #4                                          ; For each of five tiles
+    ldy #5                                          ; For each of six tile types
 set_tile_colours_loop
     ldx #2                                          ;
     jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour
@@ -3657,13 +3667,15 @@ set_tile_colours_loop
     sta background_tiles_colours_bg,Y               ;
     dey                                             ;
     bpl set_tile_colours_loop                       ;
-    ldy #5                                          ; For each of six tiles
+
+    ldy #6                                          ; For each of seven tile types
 set_tile_sprites_loop
     ldx #8                                          ; Get eight bits of room data for each tile sprite
     jsr get_x_bits_of_room_data                     ;
     sta background_tiles_sprites,Y                  ;
     dey                                             ;
     bpl set_tile_sprites_loop                       ;
+
     ldy #3                                          ; For each of four screen colours
 set_screen_colours_loop
     ldx #3                                          ;
@@ -4191,6 +4203,8 @@ unpack_byte_loop
 title_screen
     lda #$81                                        ;
     sta life_y                                      ;
+    ; DEBUG!
+    lda #0
     sta melody_active                               ; Enable melody
     lda #16                                         ; Title screen has full line of lives
     sta player_lives                                ;
@@ -4452,6 +4466,15 @@ irq_routine
     jsr set_logical_colour_y_to_a                   ;
 
 +
+    cpx #20                                         ;
+    bne +                                           ;
+
+    ; final row
+    ldy #3                                          ;
+    lda #white                                      ;
+    jsr set_logical_colour_y_to_a                   ;
+
++
     cpx #21                                         ;
     bne exit_irq                                    ;
 
@@ -4687,13 +4710,14 @@ rope_pixels_y
 ;  2 = SLOPE
 ;  3 = CONVEYOR
 ;  4 = DEADLY
-;  5 = ITEM
+;  5 = SCENERY
+;  6 = ITEM
 background_tiles_colours_fg
-    !byte $01, $02, $03, $03, $02, $00      ;
+    !byte $01, $02, $03, $03, $02, $00, $00 ;
 background_tiles_colours_bg
-    !byte $02, $00, $00, $00, $00, $00      ;
+    !byte $02, $00, $00, $00, $00, $00, $00 ;
 background_tiles_sprites
-    !byte $8d, $8e, $03, $90, $40, $91      ;
+    !byte $8d, $8e, $03, $90, $40, $91, $00 ;
 
 ; ***************************************************************************************
 enemies_sprite
