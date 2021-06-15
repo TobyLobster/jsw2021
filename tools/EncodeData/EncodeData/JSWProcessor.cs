@@ -25,7 +25,8 @@ namespace EncodeData
     class TileType
     {
         public string spriteName = "";
-        public int colour;
+        public int fg_colour;
+        public int bg_colour;
     }
 
     class Title
@@ -193,6 +194,21 @@ namespace EncodeData
     }
 
     // ************************************************************************
+    class PaletteChange
+    {
+        public int row;
+        public int logicalColour;
+        public int physicalColour;
+
+        public PaletteChange(int row, int logicalColour, int physicalColour)
+        {
+            this.row = row;
+            this.logicalColour = logicalColour;
+            this.physicalColour = physicalColour;
+        }
+    }
+
+    // ************************************************************************
     class Room
     {
         public int room_number = -1;
@@ -208,6 +224,7 @@ namespace EncodeData
         public TileType wallTile = new TileType();
         public TileType platformTile = new TileType();
         public List<int> palette = new List<int>();
+        public List<PaletteChange> paletteChanges = new List<PaletteChange>();
         public Title title = new Title();
         public List<TileCommand> commands = new List<TileCommand>();
         public List<Enemy> enemies = new List<Enemy>();
@@ -242,11 +259,16 @@ namespace EncodeData
                 processor.AddBit(slopeDir);
                 processor.AddBit(ropePresent);
 
-                processor.AddBits(2, deadlyTile.colour);
-                processor.AddBits(2, conveyorTile.colour);
-                processor.AddBits(2, slopeTile.colour);
-                processor.AddBits(2, wallTile.colour);
-                processor.AddBits(2, platformTile.colour);
+                processor.AddBits(2, deadlyTile.fg_colour);
+                processor.AddBits(2, deadlyTile.bg_colour);
+                processor.AddBits(2, conveyorTile.fg_colour);
+                processor.AddBits(2, conveyorTile.bg_colour);
+                processor.AddBits(2, slopeTile.fg_colour);
+                processor.AddBits(2, slopeTile.bg_colour);
+                processor.AddBits(2, wallTile.fg_colour);
+                processor.AddBits(2, wallTile.bg_colour);
+                processor.AddBits(2, platformTile.fg_colour);
+                processor.AddBits(2, platformTile.bg_colour);
 
                 processor.AddBits(8, processor.GetBackgroundSpriteIndex(itemTile.spriteName));
                 processor.AddBits(8, processor.GetBackgroundSpriteIndex(deadlyTile.spriteName));
@@ -262,6 +284,14 @@ namespace EncodeData
                     processor.AddBits(3, entry);
                 }
                 palette.Reverse();
+
+                // Palette changes
+                processor.AddBits(4, paletteChanges.Count);
+                foreach(var change in paletteChanges)
+                {
+                    processor.AddBits(4, change.row);
+                    processor.AddBits(5, change.logicalColour + 4 * change.physicalColour);
+                }
 
                 processor.AddBits(4, title.tab);
 
@@ -637,33 +667,38 @@ namespace EncodeData
                 return;
             }
 
-            if (IsMatch(line, @"Deadly tile logical colour *: (.*)", out results))
+            if (IsMatch(line, @"Deadly tile logical colours *: (.*)", out results))
             {
-                currentRoom.deadlyTile.colour = int.Parse(results[0]);
+                currentRoom.deadlyTile.bg_colour = int.Parse(results[0].Split(new char[] { ' ' })[0]);
+                currentRoom.deadlyTile.fg_colour = int.Parse(results[0].Split(new char[] { ' ' })[1]);
                 return;
             }
 
-            if (IsMatch(line, @"Conveyor tile logical colour *: (.*)", out results))
+            if (IsMatch(line, @"Conveyor tile logical colours *: (.*)", out results))
             {
-                currentRoom.conveyorTile.colour = int.Parse(results[0]);
+                currentRoom.conveyorTile.bg_colour = int.Parse(results[0].Split(new char[] { ' ' })[0]);
+                currentRoom.conveyorTile.fg_colour = int.Parse(results[0].Split(new char[] { ' ' })[1]);
                 return;
             }
 
-            if (IsMatch(line, @"Slope tile logical colour *: (.*)", out results))
+            if (IsMatch(line, @"Slope tile logical colours *: (.*)", out results))
             {
-                currentRoom.slopeTile.colour = int.Parse(results[0]);
+                currentRoom.slopeTile.bg_colour = int.Parse(results[0].Split(new char[] { ' ' })[0]);
+                currentRoom.slopeTile.fg_colour = int.Parse(results[0].Split(new char[] { ' ' })[1]);
                 return;
             }
 
-            if (IsMatch(line, @"Wall tile logical colour *: (.*)", out results))
+            if (IsMatch(line, @"Wall tile logical colours *: (.*)", out results))
             {
-                currentRoom.wallTile.colour = int.Parse(results[0]);
+                currentRoom.wallTile.bg_colour = int.Parse(results[0].Split(new char[] { ' ' })[0]);
+                currentRoom.wallTile.fg_colour = int.Parse(results[0].Split(new char[] { ' ' })[1]);
                 return;
             }
 
-            if (IsMatch(line, @"Platform tile logical colour *: (.*)", out results))
+            if (IsMatch(line, @"Platform tile logical colours *: (.*)", out results))
             {
-                currentRoom.platformTile.colour = int.Parse(results[0]);
+                currentRoom.platformTile.bg_colour = int.Parse(results[0].Split(new char[] { ' ' })[0]);
+                currentRoom.platformTile.fg_colour = int.Parse(results[0].Split(new char[] { ' ' })[1]);
                 return;
             }
 
@@ -710,6 +745,23 @@ namespace EncodeData
                 currentRoom.palette.Add(GetColourNumber(results[1]));
                 currentRoom.palette.Add(GetColourNumber(results[2]));
                 currentRoom.palette.Add(GetColourNumber(results[3]));
+                return;
+            }
+
+            if (IsMatch(line, @"Palette *change *: +(\d+) +(\d+) +([a-z]+) *", out results))
+            {
+                int logicalColour = int.Parse(results[1]);
+                int physicalColour;
+
+                if (results[2] == "cancel")
+                {
+                    physicalColour = currentRoom.palette[logicalColour];
+                }
+                else
+                { 
+                    physicalColour = GetColourNumber(results[2]);
+                }
+                currentRoom.paletteChanges.Add(new PaletteChange(int.Parse(results[0]), logicalColour, physicalColour));
                 return;
             }
 

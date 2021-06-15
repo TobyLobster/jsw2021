@@ -99,6 +99,16 @@ player_start_x                                      = $a0       ;
 ;player_start_y                                      = $30       ;
 ;player_start_x                                      = $d8       ;
 
+; physical colours
+black = 0
+red = 1
+green = 2
+yellow = 3
+blue = 4
+magenta = 5
+cyan = 6
+white = 7
+
 ; ***************************************************************************************
 ; This is the number of timer ticks per frame (num PAL scanlines * 64us/line)
 ; This timing is only true of non-interlaced modes.
@@ -272,14 +282,12 @@ unpacked_sprite_offset                              = $86
 enemies_on_screen                                   = $87
 unpacked_byte_two                                   = $88
 sprite_colour                                       = $89
-enemy_to_consider2                                  = $8a
-player_started_jump                                 = $8b
-player_x                                            = $8c
-player_y                                            = $8d
-player_horizontal_speed                             = $8e
-
-; $8f unused
-
+sprite_colour_eor                                   = $8a
+enemy_to_consider2                                  = $8b
+player_started_jump                                 = $8c
+player_x                                            = $8d
+player_y                                            = $8e
+player_horizontal_speed                             = $8f
 sprite_address_low1                                 = $90
 tile_address_low2                                   = $90
 sprite_address                                      = $90
@@ -322,7 +330,14 @@ out_of_time                                         = $9d
 house_clear                                         = $9e
 player_rope_pixel                                   = $9f
 
+title_text_source_low                               = $a0
+title_text_source_high                              = $a1
+title_text_destination_low                          = $a2
+title_text_destination_high                         = $a3
+title_text_loop_counter                             = $a4
+
 screen_memory_start                                 = $5600
+screen_address_title                                = screen_memory_start + 16 * $0200  ; row 16
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
 
 * = $1100
@@ -426,8 +441,8 @@ bits_still_remaining
     rol value                                       ;
     dex                                             ;
     bne get_x_bits_of_room_data_loop                ;
-    lda value                                       ;
     ldy tmp                                         ;
+    lda value                                       ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -728,8 +743,12 @@ skip_last
 ; ***************************************************************************************
 add_background_tile
     ldy tile_type                                   ;
-    ldx background_tiles_colours,Y                  ;
     lda background_tiles_sprites,Y                  ;
+    pha                                             ;
+    ldx background_tiles_colours_fg,Y               ;
+    lda background_tiles_colours_bg,Y               ;
+    tay                                             ;
+    pla                                             ;
     jsr plot_background_sprite                      ;
     jsr set_tile_table_for_background               ;
     rts                                             ;
@@ -958,14 +977,28 @@ calculate_background_sprite_address
     and #7                                          ;
     adc #>background_sprite_data                    ;
     sta sprite_address_high1                        ;
-    ldy #7                                          ;
     rts                                             ;
 
+; ***************************************************************************************
+;
+; Plot an 8x8 sprite
+;
+; On Entry:
+;
+;   A is background sprite to draw
+;   X is the foreground colour
+;   Y is the background colour
+;
 ; ***************************************************************************************
 plot_background_sprite
     jsr calculate_background_sprite_address         ;
     lda colour_mask_values,X                        ;
     sta sprite_colour                               ;
+    lda colour_mask_values,Y                        ;
+    sta sprite_colour_eor                           ;
+    eor sprite_colour                               ;
+    sta sprite_colour                               ;
+    ldy #7                                          ;
 unpack_background_sprite_loop
     lda (sprite_address),Y                          ;
     jsr unpack_byte_of_sprite_data                  ;
@@ -990,6 +1023,7 @@ unpack_background_sprite_loop
 plot_background_sprite_loop
     lda unpacked_background_sprite,Y                ;
     and sprite_colour                               ;
+    eor sprite_colour_eor                           ;
     sta (screen_address_low),Y                      ;
     dey                                             ;
     bpl plot_background_sprite_loop                 ;
@@ -1324,6 +1358,7 @@ not_slope1
     dec player_not_plotted                          ;
     beq skip_unplot                                 ;
 
+    jsr check_for_q_and_s_keys                      ;
 -
     lda vsync_counter                               ;
     cmp #3                                          ;
@@ -2342,7 +2377,7 @@ compare_tile_with_four
 prepare_conveyor_sprites
     lda background_tiles_sprites + 3                ;
     jsr calculate_background_sprite_address         ;
-    ldx background_tiles_colours + 3                ;
+    ldx background_tiles_colours_fg + 3             ;
     lda colour_mask_values,X                        ;
     sta conveyor_colour                             ;
     ldy #0                                          ;
@@ -3572,12 +3607,54 @@ leave6
     rts                                             ;
 
 ; ***************************************************************************************
+room_palette
+    !byte black                                     ; logical colour 0
+    !byte black                                     ; logical colour 1
+    !byte black                                     ; logical colour 2
+    !byte black                                     ; logical colour 3
+footer_palette
+    !byte black                                     ; logical colour 0
+    !byte red                                       ; logical colour 1
+    !byte cyan                                      ; logical colour 2
+    !byte yellow                                    ; logical colour 3
+title_palette
+    !byte black                                     ; logical colour 0
+    !byte red                                       ; logical colour 1
+    !byte green                                     ; logical colour 2
+    !byte white                                     ; logical colour 3
+
+; ***************************************************************************************
+palette_changes
+    !byte $ff                                       ; row 0
+    !byte $ff                                       ; row 1
+    !byte $ff                                       ; row 2
+    !byte $ff                                       ; row 3
+    !byte $ff                                       ; row 4
+    !byte $ff                                       ; row 5
+    !byte $ff                                       ; row 6
+    !byte $ff                                       ; row 7
+    !byte $ff                                       ; row 8
+    !byte $ff                                       ; row 9
+    !byte $ff                                       ; row 10
+    !byte $ff                                       ; row 11
+    !byte $ff                                       ; row 12
+    !byte $ff                                       ; row 13
+    !byte $ff                                       ; row 14
+    !byte $ff                                       ; row 15
+
+palette_loop_counter
+    !byte 0
+
+; ***************************************************************************************
 initialise_room_background_tiles_and_title
     ldy #4                                          ; For each of five tiles
 set_tile_colours_loop
     ldx #2                                          ;
     jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour
-    sta background_tiles_colours,Y                  ;
+    sta background_tiles_colours_fg,Y               ;
+    ldx #2                                          ;
+    jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour (background)
+    sta background_tiles_colours_bg,Y               ;
     dey                                             ;
     bpl set_tile_colours_loop                       ;
     ldy #5                                          ; For each of six tiles
@@ -3591,9 +3668,33 @@ set_tile_sprites_loop
 set_screen_colours_loop
     ldx #3                                          ;
     jsr get_x_bits_of_room_data                     ; Get three bits of room data for each screen colour
+    sta room_palette,Y                              ;
     jsr set_logical_colour_y_to_a                   ;
     dey                                             ;
     bpl set_screen_colours_loop                     ;
+
+    ldy #15                                         ;
+    lda #$ff                                        ;
+-
+    sta palette_changes,Y                           ;
+    dey                                             ;
+    bpl -                                           ;
+
+    ldx #4
+    jsr get_x_bits_of_room_data                     ; Get four bits of room data for number of palette changes
+    beq +                                           ;
+    sta palette_loop_counter                        ;
+-
+    ldx #4                                          ;
+    jsr get_x_bits_of_room_data                     ; Get four bits of room data for row of palette change
+    tay
+    ldx #5                                          ;
+    jsr get_x_bits_of_room_data                     ; Get five bits of room data for palette change value
+    sta palette_changes,Y                           ;
+    dec palette_loop_counter                        ;
+    bne -                                           ;
+
++
     lda #1                                          ; First word is uppercase
     sta start_of_word                               ;
 
@@ -3623,7 +3724,72 @@ is_1c_1d_1e_or_1f
     cmp #$1d                                        ;
     beq is_1d                                       ;
     bcs is_1e_or_1f                                 ;
-    rts                                             ; $1c ends room title
+
+    ; $1c ends room title
+    ; move title text down one pixel
+    lda #<(screen_address_title + 7)                ;
+    sta title_text_source_low                       ;
+    lda #>(screen_address_title + 7)                ;
+    sta title_text_source_high                      ;
+
+    lda #<(screen_address_title + $0200)            ;
+    sta title_text_destination_low                  ;
+    lda #>(screen_address_title + $0200)            ;
+    sta title_text_destination_high                 ;
+
+    lda #8
+    sta move_title_down_loop_counter                ;
+-
+    jsr copy_row                                    ;
+
+    ; destination is the old source
+    lda title_text_source_low                       ;
+    sta title_text_destination_low                  ;
+    lda title_text_source_high                      ;
+    sta title_text_destination_high                 ;
+
+    ; update source
+    dec title_text_source_low                       ;
+    dec move_title_down_loop_counter                ;
+    bne -
+
+    ldy #0                                          ;
+-
+    lda #0                                          ;
+    sta screen_address_title,Y                      ;
+    sta screen_address_title + $0100,Y              ;
+    tya                                             ;
+    clc                                             ;
+    adc #8                                          ;
+    tay                                             ;
+    bne -                                           ;
+
+    rts                                             ;
+
+move_title_down_loop_counter
+    !byte 0
+
+; ***************************************************************************************
+copy_row
+    ldx #1                                          ;
+    ldy #0                                          ;
+-
+    lda (title_text_source_low),Y                   ;
+    sta (title_text_destination_low),Y              ;
+    tya                                             ;
+    clc                                             ;
+    adc #8                                          ;
+    tay                                             ;
+    bne -                                           ;
+    inc title_text_source_high                      ;
+    inc title_text_destination_high                 ;
+    dex                                             ;
+    bpl -                                           ;
+    dec title_text_source_high                      ;
+    dec title_text_source_high                      ;
+    dec title_text_destination_high                 ;
+    dec title_text_destination_high                 ;
+    rts                                             ;
 
 ; ***************************************************************************************
 is_1e_or_1f
@@ -4022,23 +4188,26 @@ unpack_byte_loop
     rts                                             ;
 
 ; ***************************************************************************************
-title_screen_palette
-    !byte 0, 1, 2, 7
-
-; ***************************************************************************************
 title_screen
-    lda #$80                                        ;
+    lda #$81                                        ;
     sta life_y                                      ;
     sta melody_active                               ; Enable melody
     lda #16                                         ; Title screen has full line of lives
     sta player_lives                                ;
     jsr clear_screen                                ;
 
-    ; set palette
-    ldy #3
+    ldy #15                                         ;
 -
-    lda title_screen_palette,Y                      ;
-    jsr set_logical_colour_y_to_a                   ;
+    lda #$ff                                        ;
+    sta palette_changes, Y                          ;
+    dey                                             ;
+    bpl -                                           ;
+
+    ldy #3                                          ;
+-
+    lda title_palette,Y                             ;
+    sta room_palette,Y                              ;
+;    jsr set_logical_colour_y_to_a                   ;
     dey                                             ;
     bpl -                                           ;
 
@@ -4096,6 +4265,7 @@ wait_for_vsyncs
     inc game_timer                                  ;
     jsr update_lives                                ; Animate lives
     jsr check_for_space_bar                         ;
+    jsr check_for_q_and_s_keys                      ;
     jmp title_screen_loop                           ;
 
 ; ***************************************************************************************
@@ -4266,25 +4436,39 @@ irq_routine
     cpx #16                                         ;
     bne +                                           ;
     inc vsync_counter                               ;
-    jsr check_for_q_and_s_keys                      ;
-    jmp exit_irq                                    ;
-+
+    lda #4                                          ; change to footer palette
+    jmp change_all_palette                          ;
 
-    ; debug to show colour changes over the frame
-    cpx #3                                          ;
-    bne +                                           ;
-    ldy #2                                          ;
-    lda #2                                          ;
-    jsr set_logical_colour_y_to_a                   ;
-    jmp exit_irq                                    ;
 +
-    cpx #5                                          ;
-    bne +                                           ;
-    ldy #2                                          ;
-    lda #6                                          ;
+    bcs +                                           ;
+    ; apply palette changes in rows 0-15
+    lda palette_changes,X                           ;
+    bmi exit_irq                                    ;
+    and #3                                          ;
+    tay                                             ;
+    lda palette_changes,X                           ;
+    lsr                                             ;
+    lsr                                             ;
     jsr set_logical_colour_y_to_a                   ;
-    jmp exit_irq                                    ;
+
 +
+    cpx #21                                         ;
+    bne exit_irq                                    ;
+
+change_all_room_palette
+    lda #0                                          ; change to room palette
++
+change_all_palette
+    clc                                             ;
+    adc #<room_palette                              ;
+    sta change_palette_low                          ;
+    ldy #3                                          ;
+-
+change_palette_low = * + 1
+    lda room_palette,Y                              ;
+    jsr set_logical_colour_y_to_a                   ;
+    dey                                             ;
+    bpl -                                           ;
 
 exit_irq
     pla                                             ;
@@ -4293,6 +4477,10 @@ exit_irq
     tax                                             ;
     lda irq_accumulator                             ;
     rti                                             ;
+
+!if ((>room_palette) != (>(room_palette + 4))) {
+    !error "Alignment of room_palette is wrong"
+}
 
 ; ***************************************************************************************
 
@@ -4493,10 +4681,19 @@ rope_pixels_y
     !byte $30, $2d, $2a, $27, $24, $21, $1e, $1b, $18, $15, $12, $0f, $0c, $09, $06, $03
 
 ; ***************************************************************************************
-background_tiles_colours
-    !byte $01, $02, $03, $03, $02, $00
+; Tile types:
+;  0 = PLATFORM
+;  1 = WALL
+;  2 = SLOPE
+;  3 = CONVEYOR
+;  4 = DEADLY
+;  5 = ITEM
+background_tiles_colours_fg
+    !byte $01, $02, $03, $03, $02, $00      ;
+background_tiles_colours_bg
+    !byte $02, $00, $00, $00, $00, $00      ;
 background_tiles_sprites
-    !byte $8d, $8e, $03, $90, $40, $91
+    !byte $8d, $8e, $03, $90, $40, $91      ;
 
 ; ***************************************************************************************
 enemies_sprite

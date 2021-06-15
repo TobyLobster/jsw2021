@@ -4,11 +4,11 @@ Room 1
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 2
     Item tile sprite    : 224
     Deadly tile sprite  : 221
     Conveyor tile sprite: 223
@@ -65,11 +65,11 @@ Room 2
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 65
     Deadly tile sprite  : 52
     Conveyor tile sprite: 49
@@ -138,11 +138,11 @@ Room 3
     Conveyor direction: right
     Slope direction: \
     Rope present: yes
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 81
     Deadly tile sprite  : 79
     Conveyor tile sprite: 80
@@ -189,11 +189,11 @@ Room 4
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 2
     Item tile sprite    : 68
     Deadly tile sprite  : 75
     Conveyor tile sprite: 76
@@ -272,11 +272,11 @@ Room 5
     Conveyor direction: right
     Slope direction: \
     Rope present: yes
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 68
     Deadly tile sprite  : 71
     Conveyor tile sprite: 73
@@ -318,11 +318,11 @@ Room 6
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 3
     Item tile sprite    : 68
     Deadly tile sprite  : 75
     Conveyor tile sprite: 76
@@ -406,11 +406,11 @@ Room 7
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 3
     Item tile sprite    : 64
     Deadly tile sprite  : 74
     Conveyor tile sprite: 63
@@ -500,11 +500,11 @@ Room 8
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 197
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -550,11 +550,11 @@ Room 9
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 3
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 3
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 1
     Item tile sprite    : 193
     Deadly tile sprite  : 192
     Conveyor tile sprite: 189
@@ -608,11 +608,11 @@ Room 10
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 186
     Conveyor tile sprite: 188
@@ -675,11 +675,11 @@ Room 11
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 3
     Item tile sprite    : 75
     Deadly tile sprite  : 181
     Conveyor tile sprite: 182
@@ -761,11 +761,11 @@ Room 12
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 1
     Item tile sprite    : 178
     Deadly tile sprite  : 175
     Conveyor tile sprite: 177
@@ -838,11 +838,11 @@ Room 13
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 1
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 1
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 32
     Deadly tile sprite  : 170
     Conveyor tile sprite: 172
@@ -896,11 +896,11 @@ Room 14
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 167
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -965,11 +965,11 @@ Room 15
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 2
     Item tile sprite    : 248
     Deadly tile sprite  : 247
     Conveyor tile sprite: 73
@@ -1023,11 +1023,11 @@ Room 16
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 245
     Deadly tile sprite  : 243
     Conveyor tile sprite: 73
@@ -1079,11 +1079,11 @@ Room 17
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 164
     Deadly tile sprite  : 64
     Conveyor tile sprite: 163
@@ -1139,11 +1139,11 @@ Room 18
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 1
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 1
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 65
     Deadly tile sprite  : 157
     Conveyor tile sprite: 63
@@ -1194,18 +1194,18 @@ Room 19
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 2 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 152
     Deadly tile sprite  : 152
     Conveyor tile sprite: 154
     Slope tile sprite   : 35
     Wall tile sprite    : 151
     Platform tile sprite: 150
-    Palette: black, magenta, cyan, white
+    Palette: black, magenta, yellow, white
     Title: tab 9, "Master Bedroom"
     Tile commands:
         Use WALL
@@ -1245,11 +1245,11 @@ Room 20
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 0
-    Conveyor tile logical colour: 0
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 0
+    Conveyor tile logical colours: 0 0
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 1 0
+    Platform tile logical colours: 0 2
     Item tile sprite    : 149
     Deadly tile sprite  : 64
     Conveyor tile sprite: 63
@@ -1257,6 +1257,10 @@ Room 20
     Wall tile sprite    : 147
     Platform tile sprite: 146
     Palette: black, magenta, yellow, white
+    Palette change: 9 2 green
+    Palette change: 10 2 cancel
+    Palette change: 13 1 cyan
+;    Palette change: 15 1 cancel
     Title: tab 10, "Top Landing"
     Tile commands:
         Use WALL
@@ -1310,7 +1314,7 @@ Room 20
             Max Extent: 31
             Initial Dir: right
             Speed: 2
-            Logical colour: 2
+            Logical colour: 1
     Arrows: 0
         Arrow: no
         Arrow: no
@@ -1321,18 +1325,20 @@ Room 21
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 3
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 1 3
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 2 3
+    Platform tile logical colours: 1 3
     Item tile sprite    : 145
     Deadly tile sprite  : 64
     Conveyor tile sprite: 144
     Slope tile sprite   : 3
     Wall tile sprite    : 142
     Platform tile sprite: 141
-    Palette: black, red, cyan, white
+    Palette: black, red, blue, white
+    Palette change: 3 1 green
+    Palette change: 5 1 cancel
     Title: tab 10, "The Bathroom"
     Tile commands:
         Draw horizontal strip until X=31                 ; 'Draw strip' moves the cursor to the end tile
@@ -1374,7 +1380,7 @@ Room 21
             Max Extent: 29
             Initial Dir: left
             Speed: 2
-            Logical colour: 2
+            Logical colour: 1
     Arrows: 0
         Arrow: no
         Arrow: no
@@ -1385,11 +1391,11 @@ Room 22
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 0
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 0
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -1433,11 +1439,11 @@ Room 23
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 65
     Deadly tile sprite  : 64
     Conveyor tile sprite: 240
@@ -1491,11 +1497,11 @@ Room 24
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 65
     Deadly tile sprite  : 64
     Conveyor tile sprite: 63
@@ -1554,11 +1560,11 @@ Room 25
     Conveyor direction: right
     Slope direction: /
     Rope present: yes
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -1595,11 +1601,11 @@ Room 26
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 133
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -1686,11 +1692,11 @@ Room 27
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 2
     Item tile sprite    : 237
     Deadly tile sprite  : 74
     Conveyor tile sprite: 127
@@ -1781,11 +1787,11 @@ Room 28
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 122
     Deadly tile sprite  : 122
     Conveyor tile sprite: 73
@@ -1830,11 +1836,11 @@ Room 29
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 119
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -1918,11 +1924,11 @@ Room 30
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -1967,11 +1973,11 @@ Room 31
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 235
@@ -2004,11 +2010,11 @@ Room 32
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 0
-    Conveyor tile logical colour: 0
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 0
+    Conveyor tile logical colours: 0 0
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -2070,11 +2076,11 @@ Room 33
     Conveyor direction: right
     Slope direction: /
     Rope present: yes
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 3
     Item tile sprite    : 112
     Deadly tile sprite  : 111
     Conveyor tile sprite: 73
@@ -2146,11 +2152,11 @@ Room 34
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 1
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 1
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 108
@@ -2228,11 +2234,11 @@ Room 35
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 0
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 0
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -2311,11 +2317,11 @@ Room 36
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 3
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 3
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 3
     Item tile sprite    : 101
     Deadly tile sprite  : 99
     Conveyor tile sprite: 100
@@ -2411,11 +2417,11 @@ Room 37
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 3
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 3
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 96
     Deadly tile sprite  : 74
     Conveyor tile sprite: 95
@@ -2480,11 +2486,11 @@ Room 38
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -2563,11 +2569,11 @@ Room 39
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 51
     Conveyor tile sprite: 73
@@ -2622,11 +2628,11 @@ Room 40
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 3
     Item tile sprite    : 49
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -2654,11 +2660,11 @@ Room 41
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 1
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 1
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 1
     Item tile sprite    : 59
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -2721,11 +2727,11 @@ Room 42
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 1
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 1
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 55
     Deadly tile sprite  : 54
     Conveyor tile sprite: 73
@@ -2794,11 +2800,11 @@ Room 43
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 1
     Item tile sprite    : 46
     Deadly tile sprite  : 45
     Conveyor tile sprite: 73
@@ -2877,11 +2883,11 @@ Room 44
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 19
     Conveyor tile sprite: 73
@@ -2982,11 +2988,11 @@ Room 45
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 40
     Deadly tile sprite  : 14
     Conveyor tile sprite: 73
@@ -3037,11 +3043,11 @@ Room 46
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 3
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 3
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 1
     Item tile sprite    : 244
     Deadly tile sprite  : 144
     Conveyor tile sprite: 232
@@ -3095,11 +3101,11 @@ Room 47
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 1
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 1
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 196
     Deadly tile sprite  : 201
     Conveyor tile sprite: 207
@@ -3159,11 +3165,11 @@ Room 48
     Conveyor direction: left
     Slope direction: /
     Rope present: yes
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 253
     Deadly tile sprite  : 15
     Conveyor tile sprite: 252
@@ -3198,11 +3204,11 @@ Room 49
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 3
     Item tile sprite    : 229
     Deadly tile sprite  : 227
     Conveyor tile sprite: 228
@@ -3268,11 +3274,11 @@ Room 50
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 218
     Deadly tile sprite  : 216
     Conveyor tile sprite: 217
@@ -3363,11 +3369,11 @@ Room 51
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 1
-    Conveyor tile logical colour: 3
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 1
+    Conveyor tile logical colours: 0 3
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 87
     Deadly tile sprite  : 84
     Conveyor tile sprite: 86
@@ -3466,11 +3472,11 @@ Room 52
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 31
@@ -3557,11 +3563,11 @@ Room 53
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 0
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 3
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 0
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 3
+    Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 31
@@ -3640,11 +3646,11 @@ Room 54
     Conveyor direction: right
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 21
     Deadly tile sprite  : 19
     Conveyor tile sprite: 73
@@ -3728,11 +3734,11 @@ Room 55
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 0
-    Slope tile logical colour   : 0
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 0
+    Slope tile logical colours   : 0 0
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 16
     Deadly tile sprite  : 14
     Conveyor tile sprite: 12
@@ -3798,11 +3804,11 @@ Room 56
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 1
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 1
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 8
     Conveyor tile sprite: 73
@@ -3862,11 +3868,11 @@ Room 57
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 2
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 5
     Deadly tile sprite  : 2
     Conveyor tile sprite: 4
@@ -3931,11 +3937,11 @@ Room 58
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 1
-    Conveyor tile logical colour: 0
-    Slope tile logical colour   : 1
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 3
+    Deadly tile logical colours  : 0 1
+    Conveyor tile logical colours: 0 0
+    Slope tile logical colours   : 0 1
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 3
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
@@ -4017,11 +4023,11 @@ Room 59
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colour  : 3
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 2
-    Wall tile logical colour    : 2
-    Platform tile logical colour: 1
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 2
+    Wall tile logical colours    : 0 2
+    Platform tile logical colours: 0 1
     Item tile sprite    : 209
     Deadly tile sprite  : 200
     Conveyor tile sprite: 208
@@ -4086,11 +4092,11 @@ Room 60
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colour  : 2
-    Conveyor tile logical colour: 1
-    Slope tile logical colour   : 3
-    Wall tile logical colour    : 1
-    Platform tile logical colour: 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 1
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 1
+    Platform tile logical colours: 0 2
     Item tile sprite    : 209
     Deadly tile sprite  : 206
     Conveyor tile sprite: 208
@@ -4545,14 +4551,14 @@ BackgroundSprite 34
     ..##....
 
 BackgroundSprite 35
-    #.......                                             ; Master Bedroom SLOPE [x1]
-    ##......
-    ..#.....
-    ####....
-    #####...
-    .#..##..
-    #..##.#.
-    .......#
+    ##......                                             ; Master Bedroom SLOPE [x1]
+    .#......
+    #.##....
+    ........
+    #.#.##..
+    ........
+    .#.#..##
+    ........
 
 BackgroundSprite 36
     .....#..                                             ; [unused]
