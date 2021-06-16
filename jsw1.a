@@ -3,6 +3,30 @@
 ; Reassembly by TobyLobster, 2021
 ;
 
+; game constants
+
+; Proper start position
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_x                                      = 20 * 8    ;
+player_start_y                                      = 13 * 8    ;
+
+;player_start_room                                   = 20        ;
+;player_start_x                                      = 20 * 8     ; must be even!
+;player_start_y                                      = 10 * 8    ;
+
+; Tree Root
+;player_start_room                                   = 60        ;
+;player_start_x                                      = 23 * 8 - 2     ; must be even!
+;player_start_y                                      = 11 * 8    ;
+
+; West of Kitchen
+;player_start_room                                   = 34        ;
+;player_start_x                                      = 11 * 8     ; must be even!
+;player_start_y                                      = 1 * 8    ;
+
+
+
+; ***************************************************************************************
 ; os variables
 irq_accumulator                                     = $fc
 irq1_vector_low                                     = $0204
@@ -77,32 +101,6 @@ userVIAInterruptFlagRegister                        = $fe6d     ; Interrupt flag
 userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enable register
 
 OSBYTE                                              = $fff4     ; used during program initialization only
-
-; game constants
-;player_start_room                                   = 44        ;
-;player_start_y                                      = 10 * 8    ;
-;player_start_x                                      = 10 * 8     ;
-
-; game constants
-player_start_room                                   = 21        ; 21 = The Bathroom
-player_start_y                                      = $68       ;
-player_start_x                                      = $a0       ;
-
-;player_start_room                                   = 22        ; 22 = Halfway up the East Wall
-;player_start_y                                      = $68       ;
-;player_start_x                                      = $a0       ;
-
-;player_start_room                                   = 31        ; 31 = Back Door
-;player_start_y                                      = $40       ;
-;player_start_x                                      = $a0       ;
-
-;player_start_room                                   = 39        ; 39 = The Hall
-;player_start_y                                      = $60       ;
-;player_start_x                                      = $a0       ;
-
-;player_start_room                                   = 33        ; 33 = Cold Store
-;player_start_y                                      = $30       ;
-;player_start_x                                      = $d8       ;
 
 ; physical colours
 black = 0
@@ -1373,6 +1371,8 @@ not_slope1
     jsr plot_room_items                             ;
     jsr plot_room_items                             ;
     jsr plot_room_items                             ;
+    jsr plot_room_items                             ;
+    jsr plot_room_items                             ;
 
     lda player_x                                    ;
     ldx player_y                                    ;
@@ -2177,6 +2177,9 @@ goto_room
 leave23
     rts                                             ;
 
+cycle_item_colours
+    !byte 1,2,3,1,2,3,1,2,3,1,2,3
+
 ; ***************************************************************************************
 initialise_room_items_and_exits
     ldx #4                                          ; Get four bits of room data for number of items in room
@@ -2188,6 +2191,9 @@ initialise_room_items_and_exits
 set_items_loop                                      ; For each item,
     ldx #1                                          ; get one bit of room data for its state
     jsr get_x_bits_of_room_data                     ; (0 = collected, 1 = uncollected)
+    beq +
+    lda cycle_item_colours,Y                        ;
++
     sta items_colour,Y                              ;
     dey                                             ;
     bpl set_items_loop                              ;
@@ -2513,7 +2519,7 @@ handle_player_jumping
     sta player_y_in_enemies                         ;
     dec player_jump_timer                           ;
     bne leave27                                     ;
-    and #$fc                                        ;
+    and #$fc                                        ; when jump finishes, align to a 4 pixel boundary in Y
     sta player_y_in_enemies                         ;
 leave27
     rts                                             ;
@@ -2578,7 +2584,6 @@ set_text_position
 ; Text Source address = character_set_definitions_start + (8 * A)
 ; Preserves A,X,Y and flags
 write_char
-    php                                         ;
     sta temp3                                   ;
     stx temp4                                   ;
     sty temp5                                   ;
@@ -2614,6 +2619,7 @@ origin_of_character_definitions_high = * + 1
     adc #$bf                                    ; $bf => $c000 for BBC B, $88 => $8900 for Master
     sta character_definitions_high              ;
 
+write_char_internal
     ; leftmost four pixels of character
     ldy #7                                      ;
 -
@@ -2654,10 +2660,9 @@ origin_of_character_definitions_high = * + 1
 
     jsr move_to_next_screen_cell                ; move to next cell
 finish_up_write_char
-    lda temp3                                   ;
-    ldx temp4                                   ;
     ldy temp5                                   ;
-    plp                                         ; restore interrupts as needed
+    ldx temp4                                   ;
+    lda temp3                                   ;
     rts                                         ;
 
 move_to_next_screen_cell
@@ -3061,8 +3066,16 @@ paletteLookupTable
     !byte $00, $20, $80, $a0
 
 ; ***************************************************************************************
+; This is what the jump parabola should be, but the engine has trouble with odd increments it seems.
+; See West of Kitchen jumping up into The Banyan Tree; In Tree Root, jumping onto the cyan platform can cause problems.
+; And other cases too.
+;
+;jump_parabola_table
+;    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
+;    !byte $fc, $fc
+
 jump_parabola_table
-    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
+    !byte $00, $04, $04, $04, $04, $02, $02, $02, $00, $00, $00, $00, $fe, $fe, $fe, $fe, $fc
     !byte $fc, $fc
 
 ; ***************************************************************************************
@@ -3644,6 +3657,7 @@ palette_loop_counter
     !byte 0
 
 ; ***************************************************************************************
+start_of_palettes
 room_palette
     !byte black                                     ; logical colour 0
     !byte black                                     ; logical colour 1
@@ -3651,7 +3665,7 @@ room_palette
     !byte black                                     ; logical colour 3
 footer_palette
     !byte black                                     ; logical colour 0
-    !byte red                                       ; logical colour 1
+    !byte magenta                                   ; logical colour 1
     !byte cyan                                      ; logical colour 2
     !byte yellow                                    ; logical colour 3
 title_palette
@@ -3659,6 +3673,11 @@ title_palette
     !byte red                                       ; logical colour 1
     !byte green                                     ; logical colour 2
     !byte white                                     ; logical colour 3
+game_over_palette
+    !byte black
+    !byte yellow
+    !byte white
+    !byte blue
 
 ; ***************************************************************************************
 initialise_room_background_tiles_and_title
@@ -3686,16 +3705,10 @@ set_screen_colours_loop
     ldx #3                                          ;
     jsr get_x_bits_of_room_data                     ; Get three bits of room data for each screen colour
     sta room_palette,Y                              ;
-    jsr set_logical_colour_y_to_a                   ;
     dey                                             ;
     bpl set_screen_colours_loop                     ;
 
-    ldy #15                                         ;
-    lda #$ff                                        ;
--
-    sta palette_changes,Y                           ;
-    dey                                             ;
-    bpl -                                           ;
+    jsr clear_room_palette_changes                  ;
 
     ldx #4
     jsr get_x_bits_of_room_data                     ; Get four bits of room data for number of palette changes
@@ -3929,16 +3942,23 @@ game_loop
 game_over
     ldy #32                                         ;
     jsr clear_screen_y                              ;
+    jsr clear_room_palette_changes                  ;
+    lda #game_over_palette - start_of_palettes      ;
+    jsr set_full_room_palette                       ;
+    lda #3 + 4 * white                              ; Set logical colour 3 to white
+    sta palette_changes + 12                        ;
+    lda #1 + 4 * red                                ; Set logical colour 1 to red
+    sta palette_changes + 14                        ;
 
     lda #0                                          ;
     jsr fill_space_sprite                           ; Ensure space sprite is black
     jsr animate_game_over_boot                      ;
-    ldx #64                                         ;
+    ldx #50                                         ;
     stx game_over_timer                             ;
 game_over_loop
 -
     lda vsync_counter                               ;
-    cmp #3                                          ;
+    cmp #5                                          ;
     bcc -
     ldy #0                                          ; loop counter
     sty vsync_counter                               ;
@@ -4158,7 +4178,7 @@ scroll_scrolltext
     ldy #$10                                        ;
     lda #2                                          ;
     sta blocks_to_copy                              ;
-    ldx #$f0                                        ;
+    ldx #$f8                                        ;
 scroll_scrolltext_loop
 source_address_low = * + 1
 source_address_high = * + 2
@@ -4175,6 +4195,13 @@ target_address_high = * + 2
     bne scroll_scrolltext_loop                      ;
     dec blocks_to_copy                              ;
     bne scroll_scrolltext_loop                      ;
+
+    lda #0                                          ;
+    ldx #7                                          ;
+-
+    sta text_message_address + $1f8,x               ;
+    dex                                             ;
+    bpl -                                           ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -4184,18 +4211,24 @@ plot_title_screen_logo
     jsr set_text_position                           ;
 
     ldx #0                                          ;
+
 plot_title_screen_logo_loop
     lda title_screen_logo,X                         ;
     sta blocks_to_copy                              ;
     ldy #7                                          ; loop counter
 unpack_byte_loop
-    lda #32                                         ; plot space...
     lsr blocks_to_copy                              ;
-    bcc +                                           ;
-    lda #$7f                                        ; ...or block
-+
-    jsr write_char                                  ;
-
+    bcc skip_block                                  ;
+    ; draw block
+    lda #<fuzzy_block                               ;
+    sta character_definitions_low                   ;
+    lda #>fuzzy_block                               ;
+    sta character_definitions_high                  ;
+    sta temp3                                       ;
+    stx temp4                                       ;
+    sty temp5                                       ;
+    jsr write_char_internal                         ;
+next_byte
     dey                                             ;
     bpl unpack_byte_loop                            ;
     inx                                             ;
@@ -4204,10 +4237,98 @@ unpack_byte_loop
 
     rts                                             ;
 
+skip_block
+    lda #9                                          ;
+    jsr write_char                                  ;
+    jmp next_byte                                   ;
+
+fuzzy_block
+    !byte %11111111
+    !byte %11010101
+    !byte %10101010
+    !byte %11010101
+    !byte %10101010
+    !byte %11010101
+    !byte %10101010
+    !byte %11010101
+
+; ***************************************************************************************
+clear_room_palette_changes
+    ldy #15                                         ;
+    lda #$ff                                        ;
+-
+    sta palette_changes, Y                          ;
+    dey                                             ;
+    bpl -                                           ;
+    rts                                             ;
+
+; ***************************************************************************************
+set_full_room_palette
+    clc                                             ;
+    adc #3                                          ;
+    tax                                             ;
+    ldy #3                                          ;
+-
+    lda room_palette,X                              ;
+    sta room_palette,Y                              ;
+    dex                                             ;
+    dey                                             ;
+    bpl -                                           ;
+    rts                                             ;
+
+colour_cycler
+    !byte 1
+
+colour_cycles
+    !byte magenta, yellow, red, cyan, blue, green
+
+; ***************************************************************************************
+update_colour_cycler
+    sty temp_y_value
+    ldy colour_cycler                               ;
+    lda colour_cycles - 1,Y                         ;
+temp_y_value = * + 1
+    ldy #$ff                                        ;
+    sta colour_cycler                               ;
+    rts                                             ;
+
+; ***************************************************************************************
+title_change_palette
+    lda game_timer                                  ;
+    and #1                                          ;
+    bne skip_title_colour_change                    ;
+
+    ldy #2                                          ; loop counter
+-
+    jsr update_colour_cycler                        ;
+
+    asl                                             ;
+    asl                                             ;
+    clc                                             ;
+    adc #2                                          ;
+    sta palette_changes, Y                          ;
+    iny                                             ;
+    cpy #14                                         ;
+    bne -                                           ;
+
+    ; move colour cycler on
+    ldx #5
+-
+    jsr update_colour_cycler                        ;
+    dex                                             ;
+    bne -                                           ;
+
+skip_title_colour_change
+    rts                                             ;
+
+title_delay_before_restart
+    !byte 0
+
 ; ***************************************************************************************
 title_screen
     lda #$81                                        ;
     sta life_y                                      ;
+
     ; DEBUG!
     lda #0
     sta melody_active                               ; Enable melody
@@ -4215,20 +4336,10 @@ title_screen
     sta player_lives                                ;
     jsr clear_screen                                ;
 
-    ldy #15                                         ;
--
-    lda #$ff                                        ;
-    sta palette_changes, Y                          ;
-    dey                                             ;
-    bpl -                                           ;
+    jsr clear_room_palette_changes                  ;
 
-    ldy #3                                          ;
--
-    lda title_palette,Y                             ;
-    sta room_palette,Y                              ;
-;    jsr set_logical_colour_y_to_a                   ;
-    dey                                             ;
-    bpl -                                           ;
+    lda #title_palette - start_of_palettes          ;
+    jsr set_full_room_palette                       ;
 
     lda #$f0                                        ;
     sta text_colour_mask                            ; colour 3
@@ -4236,16 +4347,31 @@ title_screen
     lda #$ff                                        ;
     sta text_colour_mask                            ; Use colour 3 for scrolltext
 
+    lda #>title_screen_press_space                  ;
+    sta scrolltext_address_high                     ;
+    lda #<title_screen_press_space                  ;
+    sta scrolltext_address_low                      ;
+    jmp scroll_the_message                          ;
+
 restart_scrolltext
     lda #>title_screen_scrolltext                   ;
     sta scrolltext_address_high                     ;
     lda #<title_screen_scrolltext                   ;
     sta scrolltext_address_low                      ;
+    lda #0                                          ;
+    sta title_delay_before_restart                  ;
 
+scroll_the_message
     ldy #0                                          ;
     sty scrolltext_offset                           ;
 title_screen_loop
-    ldx #30                                         ;
+    lda title_delay_before_restart                  ; are we delaying?
+    beq +                                           ;
+    dec title_delay_before_restart                  ;
+    beq restart_scrolltext                          ;
+    bne wait_for_vsyncs                             ; ALWAYS branch
++
+    ldx #31                                         ;
     ldy #20                                         ; TAB(30,20)
     jsr set_text_position                           ;
 
@@ -4275,12 +4401,11 @@ wait_for_vsyncs
     ldx #2                                          ;
     jsr delay                                       ;
 
-    lda game_timer                                  ;
-    and #3                                          ;
+    jsr title_change_palette                        ;
+    lda title_delay_before_restart                  ; are we delaying?
     bne +                                           ;
-    jsr change_colour                               ;
-+
     jsr scroll_scrolltext                           ;
++
     inc game_timer                                  ;
     jsr update_lives                                ; Animate lives
     jsr check_for_space_bar                         ;
@@ -4290,19 +4415,8 @@ wait_for_vsyncs
 ; ***************************************************************************************
 end_of_scrolltext
     lda #$80                                        ;
-    sta timer_one                                   ;
-end_of_scrolltext_loop
-    lda timer_one                                   ;
-    and #7                                          ;
-    bne skip_colour_change                          ;
-    jsr change_colour                               ;
-skip_colour_change
-    jsr check_for_space_bar                         ;
-    dec timer_two                                   ;
-    bne end_of_scrolltext_loop                      ;
-    dec timer_one                                   ;
-    bne end_of_scrolltext_loop                      ;
-    beq restart_scrolltext                          ;
+    sta title_delay_before_restart                  ;
+    jmp title_screen_loop                           ;
 
 check_for_space_bar
     jsr read_keys                                   ;
@@ -4316,23 +4430,27 @@ leave
     rts                                             ;
 
 ; ***************************************************************************************
-change_colour
-    dec change_colour_value                         ;
-change_colour_value = * + 1
-    lda #0                                          ;
-    and #7                                          ;
-    beq change_colour                               ;
-write_change_colour
-    ldy #2                                          ;
-    jsr set_logical_colour_y_to_a                   ;
-    rts                                             ;
+;change_colour
+;    dec change_colour_value                         ;
+;change_colour_value = * + 1
+;    lda #0                                          ;
+;    and #7                                          ;
+;    beq change_colour                               ;
+;write_change_colour
+;    ldy #2                                          ;
+;    jsr set_logical_colour_y_to_a                   ;
+;    rts                                             ;
 
 ; ***************************************************************************************
 title_screen_scrolltext
     !text "...Jetset Willy was written for the BBC Micro by Chris Robson..."
-    !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects and is copyright to Software Projects..."
-    !text "...You must guide Willy to collect all the items around the house before midnight so that Maria will let you go to bed..."
-    !text "....Press SPACE to start the game."
+    !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects "
+    !text    "and is copyright to Software Projects..."
+    !text "...You must guide Willy to collect all the items around the house before "
+    !text    "midnight so that Maria will let you go to bed..."
+title_screen_press_space
+;    !text "....Press SPACE to start the game."
+    !text " ++++ Press SPACE to start ++++ "
     !byte 0
 
 ; ***************************************************************************************
@@ -4490,13 +4608,14 @@ change_all_palette
     clc                                             ;
     adc #<room_palette                              ;
     sta change_palette_low                          ;
-    ldy #3                                          ;
+    ldy #0                                          ;
 -
 change_palette_low = * + 1
     lda room_palette,Y                              ;
     jsr set_logical_colour_y_to_a                   ;
-    dey                                             ;
-    bpl -                                           ;
+    iny                                             ;
+    cpy #4                                          ;
+    bne -                                           ;
 
 exit_irq
     pla                                             ;
