@@ -79,14 +79,14 @@ userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enab
 OSBYTE                                              = $fff4     ; used during program initialization only
 
 ; game constants
-player_start_room                                   = 25       ;
-player_start_y                                      = 10 * 8    ;
-player_start_x                                      = 30 * 8     ;
+;player_start_room                                   = 44        ;
+;player_start_y                                      = 10 * 8    ;
+;player_start_x                                      = 10 * 8     ;
 
 ; game constants
-;player_start_room                                   = 21        ; 21 = The Bathroom
-;player_start_y                                      = $68       ;
-;player_start_x                                      = $a0       ;
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_y                                      = $68       ;
+player_start_x                                      = $a0       ;
 
 ;player_start_room                                   = 22        ; 22 = Halfway up the East Wall
 ;player_start_y                                      = $68       ;

@@ -5,9 +5,9 @@ Room 1
     Slope direction: /
     Rope present: no
     Deadly tile logical colours  : 0 2
-    Conveyor tile logical colours: 0 1
+    Conveyor tile logical colours: 0 2
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 3
+    Wall tile logical colours    : 1 3
     Platform tile logical colours: 0 2
     Item tile sprite    : 224
     Deadly tile sprite  : 221
@@ -16,6 +16,10 @@ Room 1
     Wall tile sprite    : 220
     Platform tile sprite: 219
     Palette: blue, magenta, yellow, white
+    Palette change: 4 2 cyan
+    Palette change: 5 2 cancel
+    Palette change: 10 2 green
+    Palette change: 11 2 cancel
     Title: tab 10, "Watch Tower"
     Tile commands:
         Use WALL
@@ -49,7 +53,7 @@ Room 1
             Logical colour: 1
         Enemy: 1
             Sprite: 36
-            Initial Pos: (13,6)
+            Initial Pos: (13,7)
             Min Extent: 11
             Max Extent: 31
             Initial Dir: right
@@ -68,16 +72,17 @@ Room 2
     Deadly tile logical colours  : 0 2
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 1
-    Platform tile logical colours: 0 2
+    Wall tile logical colours    : 2 1
+    Platform tile logical colours: 2 3
     Item tile sprite    : 65
     Deadly tile sprite  : 52
     Conveyor tile sprite: 49
     Slope tile sprite   : 148
     Wall tile sprite    : 211
     Platform tile sprite: 210
-    Palette: black, yellow, blue, white
-    Title: tab 11, "Nomem Luni"
+    Palette: black, yellow, green, cyan
+    Palette change: 5 2 blue
+    Title: tab 11, "Nomen Luni"
     Tile commands:
         Draw 12 single tiles at (11,7) (12,7) (13,7) (15,9) (16,4) (18,6) (19,3) (24,7) (27,3) (28,3) (28,9) (29,9)
         Use WALL
@@ -127,7 +132,7 @@ Room 2
             Max Extent: 12
             Initial Dir: up
             Speed: 4
-            Logical colour: 3
+            Logical colour: 1
     Arrows: 0
         Arrow: no
         Arrow: no
@@ -141,7 +146,7 @@ Room 3
     Deadly tile logical colours  : 0 3
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 2
+    Wall tile logical colours    : 2 3
     Platform tile logical colours: 0 3
     Item tile sprite    : 81
     Deadly tile sprite  : 79
@@ -149,7 +154,8 @@ Room 3
     Slope tile sprite   : 77
     Wall tile sprite    : 78
     Platform tile sprite: 70
-    Palette: black, red, green, yellow
+    Palette: black, cyan, green, yellow
+    Palette change: 15 1 red
     Title: tab 10, "On the Roof"
     Tile commands:
         Use WALL
@@ -200,7 +206,8 @@ Room 4
     Slope tile sprite   : 73
     Wall tile sprite    : 74
     Platform tile sprite: 75
-    Palette: black, red, green, yellow
+    Palette: black, red, magenta, yellow
+    Palette change: 5 2 green
     Title: tab 6, "Up on the Battlements"
     Tile commands:
         Use WALL
@@ -272,18 +279,19 @@ Room 5
     Conveyor direction: right
     Slope direction: \
     Rope present: yes
-    Deadly tile logical colours  : 0 3
+    Deadly tile logical colours  : 0 1
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 2
-    Platform tile logical colours: 0 3
+    Wall tile logical colours    : 2 1
+    Platform tile logical colours: 3 0
     Item tile sprite    : 68
     Deadly tile sprite  : 71
     Conveyor tile sprite: 73
     Slope tile sprite   : 72
     Wall tile sprite    : 70
     Platform tile sprite: 69
-    Palette: black, red, blue, cyan
+    Palette: black, green, blue, white
+    Palette change: 9 1 cyan
     Title: tab 2, "We must perform a Quirkafleeg"
     Tile commands:
         Use WALL
@@ -320,15 +328,15 @@ Room 6
     Rope present: no
     Deadly tile logical colours  : 0 2
     Conveyor tile logical colours: 0 1
-    Slope tile logical colours   : 0 3
+    Slope tile logical colours   : 0 2
     Wall tile logical colours    : 0 1
-    Platform tile logical colours: 0 3
+    Platform tile logical colours: 0 2
     Item tile sprite    : 68
     Deadly tile sprite  : 75
     Conveyor tile sprite: 76
-    Slope tile sprite   : 77
+    Slope tile sprite   : 9
     Wall tile sprite    : 33
-    Platform tile sprite: 79
+    Platform tile sprite: 90
     Palette: blue, red, green, white
     Title: tab 1, "I'm sure I've seen this before"
     Tile commands:
@@ -409,7 +417,7 @@ Room 7
     Deadly tile logical colours  : 0 2
     Conveyor tile logical colours: 0 2
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 1
+    Wall tile logical colours    : 2 1
     Platform tile logical colours: 0 3
     Item tile sprite    : 64
     Deadly tile sprite  : 74
@@ -417,7 +425,9 @@ Room 7
     Slope tile sprite   : 187
     Wall tile sprite    : 61
     Platform tile sprite: 62
-    Palette: red, blue, yellow, white
+    Palette: red, green, black, white
+    Palette change: 4 2 yellow
+    Palette change: 5 2 cancel
     Title: tab 8, "Rescue Esmerelda"
     Tile commands:
         Use WALL
@@ -441,7 +451,7 @@ Room 7
         Move to (26,0)
         Draw slope moving right until Y=3                ; 'Draw slope' moves the cursor to the end tile
         Use SLOPE
-        Move to (29,3)
+        Move to (30,4)
         Draw vertical strip until Y=6                    ; 'Draw strip' moves the cursor to the end tile
         Move to (27,7)
         Draw slope moving right until Y=10               ; 'Draw slope' moves the cursor to the end tile
@@ -465,7 +475,7 @@ Room 7
             Max Extent: 13
             Initial Dir: down
             Speed: 2
-            Logical colour: 2
+            Logical colour: 3
         Enemy: 1
             Sprite: 41
             Initial Pos: (12,9)
@@ -476,7 +486,7 @@ Room 7
             Logical colour: 1
         Enemy: 2
             Sprite: 36
-            Initial Pos: (4,5)
+            Initial Pos: (4,4)
             Min Extent: 0
             Max Extent: 13
             Initial Dir: left
@@ -508,10 +518,10 @@ Room 8
     Item tile sprite    : 197
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
-    Slope tile sprite   : 187
+    Slope tile sprite   : 11
     Wall tile sprite    : 195
     Platform tile sprite: 194
-    Palette: blue, red, magenta, white
+    Palette: blue, cyan, magenta, white
     Title: tab 9, "On top of the house"
     Tile commands:
         Use WALL
@@ -526,6 +536,7 @@ Room 8
         Use PLATFORM
         Move to (1,10)
         Draw vertical strip until Y=2                    ; 'Draw strip' moves the cursor to the end tile
+        Draw 7 single tiles at (12,4) (13,5) (14,6) (15,7) (16,8) (17,9) (18,10)
         Move to (12,5)
         Draw slope moving right until Y=10               ; 'Draw slope' moves the cursor to the end tile
         Move to (18,11)
@@ -534,7 +545,7 @@ Room 8
     Enemies: 1
         Enemy: 0
             Sprite: 19
-            Initial Pos: (19,4)
+            Initial Pos: (20,4)
             Min Extent: 0
             Max Extent: 13
             Initial Dir: down
@@ -551,18 +562,21 @@ Room 9
     Slope direction: /
     Rope present: no
     Deadly tile logical colours  : 0 2
-    Conveyor tile logical colours: 0 3
-    Slope tile logical colours   : 0 2
-    Wall tile logical colours    : 0 3
+    Conveyor tile logical colours: 3 3          ; solid white
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 0 2
     Platform tile logical colours: 0 1
     Item tile sprite    : 193
     Deadly tile sprite  : 192
-    Conveyor tile sprite: 189
+    Conveyor tile sprite: 0
     Slope tile sprite   : 140
     Wall tile sprite    : 191
     Platform tile sprite: 190
-    Palette: black, green, magenta, white
-    Title: tab 8, "Coservatory Roof"
+    Palette: black, green, yellow, white
+    Palette change: 7 2 cyan
+    Palette change: 8 2 magenta
+    Palette change: 11 2 red
+    Title: tab 8, "Conservatory Roof"
     Tile commands:
         Use PLATFORM
         Draw 1 single tile at (22,0)
@@ -597,7 +611,7 @@ Room 9
             Max Extent: 31
             Initial Dir: right
             Speed: 2
-            Logical colour: 3
+            Logical colour: 2
     Arrows: 0
         Arrow: no
         Arrow: no
@@ -608,18 +622,22 @@ Room 10
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colours  : 0 2
+    Deadly tile logical colours  : 1 2
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 1
-    Platform tile logical colours: 0 2
+    Wall tile logical colours    : 2 1
+    Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 186
     Conveyor tile sprite: 188
     Slope tile sprite   : 143
     Wall tile sprite    : 185
     Platform tile sprite: 184
-    Palette: blue, red, green, white
+    Palette: blue, yellow, cyan, white
+    Palette change: 6 2 magenta
+    Palette change: 7 1 green
+    Palette change: 8 2 cyan
+    Palette change: 10 2 magenta
     Title: tab 9, "Under the Roof"
     Tile commands:
         Move to (0,2)
@@ -659,7 +677,7 @@ Room 10
             Logical colour: 3
         Enemy: 1
             Sprite: 13
-            Initial Pos: (16,9)
+            Initial Pos: (16,8)
             Min Extent: 12
             Max Extent: 19
             Initial Dir: right
@@ -675,18 +693,18 @@ Room 11
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colours  : 0 2
-    Conveyor tile logical colours: 0 1
+    Deadly tile logical colours  : 0 3
+    Conveyor tile logical colours: 0 2
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 1
-    Platform tile logical colours: 0 3
+    Wall tile logical colours    : 1 3
+    Platform tile logical colours: 2 3
     Item tile sprite    : 75
     Deadly tile sprite  : 181
     Conveyor tile sprite: 182
     Slope tile sprite   : 72
     Wall tile sprite    : 180
     Platform tile sprite: 179
-    Palette: black, red, green, yellow
+    Palette: black, magenta, red, yellow
     Title: tab 10, "The Attic"
     Tile commands:
         Draw horizontal strip until X=31                 ; 'Draw strip' moves the cursor to the end tile
@@ -694,7 +712,7 @@ Room 11
         Draw horizontal strip until X=13                 ; 'Draw strip' moves the cursor to the end tile
         Draw 11 single tiles at (2,1) (2,3) (2,5) (2,7) (18,7) (19,7) (20,5) (21,5) (22,3) (31,7) (30,7)
         Use WALL
-        Draw 8 single tiles at (4,9) (11,9) (5,0) (8,0) (12,0) (15,0) (20,0) (30,0)
+        Draw 9 single tiles at (4,9) (11,9) (5,0) (8,0) (12,0) (15,0) (20,0) (27,0) (30,0)
         Move to (0,1)
         Draw block to (1,8)                              ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Use DEADLY
@@ -705,7 +723,7 @@ Room 11
     Enemies: 6
         Enemy: 0
             Sprite: 15
-            Initial Pos: (3,8)
+            Initial Pos: (4,8)
             Min Extent: 7
             Max Extent: 11
             Initial Dir: down
@@ -713,7 +731,7 @@ Room 11
             Logical colour: 2
         Enemy: 1
             Sprite: 15
-            Initial Pos: (5,9)
+            Initial Pos: (6,9)
             Min Extent: 7
             Max Extent: 11
             Initial Dir: down
@@ -721,7 +739,7 @@ Room 11
             Logical colour: 1
         Enemy: 2
             Sprite: 15
-            Initial Pos: (7,10)
+            Initial Pos: (8,10)
             Min Extent: 7
             Max Extent: 11
             Initial Dir: down
@@ -729,7 +747,7 @@ Room 11
             Logical colour: 3
         Enemy: 3
             Sprite: 15
-            Initial Pos: (9,11)
+            Initial Pos: (10,11)
             Min Extent: 7
             Max Extent: 11
             Initial Dir: up
@@ -737,7 +755,7 @@ Room 11
             Logical colour: 2
         Enemy: 4
             Sprite: 15
-            Initial Pos: (11,10)
+            Initial Pos: (12,10)
             Min Extent: 7
             Max Extent: 11
             Initial Dir: up
@@ -745,7 +763,7 @@ Room 11
             Logical colour: 1
         Enemy: 5
             Sprite: 16
-            Initial Pos: (13,9)
+            Initial Pos: (14,9)
             Min Extent: 7
             Max Extent: 11
             Initial Dir: up
@@ -761,10 +779,10 @@ Room 12
     Conveyor direction: left
     Slope direction: \
     Rope present: no
-    Deadly tile logical colours  : 0 3
-    Conveyor tile logical colours: 0 2
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 2 3
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 3
+    Wall tile logical colours    : 2 3
     Platform tile logical colours: 0 1
     Item tile sprite    : 178
     Deadly tile sprite  : 175
@@ -772,7 +790,8 @@ Room 12
     Slope tile sprite   : 176
     Wall tile sprite    : 174
     Platform tile sprite: 173
-    Palette: black, red, green, white
+    Palette: black, red, magenta, white
+    Palette change: 15 2 green
     Title: tab 0, "Dr Jones will never believe this"
     Tile commands:
         Use CONVEYOR
@@ -827,7 +846,7 @@ Room 12
             Max Extent: 12
             Initial Dir: up
             Speed: 4
-            Logical colour: 2
+            Logical colour: 3
     Arrows: 0
         Arrow: no
         Arrow: no
@@ -839,17 +858,19 @@ Room 13
     Slope direction: /
     Rope present: no
     Deadly tile logical colours  : 0 3
-    Conveyor tile logical colours: 0 1
+    Conveyor tile logical colours: 2 1
     Slope tile logical colours   : 0 1
-    Wall tile logical colours    : 0 2
-    Platform tile logical colours: 0 1
+    Wall tile logical colours    : 1 2
+    Platform tile logical colours: 3 1
     Item tile sprite    : 32
     Deadly tile sprite  : 170
     Conveyor tile sprite: 172
     Slope tile sprite   : 3
     Wall tile sprite    : 169
     Platform tile sprite: 168
-    Palette: blue, yellow, red, white
+    Palette: blue, yellow, magenta, cyan
+    Palette change: 3 2 red
+    Palette change: 5 2 cancel
     Title: tab 7, "Emergency Generator"
     Tile commands:
         Use WALL
@@ -899,7 +920,7 @@ Room 14
     Deadly tile logical colours  : 0 2
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 2
+    Wall tile logical colours    : 2 0
     Platform tile logical colours: 0 3
     Item tile sprite    : 167
     Deadly tile sprite  : 74
@@ -1083,7 +1104,7 @@ Room 17
     Slope direction: /
     Rope present: no
     Deadly tile logical colours  : 0 2
-    Conveyor tile logical colours: 3 2
+    Conveyor tile logical colours: 2 1
     Slope tile logical colours   : 0 3
     Wall tile logical colours    : 1 2
     Platform tile logical colours: 0 2
@@ -1397,15 +1418,17 @@ Room 22
     Deadly tile logical colours  : 0 0
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 1
+    Wall tile logical colours    : 2 3
     Platform tile logical colours: 0 1
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
-    Slope tile sprite   : 35
+    Slope tile sprite   : 162
     Wall tile sprite    : 139
     Platform tile sprite: 138
-    Palette: black, cyan, yellow, white
+    Palette: black, cyan, blue, white
+    Palette change: 6 1 yellow
+    Palette change: 8 1 cancel
     Title: tab 0, "Halfway up the East Wall"
     Tile commands:
         Use WALL
@@ -1431,7 +1454,7 @@ Room 22
             Max Extent: 8
             Initial Dir: left
             Speed: 2
-            Logical colour: 2
+            Logical colour: 1
     Arrows: 0
         Arrow: no
         Arrow: no
@@ -1934,7 +1957,7 @@ Room 30
     Deadly tile logical colours  : 0 2
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 2
+    Wall tile logical colours    : 1 2
     Platform tile logical colours: 0 3
     Item tile sprite    : 75
     Deadly tile sprite  : 74
@@ -1942,7 +1965,7 @@ Room 30
     Slope tile sprite   : 72
     Wall tile sprite    : 114
     Platform tile sprite: 113
-    Palette: black, red, green, cyan
+    Palette: black, green, yellow, cyan
     Title: tab 9, "East Wall Base"
     Tile commands:
         Use WALL
@@ -2699,7 +2722,11 @@ Room 41
     Slope tile sprite   : 56
     Wall tile sprite    : 58
     Platform tile sprite: 57
-    Palette: black, red, green, white
+    Palette: black, blue, yellow, white
+    Palette change: 2 1 red
+    Palette change: 3 2 green
+    Palette change: 7 1 magenta
+    Palette change: 9 1 red
     Title: tab 8, "Out on a limb"
     Tile commands:
         Use WALL
@@ -2767,6 +2794,9 @@ Room 42
     Wall tile sprite    : 53
     Platform tile sprite: 52
     Palette: black, red, green, white
+    Palette change: 5 1 cyan
+    Palette change: 7 1 yellow
+    Palette change: 12 1 cancel
     Title: tab 12, "Tree Top"
     Tile commands:
         Use WALL
@@ -2778,7 +2808,7 @@ Room 42
         Draw horizontal strip until X=0                  ; 'Draw strip' moves the cursor to the end tile
         Move to (3,6)
         Draw horizontal strip until X=5                  ; 'Draw strip' moves the cursor to the end tile
-        Move to (8,9)
+        Move to (8,8)
         Draw horizontal strip until X=10                 ; 'Draw strip' moves the cursor to the end tile
         Move to (13,2)
         Draw horizontal strip until X=14                 ; 'Draw strip' moves the cursor to the end tile
@@ -2796,15 +2826,15 @@ Room 42
     Enemies: 3
         Enemy: 0
             Sprite: 36
-            Initial Pos: (7,4)
+            Initial Pos: (7,5)
             Min Extent: 0
             Max Extent: 8
             Initial Dir: left
             Speed: 2
-            Logical colour: 3
+            Logical colour: 1
         Enemy: 1
             Sprite: 23
-            Initial Pos: (23,2)
+            Initial Pos: (23,3)
             Min Extent: 5
             Max Extent: 31
             Initial Dir: left
@@ -2817,7 +2847,7 @@ Room 42
             Max Extent: 20
             Initial Dir: left
             Speed: 2
-            Logical colour: 3
+            Logical colour: 1
     Arrows: 1
         Arrow: Y 7, timing index 0
         Arrow: no
@@ -2836,10 +2866,12 @@ Room 43
     Item tile sprite    : 46
     Deadly tile sprite  : 45
     Conveyor tile sprite: 73
-    Slope tile sprite   : 143
+    Slope tile sprite   : 24
     Wall tile sprite    : 44
     Platform tile sprite: 43
     Palette: blue, red, green, white
+    Palette change: 11 2 cyan
+    Palette change: 12 2 cancel
     Title: tab 3, "On a Branch Over the Drive"
     Tile commands:
         Use PLATFORM
@@ -2900,7 +2932,7 @@ Room 43
             Max Extent: 14
             Initial Dir: down
             Speed: 2
-            Logical colour: 2
+            Logical colour: 1
     Arrows: 1
         Arrow: no
         Arrow: Y 11, timing index 2
@@ -2914,7 +2946,7 @@ Room 44
     Deadly tile logical colours  : 0 3
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 1
+    Wall tile logical colours    : 1 3
     Platform tile logical colours: 0 2
     Item tile sprite    : 75
     Deadly tile sprite  : 19
@@ -3019,15 +3051,19 @@ Room 45
     Deadly tile logical colours  : 0 3
     Conveyor tile logical colours: 0 1
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 0 1
+    Wall tile logical colours    : 1 3
     Platform tile logical colours: 0 2
     Item tile sprite    : 40
-    Deadly tile sprite  : 14
+    Deadly tile sprite  : 38
     Conveyor tile sprite: 73
     Slope tile sprite   : 3
-    Wall tile sprite    : 12
-    Platform tile sprite: 12
-    Palette: black, red, green, yellow
+    Wall tile sprite    : 37
+    Platform tile sprite: 26
+    Palette: black, cyan, green, yellow
+    Palette change: 7 1 blue
+    Palette change: 8 1 cancel
+    Palette change: 11 1 magenta
+    Palette change: 13 1 red
     Title: tab 10, "Cuckoo's Nest"
     Tile commands:
         Use PLATFORM
@@ -3052,7 +3088,7 @@ Room 45
             Max Extent: 12
             Initial Dir: left
             Speed: 2
-            Logical colour: 3
+            Logical colour: 1
         Enemy: 1
             Sprite: 14
             Initial Pos: (16,8)
@@ -4364,14 +4400,22 @@ BackgroundSprite 8
     ..##....
 
 BackgroundSprite 9
-    ########                                             ; [unused]
-    .#.##.##
-    ##.#.##.
-    #.#.####
-    ##.#..#.
-    #.##.###
-    ###...#.
-    ####.###
+    #.......
+    .#......
+    ..#.....
+    .#.#....
+    .#..#...
+    .#.#.#..
+    .#.#..#.
+    .#.#.#.#
+;    ########                                             ; [unused]
+;    .#.##.##
+;    ##.#.##.
+;    #.#.####
+;    ##.#..#.
+;    #.##.###
+;    ###...#.
+;    ####.###
 
 BackgroundSprite 10
     ...#....                                             ; The Bridge
@@ -4384,19 +4428,28 @@ BackgroundSprite 10
     #####..#
 
 BackgroundSprite 11
-    #.#.....                                             ; [unused]
-    ...#.#..
-    #.....#.
-    .#.#....
-    ....#.#.
-    .#.....#
-    ..#.#...
-    .....#.#
+     .......#                                             ; On top of the house SLOPE [x1]
+     ......##
+     .....##.
+     ....##.#
+     ...##.#.
+     ..##.#..
+     .##.#...
+     ##.#....
+
+;    #.#.....                                             ; [unused]
+;    ...#.#..
+;    #.....#.
+;    .#.#....
+;    ....#.#.
+;    .#.....#
+;    ..#.#...
+;    .....#.#
 
 BackgroundSprite 12
-    ##.#.###                                             ; Cuckoo's Nest PLATFORM [x8]
-    #.##..##                                             ; Cuckoo's Nest WALL [x5]
-    .###.#.#                                             ; Under the Megatree PLATFORM [x6]
+    ##.#.###                                             ; Under the Megatree PLATFORM [x6]
+    #.##..##
+    .###.#.#
     .##.##.#
     .#.###..
     ...##...
@@ -4514,14 +4567,23 @@ BackgroundSprite 23
     .#####.#
 
 BackgroundSprite 24
-    ...#.#..                                             ; [unused]
-    ..#.#.#.
-    ...#.#..
-    ....#..#
-    .##.#.#.
-    #..###..
+    .......#                                              ; On a Branch Over the Drive SLOPE [x1]
+    ....#.#.
+    .....#..
     ....#...
-    ....#...
+    .#.#....
+    ..#.....
+    .#......
+    #.......
+
+;    ...#.#..                                             ; [unused]
+;    ..#.#.#.
+;    ...#.#..
+;    ....#..#
+;    .##.#.#.
+;    #..###..
+;    ....#...
+;    ....#...
 
 BackgroundSprite 25
     ##......                                             ; Inside the Megatrunk SLOPE [x1]
@@ -4534,14 +4596,23 @@ BackgroundSprite 25
     ........
 
 BackgroundSprite 26
-    .####.##                                             ; [unused]
-    ........
-    ###.##.#
-    ........
-    #.#.#.#.
-    .#.#.#.#
-    #.#.#.#.
-    .#.#.#.#
+    .....#..                                              ; Cuckoo's Nest
+    ......##
+    ##..#..#
+    ##.##...
+    ..##....
+    ..##.##.
+    ..#...##
+    .......#
+
+;    .####.##                                             ; [unused]
+;    ........
+;    ###.##.#
+;    ........
+;    #.#.#.#.
+;    .#.#.#.#
+;    #.#.#.#.
+;    .#.#.#.#
 
 BackgroundSprite 27
     #.###.##                                             ; The Yacht WALL [x14]
@@ -4644,7 +4715,7 @@ BackgroundSprite 36
     ########
 
 BackgroundSprite 37
-    ...##..#                                             ; [unused]
+    ########                                             ; Cuckoo's Nest
     .##.....
     ....###.
     ####....
@@ -4654,7 +4725,7 @@ BackgroundSprite 37
     ..###...
 
 BackgroundSprite 38
-    ##....#.                                             ; [unused]
+    ##....#.                                             ; Cuckoo's Nest
     ..##.#..
     ....#.##
     .#...#..
@@ -4738,10 +4809,10 @@ BackgroundSprite 46
     ..####..
     .#..####
     .#....##
-    ##....#.
+    #.....#.
     #....##.
-    #....#..
-    ........
+    ###..#..
+    ######..
 
 BackgroundSprite 47
     ########                                             ; [unused]
@@ -4994,14 +5065,23 @@ BackgroundSprite 71
     ########
 
 BackgroundSprite 72
-    ........                                             ; We must perform a Quirkafleeg SLOPE [x2]
-    #.......
-    ##......
-    ##......
-    .#.#....
-    #..##...
-    ##.###..
-    ###.###.
+    #.......                                             ; We must perform a Quirkafleeg SLOPE [x2]
+    .#......
+    ..#.....
+    ..##....
+    #.#.#...
+    .##..#..
+    ..#...#.
+    ...#...#
+
+;    ........                                             ; We must perform a Quirkafleeg SLOPE [x2]
+;    #.......
+;    ##......
+;    ##......
+;    .#.#....
+;    #..##...
+;    ##.###..
+;    ###.###.
 
 BackgroundSprite 73
     #.......                                             ; Up on the Battlements SLOPE [x3]
@@ -5188,14 +5268,23 @@ BackgroundSprite 89
     #.#.#.#.
 
 BackgroundSprite 90
-    #......#                                             ; [unused]
-    #......#
-    .#....#.
-    ..#..#..
-    ...##...
-    ...##...
-    ...##...
-    ...##...
+    .#.#...#                                             ; I'm sure I've seen this before PLATFORM [x6]
+    .#.#.#.#
+    .#.#.#..
+    .#.#.#.#
+    ...#.#.#
+    .#.#.#.#
+    .#...#.#
+    .#.#.#.#
+
+;    #......#                                             ; [unused]
+;    #......#
+;    .#....#.
+;    ..#..#..
+;    ...##...
+;    ...##...
+;    ...##...
+;    ...##...
 
 BackgroundSprite 91
     #.#.#.#.                                             ; Ballroom West PLATFORM [x6]
@@ -5728,11 +5817,11 @@ BackgroundSprite 142
 
 BackgroundSprite 143
     .......#                                             ; Under the Roof SLOPE [x1]
-    ......#.                                             ; On a Branch Over the Drive SLOPE [x1]
+    ......#.
     .....#..
     ..#.#...
-    ...#.#..
-    ..#.....
+    ...#....
+    ..#.#...
     .#......
     #.......
 
@@ -5917,12 +6006,12 @@ BackgroundSprite 161
     .#...#..
 
 BackgroundSprite 162
-    #.......                                             ; [unused]
+    #.......                                             ; Halfway up the East Wall
     ##......
     ###.....
     .###....
-    ..###...
-    #..###..
+    #.###...
+    ...###..
     .#..###.
     ##...###
 
@@ -6167,14 +6256,14 @@ BackgroundSprite 186
     #.#..#..
 
 BackgroundSprite 187
-    .......#                                             ; Rescue Esmerelda SLOPE [x9]
-    ......#.                                             ; On top of the house SLOPE [x1]
-    .....#..
-    ....#..#
-    ...#..#.
-    ..#..#..
-    .#..#...
-    #..#....
+    ......##                                             ; Rescue Esmerelda SLOPE [x9]
+    ......##
+    ....##..
+    ....##..
+    ..##...#
+    ..##..#.
+    ##...#..
+    ##..#...
 
 BackgroundSprite 188
     #.#..#.#                                             ; Under the Roof CONVEYOR [x8]
@@ -6187,13 +6276,13 @@ BackgroundSprite 188
     .##..##.
 
 BackgroundSprite 189
-    ########                                             ; Coservatory Roof CONVEYOR [x5]
-    ########
-    ########
-    ########
-    ########
-    ########
-    ########
+    ........                                             ; [unused]
+    ........
+    ........
+    ........
+    ........
+    ........
+    ........
     ........
 
 BackgroundSprite 190
