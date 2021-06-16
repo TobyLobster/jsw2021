@@ -1511,9 +1511,11 @@ set_tile_table_for_background
 
     lda tile_type                                   ;
     adc #1                                          ;
-    cmp #5                                          ; DEADLY
+    cmp #5                                          ;
+    beq not_item                                    ; if (DEADLY) then store that
+    cmp #6                                          ; store (tile type + 1) in tile_table for PLATFORM, WALL, SLOPE, CONVEYOR
     bcc set_tile_table                              ;
-    beq not_item                                    ;
+    beq scenery                                     ; if (SCENERY) skip else it's ITEM
     inc item_number                                 ; If this tile is an item, store its details
     ldx item_number                                 ;
     lda screen_address_low                          ;
@@ -1531,6 +1533,7 @@ not_item
 set_tile_table
     ldy #0                                          ;
     sta (tile_address_low1),Y                       ;
+scenery
     rts                                             ;
 
 ; ***************************************************************************************
@@ -2006,11 +2009,13 @@ plot_room_items
     bmi leave21                                     ;
     cpx item_number                                 ;
     bcc skip_item                                   ;
+
     ldx item_number                                 ;
     lda items_screen_address_low,X                  ;
     sta screen_address_low                          ;
     lda items_screen_address_high,X                 ;
     sta screen_address_high                         ;
+
     ldy items_colour,X                              ;
     beq item_collected1                             ;
     dec items_colour,X                              ;

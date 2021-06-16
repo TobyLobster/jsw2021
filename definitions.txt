@@ -1350,19 +1350,23 @@ Room 21
     Slope direction: /
     Rope present: no
     Deadly tile logical colours  : 0 2
-    Conveyor tile logical colours: 1 3
+    Conveyor tile logical colours: 2 3
     Slope tile logical colours   : 0 3
     Wall tile logical colours    : 2 3
     Platform tile logical colours: 1 3
+    Scenery tile logical colours : 2 3
     Item tile sprite    : 145
     Deadly tile sprite  : 64
     Conveyor tile sprite: 144
     Slope tile sprite   : 3
     Wall tile sprite    : 142
+    Scenery tile sprite : 141
     Platform tile sprite: 141
-    Palette: black, red, blue, white
+    Palette: black, red, blue, yellow
     Palette change: 3 1 green
     Palette change: 5 1 cancel
+    Palette change: 13 3 white
+    Palette change: 15 3 cancel
     Title: tab 10, "The Bathroom"
     Tile commands:
         Draw horizontal strip until X=31                 ; 'Draw strip' moves the cursor to the end tile
@@ -1380,9 +1384,12 @@ Room 21
         Move to (0,9)
         Draw vertical strip until Y=3                    ; 'Draw strip' moves the cursor to the end tile
         Move to (17,3)
-        Draw vertical strip until Y=9                    ; 'Draw strip' moves the cursor to the end tile
+        Draw vertical strip until Y=10                   ; 'Draw strip' moves the cursor to the end tile
         Move to (16,10)
         Draw slope moving left until Y=3                 ; 'Draw slope' moves the cursor to the end tile
+;        Use SCENERY
+;        Move to (6,2)
+;        Draw horizontal strip until X=8                  ; 'Draw strip' moves the cursor to the end tile
         Use CONVEYOR
         Move to (20,1)
         Draw horizontal strip until X=23                 ; 'Draw strip' moves the cursor to the end tile
@@ -2471,7 +2478,6 @@ Room 37
     Palette change: 4 1 red
     Palette change: 5 2 yellow
     Palette change: 6 2 cancel
-    Palette change: 9 1 cancel
     Palette change: 13 2 yellow
     Palette change: 14 1 red
     Palette change: 15 2 green
