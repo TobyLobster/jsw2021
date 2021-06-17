@@ -45,6 +45,12 @@ namespace EncodeData
         public Dir dir;
         public int speed;
         public int logicalColour;
+        public bool withReverse;
+
+        public Enemy(bool reverse)
+        {
+            withReverse = reverse;
+        }
     }
 
     class Arrow
@@ -173,11 +179,13 @@ namespace EncodeData
     class EnemySprites
     {
         public string enemyId;
+        public bool withReverse;
         public List<Sprite> sprites = new List<Sprite>();
 
-        public EnemySprites(string name)
+        public EnemySprites(string name, bool reverse)
         {
             enemyId = name;
+            withReverse = reverse;
         }
     }
 
@@ -230,11 +238,6 @@ namespace EncodeData
         public List<TileCommand> commands = new List<TileCommand>();
         public List<Enemy> enemies = new List<Enemy>();
         public List<Arrow> arrows = new List<Arrow>();
-
-        // ********************************************************************
-        public void Output(string outputFilepath)
-        {
-        }
 
         // ********************************************************************
         public List<int> GetBytes(JSWProcessor processor)
@@ -864,9 +867,9 @@ namespace EncodeData
                 return;
             }
 
-            if (IsMatch(line, @"Enemy *: *(\d+)", out results))
+            if (IsMatch(line, @"Enemy *: *(\d+)( +[Ww]ith [Rr]everse)?", out results))
             {
-                currentRoom.enemies.Add(new Enemy());
+                currentRoom.enemies.Add(new Enemy(results.Count > 1));
                 return;
             }
             if (IsMatch(line, @"Sprite *: *(.*)$", out results))
@@ -971,9 +974,9 @@ namespace EncodeData
         public void ParseEnemiesLine(string line)
         {
             line = line.Trim();
-            if (IsMatch(line, @"Enemy +(\d+)", out var results))
+            if (IsMatch(line, @"Enemy +(\d+)( +[Ww]ith [Rr]everse)?", out var results))
             {
-                enemies.Add(new EnemySprites(results[0]));
+                enemies.Add(new EnemySprites(results[0], results.Count > 1));
                 isEnemyLine = true;
             }
             else if (line == "Sprite")
@@ -1189,6 +1192,11 @@ namespace EncodeData
                 foreach(var enemy in enemies)
                 {
                     var val = enemy.sprites.Count;
+                    if (enemy.withReverse)
+                    {
+                        val += 128;       // Mark frames for reversal
+                    }
+
                     if (items_on_line > 0)
                     { 
                         enemy_frames += ", ";
@@ -1217,6 +1225,7 @@ namespace EncodeData
                     { 
                         enemy_frames += ", ";
                     }
+
                     enemy_frames += "$" + running_total.ToString("x2");
                     running_total += enemy.sprites.Count;
                     items_on_line++;

@@ -337,6 +337,8 @@ title_text_source_high                              = $a1
 title_text_destination_low                          = $a2
 title_text_destination_high                         = $a3
 title_text_loop_counter                             = $a4
+temp_address_low                                    = $a5
+temp_address_high                                   = $a6
 
 screen_memory_start                                 = $5600
 screen_address_title                                = screen_memory_start + 16 * $0200  ; row 16
@@ -776,11 +778,14 @@ unpack_enemy_sprites
     lda enemies_on_screen                           ;
     sta enemy_to_consider1                          ;
     beq leave9                                      ; if (no enemies) then branch (return)
+
 unpack_enemy_sprites_loop
-    ldx enemy_to_consider1                          ;
+    ldx enemy_to_consider1                          ; which enemy index to look at
     cpx enemies_on_screen                           ;
-    beq first_enemy                                 ; If this isn't the first enemy,
-    ldy enemies_on_screen                           ;
+    beq first_enemy                                 ; If (first enemy) then branch
+
+    ; check to see if we have already done this sprite
+    ldy enemies_on_screen                           ; loop counter
 check_if_enemy_already_unpacked                     ; has its sprite already been used?
     lda enemies_sprite,Y                            ;
     cmp enemies_sprite,X                            ;
@@ -788,19 +793,29 @@ check_if_enemy_already_unpacked                     ; has its sprite already bee
     lda enemies_unpacked_sprite_offset,Y            ;
     sta enemies_unpacked_sprite_offset,X            ;
     bpl consider_next_enemy1                        ;
+
 different_sprite
     dey                                             ;
     cpy enemy_to_consider1                          ;
     bne check_if_enemy_already_unpacked             ;
-first_enemy                                         ; If not, unpack its sprite
+
+first_enemy                                         ;
+    ; unpack sprite: first get sprite address
     ldy enemies_sprite,X                            ;
     lda unpacked_sprite_offset                      ;
-    sta enemies_unpacked_sprite_offset,X            ;
+    sta enemies_unpacked_sprite_offset,X            ; store enemy sprite number
     lda enemy_sprites_frames,Y                      ;
-    sta number_of_frames                            ;
+    sta should_reflect                              ; top bit set if reflection required
+    php                                             ;
+    and #$7f                                        ;
+    sta number_of_frames                            ; store number of frames for this enemy
+    plp                                             ;
+    bpl +                                           ;
+    asl                                             ;
++
     clc                                             ;
     adc unpacked_sprite_offset                      ;
-    sta unpacked_sprite_offset                      ;
+    sta unpacked_sprite_offset                      ; unpacked_sprite_offset += number of frames
     lda enemy_sprites_frame_offsets,Y               ;
     lsr                                             ;
     ror tmp                                         ;
@@ -818,35 +833,147 @@ first_enemy                                         ; If not, unpack its sprite
     sta sprite_address_low1                         ;
     bcc unpack_frames_loop                          ;
     inc sprite_address_high1                        ;
+
+    ; unpack each sprite in a loop
 unpack_frames_loop
     jsr unpack_enemy_sprite                         ;
-    dec number_of_frames                            ;
+    dec number_of_frames                            ; unpack a frame each time round this loop
     bne unpack_frames_loop                          ;
+
+    lda should_reflect                              ;
+    bmi reflect                                     ;
+
 consider_next_enemy1
     dec enemy_to_consider1                          ;
     bne unpack_enemy_sprites_loop                   ;
+
 leave9
     rts                                             ;
 
 ; ***************************************************************************************
+update_temp_address
+    lda temp_address_low                            ; }
+    sec                                             ; }
+    sbc #64                                         ; } temp_address -= 64
+    sta temp_address_low                            ; }
+    bcs +                                           ; }
+    dec temp_address_high                           ; }
++
+    rts                                             ;
+
+; ***************************************************************************************
+reflect
+    lda unpacked_sprite_address_low                 ;
+    sta temp_address_low                            ; temp_address = unpacked_sprite_address
+    lda unpacked_sprite_address_high                ;
+    sta temp_address_high                           ;
+
+    lda #4                                          ;
+    sta num_sprites_remaining                       ;
+    ldx #0                                          ; destination offset
+reflect_sprites_loop
+    jsr update_temp_address                         ;
+    lda #16                                         ; copy 16 rows
+    sta num_rows_remaining                          ;
+
+    ; read four bytes, reverse them and store them
+reflect_rows_loop
+    ldy #3                                          ; loop counter
+-
+    lda (temp_address_low),Y                        ;
+    sty temp_reflectY                               ; } remember X,Y
+    stx temp_reflectX                               ; }
+    jsr reverse_each_nybble                         ;
+    ldy temp_reflectX                               ; Y = X
+    sta (unpacked_sprite_address_low),Y             ; store byte
+    ldx temp_reflectX                               ; recall X
+    inx                                             ;
+    ldy temp_reflectY                               ; recall Y
+    dey                                             ;
+    bpl -                                           ;
+
+    ; move to next row
+    lda temp_address_low                            ; }
+    clc                                             ; }
+    adc #4                                          ; } add 4 to temp_address
+    sta temp_address_low                            ; }
+    bcc +                                           ; }
+    inc temp_address_high                           ; }
++
+    dec num_rows_remaining                          ;
+    bne reflect_rows_loop                           ;
+
+    ; go on to next sprite
+    jsr update_temp_address                         ;
+    dec num_sprites_remaining                       ;
+    bne reflect_sprites_loop                        ;
+
+    ; move high byte on one. Assumes 4 sprites
+    inc unpacked_sprite_address_high                ;
+
+    jmp consider_next_enemy1                        ;
+
+num_sprites_remaining
+    !byte 0                                         ;
+num_rows_remaining
+    !byte 0                                         ;
+should_reflect
+    !byte 0                                         ;
+temp_reflectX
+    !byte 0                                         ;
+temp_reflectY
+    !byte 0                                         ;
+temp_reverse
+    !byte 0
+
+; ***************************************************************************************
+;
+; On entry: A = bit pattern: abcdefgh
+; On exit:  A = bit pattern: dcbahgfe
+;
+; 19 instructions, 28 bytes, 46 cycles (assuming .temp is in zero page, and including RTS).
+;
+; ***************************************************************************************
+reverse_each_nybble
+    tax                                             ; X = abcdefgh
+    and #$AA                                        ; A = a0c0e0g0
+    lsr                                             ; A = 0a0c0e0g
+    sta temp_reverse                                ; t = 0a0c0e0g
+    txa                                             ; A = abcdefgh
+    asl                                             ; A = bcdefgh0
+    and #$AA                                        ; A = b0d0f0h0
+    ora temp_reverse                                ; A = badcfehg
+    tax                                             ; X = badcfehg
+    and #$33                                        ; A = 00dc00hg
+    asl                                             ; A = 0dc00hg0
+    asl                                             ; A = dc00hg00
+    sta temp_reverse                                ; t = dc00hg00
+    txa                                             ; A = badcfehg
+    lsr                                             ; A = 0badcfeh
+    lsr                                             ; A = 00badcfe
+    and #$33                                        ; A = 00ba00fe
+    ora temp_reverse                                ; A = dcbahgfe
+    rts                                             ;
+
+; ***************************************************************************************
 unpack_enemy_sprite
-    ldy #0                                          ; loop counter for target (incrementing)
+    ldy #0                                          ; loop counter for target (increments)
     ldx #31                                         ; loop counter for source (decrementing)
 unpack_enemy_sprite_loop
-    sty tempY                                       ;
+    sty tempY                                       ; remember Y
     txa                                             ;
-    tay                                             ;
-    lda (sprite_address),Y                          ;
-    jsr unpack_byte_of_sprite_data                  ;
-    ldy unpacked_byte_two                           ;
-    sta unpacked_byte_two                           ;
-    tya                                             ;
+    tay                                             ; Y = X
+    lda (sprite_address),Y                          ; get byte from 1bpp sprite
+    jsr unpack_byte_of_sprite_data                  ; unpack into two bytes of 2bpp data
+    ldy unpacked_byte_two                           ; }
+    sta unpacked_byte_two                           ; } swap A and unpacked_byte_two
+    tya                                             ; }
 tempY = * + 1
-    ldy #$ff                                        ;
-    sta (unpacked_sprite_address_low),Y             ;
+    ldy #$ff                                        ; recall Y
+    sta (unpacked_sprite_address_low),Y             ; store first of two bytes
     iny                                             ;
     lda unpacked_byte_two                           ;
-    sta (unpacked_sprite_address_low),Y             ;
+    sta (unpacked_sprite_address_low),Y             ; store second of two bytes
     iny                                             ;
     dex
     bpl unpack_enemy_sprite_loop                    ;
@@ -854,14 +981,14 @@ tempY = * + 1
     lda sprite_address_low1                         ;
     clc                                             ;
     adc #32                                         ;
-    sta sprite_address_low1                         ;
+    sta sprite_address_low1                         ; add 32 to source address
     bcc +                                           ;
     inc sprite_address_high1                        ;
 +
     lda unpacked_sprite_address_low                 ;
     clc                                             ;
     adc #64                                         ;
-    sta unpacked_sprite_address_low                 ;
+    sta unpacked_sprite_address_low                 ; add 64 to destination address
     bcc +                                           ;
     inc unpacked_sprite_address_high                ;
 +
@@ -1057,6 +1184,9 @@ calculate_enemy_sprite_address
     sta enemies_unpacked_sprite_offset,X            ;
 not_candelabra
     lda enemy_sprites_frames,Y                      ;
+    bpl +                                           ;
+    asl                                             ; if (top bit set, i.e. sprite is reverse also) then twice as many frames
++
     sta sprite_frames                               ;
     lda enemies_direction,X                         ;
     bne enemy_moving_vertically                     ;
