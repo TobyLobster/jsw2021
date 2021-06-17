@@ -4038,18 +4038,18 @@ Room 58
     Conveyor direction: right
     Slope direction: /
     Rope present: no
-    Deadly tile logical colours  : 0 1
+    Deadly tile logical colours  : 0 3
     Conveyor tile logical colours: 0 0
-    Slope tile logical colours   : 0 1
-    Wall tile logical colours    : 3 2
-    Platform tile logical colours: 3 2
+    Slope tile logical colours   : 0 3
+    Wall tile logical colours    : 1 2
+    Platform tile logical colours: 1 2
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
     Slope tile sprite   : 34
     Wall tile sprite    : 33
     Platform tile sprite: 92
-    Palette: yellow, red, magenta, green
+    Palette: yellow, green, magenta, red
     Title: tab 8, "Entrance to Hades"
     Tile commands:
         Use WALL
@@ -4099,7 +4099,7 @@ Room 58
             Max Extent: 11
             Initial Dir: up
             Speed: 1
-            Logical colour: 3
+            Logical colour: 1
         Enemy: 1
             Sprite: 32
             Initial Pos: (4,11)
@@ -4107,7 +4107,7 @@ Room 58
             Max Extent: 11
             Initial Dir: up
             Speed: 1
-            Logical colour: 3
+            Logical colour: 1
         Enemy: 2
             Sprite: 33
             Initial Pos: (3,13)
@@ -4115,7 +4115,7 @@ Room 58
             Max Extent: 13
             Initial Dir: up
             Speed: 1
-            Logical colour: 3
+            Logical colour: 1
     Arrows: 0
         Arrow: no
         Arrow: no

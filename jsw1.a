@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-;player_start_room                                   = 21        ; 21 = The Bathroom
-;player_start_x                                      = 20 * 8    ;
-;player_start_y                                      = 13 * 8    ;
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_x                                      = 20 * 8    ;
+player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 16        ;
-player_start_x                                      = 30 * 8     ; must be even!
-player_start_y                                      = 10 * 8    ;
+;player_start_room                                   = 58        ;
+;player_start_x                                      = 21 * 8     ; must be even!
+;player_start_y                                      = 3 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;
@@ -1416,6 +1416,165 @@ check_for_jump
     rts                                             ;
 
 ; ***************************************************************************************
+update_animated_scenery
+    lda game_timer                                  ;
+    and #3                                          ;
+    bne leave28                                     ;
+    ldy #255                                        ;
+    lda player_room                                 ;
+    cmp #28                                         ;
+    bne +                                           ; if (not first landing) then branch
+    ldy #122                                        ;
+    sty animated_sprite_to_draw                     ;
+    ldy #0                                          ;
++
+    cmp #10                                         ; if (not under the roof) then branch
+    bne +                                           ;
+    ldy #185                                        ;
+    sty animated_sprite_to_draw                     ;
+    ldy #1                                          ;
++
+    cmp #2                                          ; if (not nomen luni) then branch
+    bne +                                           ;
+    ldy #211                                        ;
+    sty animated_sprite_to_draw                     ;
+    ldy #2                                          ;
++
+    cmp #58                                         ;
+    bne +                                           ;
+    ldy #92                                         ;
+    sty animated_sprite_to_draw                     ;
+    ldy #3                                          ;
++
+    tya                                             ;
+    bmi leave28                                     ;
+    jsr animate_scenery                             ;
+leave28
+    rts                                             ;
+
+; ***************************************************************************************
+animate_scenery
+    lda start_of_animation_offset + 1,Y             ;
+    sta final_strip_offset                          ;
+    lda start_of_animation_offset,Y                 ;
+    tay                                             ;
+-
+    sty anim_index                                  ;
+    lda first_landing_scenery,Y                     ;
+    sta tile_x                                      ;
+    lda first_landing_scenery + 1,Y                 ;
+    sta tile_y                                      ;
+    lda first_landing_scenery + 2,Y                 ;
+    sta scenery_len                                 ;
+scenery_strip_loop
+    lda game_timer                                  ;
+    and #4                                          ;
+    beq +
+    ldx #2                                          ; colours to use
+    ldy #1                                          ;
+    bne ++
++
+    ldx #1                                          ; opposite colours to use
+    ldy #2                                          ;
+++
+animated_sprite_to_draw = * + 1
+    lda #$ff                                        ; sprite to draw
+    jsr plot_background_sprite                      ;
+    lda scenery_len                                 ;
+    bmi vertical
+    inc tile_x                                      ;
+next_tile
+    dec scenery_len                                 ;
+    lda scenery_len                                 ;
+    and #$7f                                        ;
+    bne scenery_strip_loop                          ;
+    ldy anim_index                                  ;
+    iny                                             ;
+    iny                                             ;
+    iny                                             ;
+    cpy final_strip_offset                          ;
+    bcc -                                           ;
+    rts                                             ;
+
+vertical
+    dec tile_y                                      ;
+    jmp next_tile                                   ;
+
+anim_index
+    !byte 0
+scenery_len
+    !byte 0
+final_strip_offset
+    !byte 0
+
+; ***************************************************************************************
+start_of_animation_offset
+    !byte 0
+    !byte under_the_roof_scenery - first_landing_scenery
+    !byte nomen_luni_scenery - first_landing_scenery
+    !byte entrance_to_hades - first_landing_scenery
+    !byte end_of_scenery - first_landing_scenery
+
+first_landing_scenery
+    !byte 29,12,$80 + 5
+    !byte 28,11,3
+under_the_roof_scenery
+    !byte 12,15,18
+    !byte 16,14,1
+    !byte 19,14,4
+    !byte 25,14,1
+    !byte 15,13,3
+    !byte 19,13,4
+    !byte 24,13,3
+    !byte 20,12,2
+nomen_luni_scenery
+    !byte 18,10, 6
+    !byte 18, 9, 6
+    !byte 20, 8, $80 + 7
+    !byte 21, 8, $80 + 7
+    !byte 30, 6, 2
+    !byte 29, 5, 3
+    !byte 26, 4, 6
+    !byte 25, 3, 1
+    !byte 31, 3, $80 + 4
+    !byte 30, 2, 1
+    !byte 12, 1, 18
+    !byte 12, 0, 18
+entrance_to_hades
+    !byte 13, 13, 3
+    !byte 18, 13, $80 + 5
+    !byte 20, 13, 4
+    !byte 13, 12, $80 + 4
+    !byte 16, 12, $80 + 3
+    !byte 20, 12, $80 + 4
+    !byte 21, 11, 2
+    !byte 14, 9, 2
+    !byte 21, 9, 3
+    !byte  7, 6, $80 + 5
+    !byte 11, 6, $80 + 5
+    !byte 14, 6, 1
+    !byte 17, 6, $80 + 5
+    !byte 18, 6, 1
+    !byte 21, 6, 3
+    !byte 26, 6, 1
+    !byte 29, 6, $80 + 5
+    !byte  8, 5, 1
+    !byte 10, 5, 1
+    !byte 13, 5, $80 + 3
+    !byte 15, 5, $80 + 3
+    !byte 19, 5, 1
+    !byte 22, 5, $80 + 4
+    !byte 25, 5, $80 + 4
+    !byte 27, 5, $80 + 4
+    !byte  9, 4, 1
+    !byte 18, 4, 1
+    !byte 19, 3, $80 + 2
+    !byte 26, 3, 1
+    !byte 14, 2, 1
+    !byte 30, 2, 2
+end_of_scenery
+
+; ***************************************************************************************
 update_game
     lda player_rope_pixel                           ;
     bne consider_keys                               ; player can't jump when on the rope
@@ -1497,6 +1656,7 @@ not_slope1
     beq skip_unplot                                 ;
 
     jsr check_for_q_and_s_keys                      ;
+    jsr update_animated_scenery                     ;
 -
     lda vsync_counter                               ;
     cmp #3                                          ;
