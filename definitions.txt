@@ -2394,7 +2394,6 @@ Room 36
         Draw 2 single tiles at (15,7) (14,7)
         Move to (31,4)
         Draw slope moving left until Y=15                ; 'Draw slope' moves the cursor to the end tile
-        Draw 2 single tiles at (2,6) (9,9)
         Use DEADLY
         Draw 1 single tile at (27,12)
         Use ITEM
@@ -4134,7 +4133,7 @@ Room 59
     Platform tile logical colours: 0 1
     Item tile sprite    : 209
     Deadly tile sprite  : 200
-    Conveyor tile sprite: 208
+    Conveyor tile sprite: 66
     Slope tile sprite   : 94
     Wall tile sprite    : 199
     Platform tile sprite: 198
@@ -4791,45 +4790,6 @@ BackgroundSprite 47
     .#.#.#.#
     #.#.#.#.
 
-
-;    ########                                             ; [unused]
-;    .#.##.##
-;    ##.#.##.
-;    #.#.####
-;    ##.#..#.
-;    #.##.###
-;    ###...#.
-;    ####.###
-
-;    #.#.....                                             ; [unused]
-;    ...#.#..
-;    #.....#.
-;    .#.#....
-;    ....#.#.
-;    .#.....#
-;    ..#.#...
-;    .....#.#
-
-;    ...#.#..                                             ; [unused]
-;    ..#.#.#.
-;    ...#.#..
-;    ....#..#
-;    .##.#.#.
-;    #..###..
-;    ....#...
-;    ....#...
-
-;    .####.##                                             ; [unused]
-;    ........
-;    ###.##.#
-;    ........
-;    #.#.#.#.
-;    .#.#.#.#
-;    #.#.#.#.
-;    .#.#.#.#
-
-
-
 BackgroundSprite 48
     ##.#####                                             ; The Hall PLATFORM [x1]
     ###.####                                             ; The Hall WALL [x6]
@@ -5011,12 +4971,12 @@ BackgroundSprite 65
     .#.#.#.#
 
 BackgroundSprite 66
-    .##..##.                                             ; [unused]
-    .##..##.
-    .##..##.
+    ###.....                                             ; Under the Drive CONVEYOR [x2]
+    #.#.#.#.
+    #####...
     ........
-    .##..##.
-    .##..##.
+    ########
+    ########
     .##..##.
     .##..##.
 
@@ -6472,8 +6432,8 @@ BackgroundSprite 207
     ...##...
 
 BackgroundSprite 208
-    ###.###.                                             ; Under the Drive CONVEYOR [x2]
-    #.#.#.#.                                             ; Tree Root CONVEYOR [x3]
+    ###.###.                                             ; Tree Root CONVEYOR [x3]
+    #.#.#.#.
     ..###...
     ########
     ########
@@ -6950,6 +6910,54 @@ BackgroundSprite 255
     ..##.###
     ##....#.
     ##..#...
+
+
+
+;    .##..##.                                             ; [unused]
+;    .##..##.
+;    .##..##.
+;    ........
+;    .##..##.
+;    .##..##.
+;    .##..##.
+;    .##..##.
+
+;    ########                                             ; [unused]
+;    .#.##.##
+;    ##.#.##.
+;    #.#.####
+;    ##.#..#.
+;    #.##.###
+;    ###...#.
+;    ####.###
+
+;    #.#.....                                             ; [unused]
+;    ...#.#..
+;    #.....#.
+;    .#.#....
+;    ....#.#.
+;    .#.....#
+;    ..#.#...
+;    .....#.#
+
+;    ...#.#..                                             ; [unused]
+;    ..#.#.#.
+;    ...#.#..
+;    ....#..#
+;    .##.#.#.
+;    #..###..
+;    ....#...
+;    ....#...
+
+;    .####.##                                             ; [unused]
+;    ........
+;    ###.##.#
+;    ........
+;    #.#.#.#.
+;    .#.#.#.#
+;    #.#.#.#.
+;    .#.#.#.#
+
 
 Enemy 1
     Sprite

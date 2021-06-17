@@ -10,7 +10,8 @@ player_start_room                                   = 21        ; 21 = The Bathr
 player_start_x                                      = 20 * 8    ;
 player_start_y                                      = 13 * 8    ;
 
-;player_start_room                                   = 20        ;
+; Temp start
+;player_start_room                                   = 59        ;
 ;player_start_x                                      = 20 * 8     ; must be even!
 ;player_start_y                                      = 10 * 8    ;
 
@@ -2457,17 +2458,16 @@ prepare_left_conveyor_bytes_loop
 
 ; ***************************************************************************************
 rotate_and_store_conveyor_byte
-    clc                                             ;
-    lda packed_byte2                                ;
-    bpl +                                           ;
-    sec                                             ;
-+
-    rol                                             ;
-    sta packed_byte2                                ;
+    lda packed_byte2                                ; }
+    cmp #$80                                        ; } rotate 8 bits
+    rol                                             ; }
+    sta packed_byte2                                ; }
+
     jsr unpack_byte_of_sprite_data                  ;
     and conveyor_colour                             ;
     eor conveyor_colour_eor                         ;
     sta unpacked_conveyor_sprite,X                  ;
+
     lda unpacked_byte_two                           ;
     and conveyor_colour                             ;
     eor conveyor_colour_eor                         ;
