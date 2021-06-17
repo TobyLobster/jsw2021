@@ -924,6 +924,13 @@ calculate_screen_address
 }
 
 ; ***************************************************************************************
+;
+; On Entry:
+;  A holds the X coordinate in pixels
+;  X holds the Y coordinate in pixels
+;  sprite_address_low2/high2
+;
+; ***************************************************************************************
 plot_sprite
     jsr calculate_screen_address                    ;
     lda sprite_address_high2                        ;
@@ -4207,7 +4214,7 @@ target_address_high = * + 2
 ; ***************************************************************************************
 plot_title_screen_logo
     ldx #0                                          ;
-    ldy #2                                          ; TAB(0,2)
+    ldy #1                                          ; TAB
     jsr set_text_position                           ;
 
     ldx #0                                          ;
@@ -4219,6 +4226,7 @@ plot_title_screen_logo_loop
 unpack_byte_loop
     lsr blocks_to_copy                              ;
     bcc skip_block                                  ;
+
     ; draw block
     lda #<fuzzy_block                               ;
     sta character_definitions_low                   ;
@@ -4235,12 +4243,25 @@ next_byte
     cpx #title_screen_logo_end - title_screen_logo  ;
     bne plot_title_screen_logo_loop                 ;
 
+    ldx #2                                          ;
+    ldy #14                                         ;
+    jsr set_text_position                           ; TAB
+    ldy #0                                          ;
+-
+    lda title_message,Y                             ;
+    iny                                             ;
+    jsr write_char                                  ;
+    bne -                                           ;
++
     rts                                             ;
 
 skip_block
     lda #9                                          ;
     jsr write_char                                  ;
     jmp next_byte                                   ;
+
+title_message
+    !text "2021 Edition by TobyLobster",0
 
 fuzzy_block
     !byte %11111111
@@ -4284,7 +4305,7 @@ colour_cycles
 
 ; ***************************************************************************************
 update_colour_cycler
-    sty temp_y_value
+    sty temp_y_value                                ;
     ldy colour_cycler                               ;
     lda colour_cycles - 1,Y                         ;
 temp_y_value = * + 1
@@ -4298,7 +4319,7 @@ title_change_palette
     and #1                                          ;
     bne skip_title_colour_change                    ;
 
-    ldy #2                                          ; loop counter
+    ldy #1                                          ; loop counter
 -
     jsr update_colour_cycler                        ;
 
@@ -4308,11 +4329,11 @@ title_change_palette
     adc #2                                          ;
     sta palette_changes, Y                          ;
     iny                                             ;
-    cpy #14                                         ;
+    cpy #13                                         ;
     bne -                                           ;
 
     ; move colour cycler on
-    ldx #5
+    ldx #5                                          ;
 -
     jsr update_colour_cycler                        ;
     dex                                             ;
@@ -4329,14 +4350,15 @@ title_screen
     lda #$81                                        ;
     sta life_y                                      ;
 
-    ; DEBUG!
-    lda #0
+    lda #1
     sta melody_active                               ; Enable melody
     lda #16                                         ; Title screen has full line of lives
     sta player_lives                                ;
     jsr clear_screen                                ;
 
     jsr clear_room_palette_changes                  ;
+    lda #2 + 4 * green                              ;
+    sta palette_changes + 13                        ;
 
     lda #title_palette - start_of_palettes          ;
     jsr set_full_room_palette                       ;
@@ -4430,18 +4452,6 @@ leave
     rts                                             ;
 
 ; ***************************************************************************************
-;change_colour
-;    dec change_colour_value                         ;
-;change_colour_value = * + 1
-;    lda #0                                          ;
-;    and #7                                          ;
-;    beq change_colour                               ;
-;write_change_colour
-;    ldy #2                                          ;
-;    jsr set_logical_colour_y_to_a                   ;
-;    rts                                             ;
-
-; ***************************************************************************************
 title_screen_scrolltext
     !text "...Jetset Willy was written for the BBC Micro by Chris Robson..."
     !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects "
@@ -4449,8 +4459,7 @@ title_screen_scrolltext
     !text "...You must guide Willy to collect all the items around the house before "
     !text    "midnight so that Maria will let you go to bed..."
 title_screen_press_space
-;    !text "....Press SPACE to start the game."
-    !text " ++++ Press SPACE to start ++++ "
+    !text "  ++++ Press SPACE to start ++++"
     !byte 0
 
 ; ***************************************************************************************
