@@ -871,6 +871,7 @@ reflect
     lda #4                                          ;
     sta num_sprites_remaining                       ;
     ldx #0                                          ; destination offset
+    stx reflect_destination_offset                  ; }
 reflect_sprites_loop
     jsr update_temp_address                         ;
     lda #16                                         ; copy 16 rows
@@ -880,15 +881,13 @@ reflect_sprites_loop
 reflect_rows_loop
     ldy #3                                          ; loop counter
 -
+    sty temp_reflectY                               ;
     lda (temp_address_low),Y                        ;
-    sty temp_reflectY                               ; } remember X,Y
-    stx temp_reflectX                               ; }
     jsr reverse_each_nybble                         ;
-    ldy temp_reflectX                               ; Y = X
+    ldy reflect_destination_offset                  ;
     sta (unpacked_sprite_address_low),Y             ; store byte
-    ldx temp_reflectX                               ; recall X
-    inx                                             ;
-    ldy temp_reflectY                               ; recall Y
+    inc reflect_destination_offset                  ; increment destination offset
+    ldy temp_reflectY                               ;
     dey                                             ;
     bpl -                                           ;
 
@@ -919,7 +918,7 @@ num_rows_remaining
     !byte 0                                         ;
 should_reflect
     !byte 0                                         ;
-temp_reflectX
+reflect_destination_offset
     !byte 0                                         ;
 temp_reflectY
     !byte 0                                         ;
