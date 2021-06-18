@@ -5041,8 +5041,8 @@ melody_table
     +note ds4, 2        ; measure 19
     +note es4, 1
     +note g4,  1
-    +note es4, 1
-    +note ds4, 3
+    +note es4, 2
+    +note ds4, 2
 
     +note d4,  2        ; measure 20
     +note d4,  1
@@ -5122,38 +5122,41 @@ melody_table_end
 
 ; ***************************************************************************************
 pitch_table_first
-    +pitch_first_byte 676          ; 184.91 Hz     0       F#3 =  185.00 Hz
-    +pitch_first_byte 638          ; 195.92 Hz     1       G3  =  196.00 Hz
-    +pitch_first_byte 602          ; 207.64 Hz     2       G#3 =  207.65 Hz
-    +pitch_first_byte 568          ; 220.07 Hz     3       A3  =  220.00 Hz
-    +pitch_first_byte 536          ; 233.21 Hz     4       A#3 =  233.08 Hz
-    +pitch_first_byte 506          ; 247.04 Hz     5       B3  =  246.94 Hz
-    +pitch_first_byte 478          ; 261.51 Hz     6       C4  =  261.63 Hz
-    +pitch_first_byte 451          ; 277.16 Hz     7       C#4 =  277.18 Hz
-    +pitch_first_byte 426          ; 293.43 Hz     8       D4  =  293.66 Hz
-    +pitch_first_byte 402          ; 310.95 Hz     9       D#4 =  311.13 Hz
-    +pitch_first_byte 379          ; 329.82 Hz     10      E4  =  329.63 Hz
-    +pitch_first_byte 358          ; 349.16 Hz     11      F4  =  349.23 Hz
-    +pitch_first_byte 338          ; 369.82 Hz     12      F#4 =  369.99 Hz
-    +pitch_first_byte 319          ; 391.85 Hz     13      G4  =  392.00 Hz
+    +pitch_first_byte 338          ; 369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
+    +pitch_first_byte 319          ; 391.85 Hz           G4  =  392.00 Hz            0.15 Hz
+    +pitch_first_byte 301          ; 415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
+    +pitch_first_byte 284          ; 440.14 Hz           A4  =  440.00 Hz            0.14 Hz
+    +pitch_first_byte 268          ; 466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
+    +pitch_first_byte 253          ; 494.07 Hz           B4  =  493.88 Hz            0.19 Hz
+    +pitch_first_byte 239          ; 523.01 Hz           C5  =  523.25 Hz            0.24 Hz
+    +pitch_first_byte 225          ; 555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
+    +pitch_first_byte 213          ; 586.85 Hz           D5  =  587.33 Hz            0.48 Hz
+    +pitch_first_byte 201          ; 621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
+    +pitch_first_byte 190          ; 657.89 Hz           E5  =  659.26 Hz            1.36 Hz
+    +pitch_first_byte 179          ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
+    +pitch_first_byte 169          ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
+    +pitch_first_byte 159          ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
     !byte 0                        ;
 
 pitch_table_second
-    +pitch_second_byte 676         ; 184.91 Hz     0       F#3 =  185.00 Hz
-    +pitch_second_byte 638         ; 195.92 Hz     0       G3  =  196.00 Hz
-    +pitch_second_byte 602         ; 207.64 Hz     1       G#3 =  207.65 Hz
-    +pitch_second_byte 568         ; 220.07 Hz     2       A3  =  220.00 Hz
-    +pitch_second_byte 536         ; 233.21 Hz     3       A#3 =  233.08 Hz
-    +pitch_second_byte 506         ; 247.04 Hz     4       B3  =  246.94 Hz
-    +pitch_second_byte 478         ; 261.51 Hz     5       C4  =  261.63 Hz
-    +pitch_second_byte 451         ; 277.16 Hz     6       C#4 =  277.18 Hz
-    +pitch_second_byte 426         ; 293.43 Hz     7       D4  =  293.66 Hz
-    +pitch_second_byte 402         ; 310.95 Hz     8       D#4 =  311.13 Hz
-    +pitch_second_byte 379         ; 329.82 Hz     9       E4  =  329.63 Hz
-    +pitch_second_byte 358         ; 349.16 Hz     10      F4  =  349.23 Hz
-    +pitch_second_byte 338         ; 369.82 Hz     11      F#4 =  369.99 Hz
-    +pitch_second_byte 319         ; 391.85 Hz     12      G4  =  392.00 Hz
+    +pitch_second_byte 338         ;  369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
+    +pitch_second_byte 319         ;  391.85 Hz           G4  =  392.00 Hz            0.15 Hz
+    +pitch_second_byte 301         ;  415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
+    +pitch_second_byte 284         ;  440.14 Hz           A4  =  440.00 Hz            0.14 Hz
+    +pitch_second_byte 268         ;  466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
+    +pitch_second_byte 253         ;  494.07 Hz           B4  =  493.88 Hz            0.19 Hz
+    +pitch_second_byte 239         ;  523.01 Hz           C5  =  523.25 Hz            0.24 Hz
+    +pitch_second_byte 225         ;  555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
+    +pitch_second_byte 213         ;  586.85 Hz           D5  =  587.33 Hz            0.48 Hz
+    +pitch_second_byte 201         ;  621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
+    +pitch_second_byte 190         ;  657.89 Hz           E5  =  659.26 Hz            1.36 Hz
+    +pitch_second_byte 179         ;  698.32 Hz           F5  =  698.46 Hz            0.13 Hz
+    +pitch_second_byte 169         ;  739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
+    +pitch_second_byte 159         ;  786.16 Hz           G5  =  783.99 Hz            2.17 Hz
     !byte 0                        ; [TODO: unused?]
+
+
+
 
 ; ***************************************************************************************
 ; per channel information
