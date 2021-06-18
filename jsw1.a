@@ -5078,8 +5078,8 @@ melody_table
     +note ds4, 2        ; measure 19
     +note es4, 1
     +note g4,  1
-    +note es4, 2
-    +note ds4, 2
+    +note es4, 1
+    +note ds4, 3
 
     +note d4,  2        ; measure 20
     +note d4,  1
@@ -5135,8 +5135,9 @@ melody_table
 
     +note c4,  2        ; measure 30
     +note c4,  2
+    +note c4,  1
     +note c4,  2
-    +note c4,  2
+    +note non, 1
 
     +note as3, 2        ; measure 31
     +note a3,  2
