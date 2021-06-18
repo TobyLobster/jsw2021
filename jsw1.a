@@ -5098,9 +5098,8 @@ melody_table
 
     +note c5,  2        ; measure 30
     +note c5,  2
-    +note c5,  1
     +note c5,  2
-    +note non, 1
+    +note c5,  2
 
     +note as4, 2        ; measure 31
     +note a4,  2
@@ -5136,7 +5135,6 @@ pitch_table_first
     +pitch_first_byte 179          ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
     +pitch_first_byte 169          ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
     +pitch_first_byte 159          ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
-    !byte 0                        ;
 
 pitch_table_second
     +pitch_second_byte 338         ;  369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
@@ -5153,7 +5151,6 @@ pitch_table_second
     +pitch_second_byte 179         ;  698.32 Hz           F5  =  698.46 Hz            0.13 Hz
     +pitch_second_byte 169         ;  739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
     +pitch_second_byte 159         ;  786.16 Hz           G5  =  783.99 Hz            2.17 Hz
-    !byte 0                        ; [TODO: unused?]
 
 
 
@@ -5410,41 +5407,6 @@ items_tile_address_low
 
 items_tile_address_high
     !byte $6f, $6f, $6f, $6f, $6f, $6f, $6f, $08, $08, $08, $08, $08
-
-; ***************************************************************************************
-os_screen_address_lookup_table
-    !be16 $0000
-    !be16 $0200
-    !be16 $0400
-    !be16 $0600
-    !be16 $0800
-    !be16 $0a00
-    !be16 $0c00
-    !be16 $0e00
-    !be16 $1000
-    !be16 $1200
-    !be16 $1400
-    !be16 $1600
-    !be16 $1800
-    !be16 $1a00
-    !be16 $1c00
-    !be16 $1e00
-    !be16 $2000
-    !be16 $2200
-    !be16 $2400
-    !be16 $2600
-    !be16 $2800
-    !be16 $2a00
-    !be16 $2c00
-    !be16 $2e00
-    !be16 $3000
-    !be16 $3200
-    !be16 $3400
-    !be16 $3600
-    !be16 $3800
-    !be16 $3a00
-    !be16 $3c00
-    !be16 $3e00
 
 life_colours
     ;      KK,  RR,  YY,  WW
