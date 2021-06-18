@@ -1350,21 +1350,23 @@ Room 21
     Slope direction: /
     Rope present: no
     Deadly tile logical colours  : 0 2
-    Conveyor tile logical colours: 2 3
+    Conveyor tile logical colours: 0 2
     Slope tile logical colours   : 0 3
     Wall tile logical colours    : 2 3
     Platform tile logical colours: 1 3
+    Scenery tile logical colours : 0 2
     Item tile sprite    : 145
     Deadly tile sprite  : 64
     Conveyor tile sprite: 144
     Slope tile sprite   : 3
     Wall tile sprite    : 142
     Platform tile sprite: 141
+    Scenery tile sprite : 142
     Palette: black, red, blue, yellow
     Palette change: 3 1 green
     Palette change: 5 1 cancel
-    Palette change: 13 3 white
-    Palette change: 15 3 cancel
+    Palette change: 13 2 white
+    Palette change: 15 2 cancel
     Title: tab 10, "The Bathroom"
     Tile commands:
         Draw horizontal strip until X=31                 ; 'Draw strip' moves the cursor to the end tile
@@ -1388,6 +1390,9 @@ Room 21
         Use CONVEYOR
         Move to (20,1)
         Draw horizontal strip until X=23                 ; 'Draw strip' moves the cursor to the end tile
+        Use SCENERY
+        Move to (30,1)
+        Draw block to (31,2)
         Use ITEM
         Draw 1 single tile at (23,2)
     Enemies: 2
@@ -1398,7 +1403,7 @@ Room 21
             Max Extent: 0
             Initial Dir: left
             Speed: 0
-            Logical colour: 3
+            Logical colour: 2
         Enemy: 1
             Sprite: 28
             Initial Pos: (15,3)

@@ -4782,38 +4782,37 @@ play_melody
     dec note_length                                 ;
     bne set_melody_vol                              ;
     ldx note_number                                 ;
-    lda melody_duration_table,X                     ;
+    lda melody_table,X                              ;
+    lsr                                             ;
+    and #%01111000                                  ;
     sta note_length                                 ;
-    lda melody_pitch_table,X                        ;
-
-; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
-; write second byte:  top 6 bits of pitch P
-;
-; To set volume V (0-15) on channel C (0-2, or 3=noise):
-; write volume byte:  128 + 32*C + 16 + volume (0-15, 0 = loudest)
-
+    lda melody_table,X                              ;
     and #$0f                                        ;
-    ora #$80                                        ; 'OR' in upper nybble for channel 3
+    cmp #14                                         ;
+    beq start_rapid_decay                           ;
+    ldx #0                                          ;
+    stx is_rapid_decay                              ;
+    tax                                             ;
+    lda pitch_table_first,X                         ;
     jsr send_to_sound_chip                          ; first byte
-
-    lda melody_pitch_table,X                        ;
-    lsr                                             ;
-    lsr                                             ;
-    lsr                                             ;
-    lsr                                             ;
+    lda pitch_table_second,X                        ;
     jsr send_to_sound_chip                          ; second byte
 
     lda #11 * 4                                     ;
     sta melody_note_volume                          ;
 
+next_note
     inc note_number                                 ;
     lda note_number                                 ;
-    cmp #$25                                        ;
+    cmp #melody_table_end - melody_table            ;
     bne set_melody_vol                              ;
     lda #0                                          ;
     sta note_number                                 ;
 set_melody_vol
     ; set volume of playing note
+    ; To set volume V (0-15) on channel C (0-2, or 3=noise):
+    ; write volume byte:  128 + 32*C + 16 + volume (0-15, 0 = loudest)
+
     lda melody_note_volume                          ;
     lsr                                             ;
     lsr                                             ;
@@ -4824,8 +4823,24 @@ set_melody_vol
     lda melody_note_volume                          ;
     beq +                                           ;
     dec melody_note_volume                          ;
+    beq +                                           ;
+    lda is_rapid_decay                              ;
+    beq +                                           ;
+    dec melody_note_volume                          ;
+    beq +                                           ;
+    dec melody_note_volume                          ;
+    beq +                                           ;
+    dec melody_note_volume                          ;
 +
     rts                                             ;
+
+start_rapid_decay
+    ldx #1                                          ;
+    stx is_rapid_decay                              ;
+    bne next_note                                   ;
+
+is_rapid_decay
+    !byte 0
 
 ; ***************************************************************************************
 check_for_q_and_s_keys
@@ -4927,19 +4942,254 @@ exit_irq
     !error "Alignment of room_palette is wrong"
 }
 
+!macro note .pitch, .dur {
+    !byte .pitch + 16 * .dur
+}
+
+fs3 = 0
+g3  = 1
+gs3 = 2
+a3  = 3
+as3 = 4
+b3  = 5
+c4  = 6
+cs4 = 7
+d4  = 8
+ds4 = 9
+e4  = 10
+es4 = 11
+f4  = 11
+fs4 = 12
+g4  = 13
+non = 14
+
 ; ***************************************************************************************
 
-melody_pitch_table
-    !byte 169, 190, 169, 190, 201, 253
-    !byte 201, 190, 169, 190, 169, 190, 201, 190, 169, 150, 142, 150, 142, 150, 169
-    !byte 127, 134, 150, 169, 190, 201, 190, 169, 201
-    !byte 160, 169, 190, 169, 160, 190, 127
+melody_table
+    +note d4,  1        ; measure 1
+    +note c4,  1
+    +note d4,  1
+    +note c4,  1
+    +note b3,  2
+    +note g3,  3
 
-melody_duration_table
-    !byte  8,  8,  8,  8, 16, 32
-    !byte  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8, 64
-    !byte 32, 16, 16,  8,  8,  8,  8, 16, 16
-    !byte  8,  8,  8,  8, 16, 16, 64
+    +note non, 1        ; measure 2
+    +note b3,  1
+    +note c4,  1
+    +note d4,  1
+    +note c4,  1
+    +note d4,  1
+    +note c4,  1
+
+    +note b3,  1        ; measure 3
+    +note c4,  1
+    +note d4,  1
+    +note e4,  1
+    +note es4, 1
+    +note e4,  1
+    +note es4, 1
+    +note e4,  1
+
+    +note d4,  4        ; measure 4
+    +note non, 4
+
+    +note ds4, 2        ; measure 5
+    +note d4,  2
+    +note cs4, 2
+    +note c4,  2
+
+    +note as3, 1        ; measure 6
+    +note a3,  1
+    +note g3,  1
+    +note a3,  1
+    +note as3, 3
+    +note non, 1
+
+    +note as3, 1        ; measure 7
+    +note a3,  1
+    +note g3,  1
+    +note a3,  1
+    +note as3, 2
+    +note g3,  2
+
+    +note d4,  4        ; measure 8
+    +note non, 4
+
+    +note d4,  1        ; measure 9
+    +note c4,  1
+    +note d4,  1
+    +note c4,  1
+    +note b3,  2
+    +note g3,  3
+
+    +note non, 1
+    +note b3,  1        ; measure 10
+    +note c4,  1
+    +note d4,  1
+    +note c4,  1
+    +note d4,  1
+    +note c4,  1
+
+    +note b3,  1        ; measure 11
+    +note c4,  1
+    +note d4,  1
+    +note e4,  1
+    +note es4, 1
+    +note e4,  1
+    +note es4, 1
+    +note e4,  1
+
+    +note d4,  4        ; measure 12
+    +note non, 4
+
+    +note ds4, 2        ; measure 13
+    +note d4,  2
+    +note cs4, 2
+    +note c4,  2
+
+    +note as3, 1        ; measure 14
+    +note a3,  1
+    +note g3,  1
+    +note a3,  1
+    +note as3, 2
+    +note non, 2
+
+    +note as3, 1        ; measure 15
+    +note a3,  1
+    +note g3,  1
+    +note as3, 1
+    +note a3,  1
+    +note g3,  1
+    +note fs3, 1
+    +note a3,  1
+
+    +note g3,  2        ; measure 16
+    +note non, 2
+    +note b3,  4
+
+    +note c4,  4        ; measure 17
+    +note d4,  4
+
+    +note ds4, 2        ; measure 18
+    +note ds4, 2
+    +note ds4, 2
+    +note ds4, 2
+
+    +note ds4, 2        ; measure 19
+    +note es4, 1
+    +note g4,  1
+    +note es4, 2
+    +note ds4, 2
+
+    +note d4,  2        ; measure 20
+    +note d4,  1
+    +note d4,  1
+    +note d4,  1
+    +note c4,  1
+    +note as3, 1
+    +note c4,  1
+
+    +note d4,  6        ; measure 21
+    +note d4,  2
+
+    +note c4,  2        ; measure 22
+    +note c4,  2
+    +note c4,  2
+    +note c4,  2
+
+    +note c4,  2        ; measure 23
+    +note d4,  1
+    +note ds4, 1
+    +note d4,  3
+    +note c4,  1
+
+    +note b3,  4        ; measure 24
+    +note non, 4
+
+    +note b3,  2        ; measure 25
+    +note c4,  2
+    +note d4,  2
+
+    +note ds4, 2        ; measure 26
+    +note ds4, 2
+    +note ds4, 2
+    +note ds4, 2
+
+    +note ds4, 2        ; measure 27
+    +note es4, 1
+    +note g4,  1
+    +note es4, 2
+    +note ds4, 2
+
+    +note d4,  2        ; measure 28
+    +note d4,  1
+    +note d4,  1
+    +note d4,  1
+    +note c4,  1
+    +note as3, 1
+    +note c4,  1
+
+    +note d4,  2        ; measure 29
+    +note non, 4
+    +note g3,  2
+
+    +note c4,  2        ; measure 30
+    +note c4,  2
+    +note c4,  2
+    +note c4,  2
+
+    +note as3, 2        ; measure 31
+    +note a3,  2
+    +note g3,  2
+    +note as3, 2
+
+    +note d4,  8        ; measure 32
+melody_table_end
+
+; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
+; write second byte:  top 6 bits of pitch P
+!macro pitch_first_byte .pitch {
+    !byte 128 + 32 * 0 + (.pitch % 16)
+}
+
+!macro pitch_second_byte .pitch {
+    !byte .pitch / 16
+}
+
+; ***************************************************************************************
+pitch_table_first
+    +pitch_first_byte 676          ; 184.91 Hz     0       F#3 =  185.00 Hz
+    +pitch_first_byte 638          ; 195.92 Hz     1       G3  =  196.00 Hz
+    +pitch_first_byte 602          ; 207.64 Hz     2       G#3 =  207.65 Hz
+    +pitch_first_byte 568          ; 220.07 Hz     3       A3  =  220.00 Hz
+    +pitch_first_byte 536          ; 233.21 Hz     4       A#3 =  233.08 Hz
+    +pitch_first_byte 506          ; 247.04 Hz     5       B3  =  246.94 Hz
+    +pitch_first_byte 478          ; 261.51 Hz     6       C4  =  261.63 Hz
+    +pitch_first_byte 451          ; 277.16 Hz     7       C#4 =  277.18 Hz
+    +pitch_first_byte 426          ; 293.43 Hz     8       D4  =  293.66 Hz
+    +pitch_first_byte 402          ; 310.95 Hz     9       D#4 =  311.13 Hz
+    +pitch_first_byte 379          ; 329.82 Hz     10      E4  =  329.63 Hz
+    +pitch_first_byte 358          ; 349.16 Hz     11      F4  =  349.23 Hz
+    +pitch_first_byte 338          ; 369.82 Hz     12      F#4 =  369.99 Hz
+    +pitch_first_byte 319          ; 391.85 Hz     13      G4  =  392.00 Hz
+    !byte 0                        ;
+
+pitch_table_second
+    +pitch_second_byte 676         ; 184.91 Hz     0       F#3 =  185.00 Hz
+    +pitch_second_byte 638         ; 195.92 Hz     0       G3  =  196.00 Hz
+    +pitch_second_byte 602         ; 207.64 Hz     1       G#3 =  207.65 Hz
+    +pitch_second_byte 568         ; 220.07 Hz     2       A3  =  220.00 Hz
+    +pitch_second_byte 536         ; 233.21 Hz     3       A#3 =  233.08 Hz
+    +pitch_second_byte 506         ; 247.04 Hz     4       B3  =  246.94 Hz
+    +pitch_second_byte 478         ; 261.51 Hz     5       C4  =  261.63 Hz
+    +pitch_second_byte 451         ; 277.16 Hz     6       C#4 =  277.18 Hz
+    +pitch_second_byte 426         ; 293.43 Hz     7       D4  =  293.66 Hz
+    +pitch_second_byte 402         ; 310.95 Hz     8       D#4 =  311.13 Hz
+    +pitch_second_byte 379         ; 329.82 Hz     9       E4  =  329.63 Hz
+    +pitch_second_byte 358         ; 349.16 Hz     10      F4  =  349.23 Hz
+    +pitch_second_byte 338         ; 369.82 Hz     11      F#4 =  369.99 Hz
+    +pitch_second_byte 319         ; 391.85 Hz     12      G4  =  392.00 Hz
+    !byte 0                        ;
 
 ; ***************************************************************************************
 ; Change the appearance of logical colour Y to physical colour A
