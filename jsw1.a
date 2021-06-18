@@ -11,9 +11,9 @@ player_start_x                                      = 20 * 8    ;
 player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-;player_start_room                                   = 58        ;
-;player_start_x                                      = 21 * 8     ; must be even!
-;player_start_y                                      = 3 * 8    ;
+;player_start_room                                   = 18        ;
+;player_start_x                                      = 14 * 8     ; must be even!
+;player_start_y                                      = 10 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;
@@ -339,6 +339,17 @@ title_text_destination_high                         = $a3
 title_text_loop_counter                             = $a4
 temp_address_low                                    = $a5
 temp_address_high                                   = $a6
+num_sprites_remaining                               = $a7
+num_rows_remaining                                  = $a8
+should_reflect                                      = $a9
+reflect_destination_offset                          = $aa
+temp_reflectY                                       = $ab
+temp_reverse                                        = $ac
+anim_index                                          = $ad
+scenery_len                                         = $ae
+final_strip_offset                                  = $af
+move_title_down_loop_counter                        = $b0
+title_delay_before_restart                          = $b1
 
 screen_memory_start                                 = $5600
 screen_address_title                                = screen_memory_start + 16 * $0200  ; row 16
@@ -911,19 +922,6 @@ reflect_rows_loop
     inc unpacked_sprite_address_high                ;
 
     jmp consider_next_enemy1                        ;
-
-num_sprites_remaining
-    !byte 0                                         ;
-num_rows_remaining
-    !byte 0                                         ;
-should_reflect
-    !byte 0                                         ;
-reflect_destination_offset
-    !byte 0                                         ;
-temp_reflectY
-    !byte 0                                         ;
-temp_reverse
-    !byte 0
 
 ; ***************************************************************************************
 ;
@@ -1499,13 +1497,6 @@ next_tile
 vertical
     dec tile_y                                      ;
     jmp next_tile                                   ;
-
-anim_index
-    !byte 0
-scenery_len
-    !byte 0
-final_strip_offset
-    !byte 0
 
 ; ***************************************************************************************
 start_of_animation_offset
@@ -2285,6 +2276,7 @@ leave_with_initial_x_and_y
     ldx x1                                          ;
     ldy y                                           ;
     rts                                             ;
+
 tile_is_item                                        ; If the tile is an item,
     and #$0f                                        ;
     tax                                             ;
@@ -4092,9 +4084,6 @@ is_1c_1d_1e_or_1f
 
     rts                                             ;
 
-move_title_down_loop_counter
-    !byte 0
-
 ; ***************************************************************************************
 copy_row
     ldx #1                                          ;
@@ -4425,42 +4414,6 @@ keyStateEscape
 keyStateShift
    !byte 0
 
-;previousKeyStates
-;previousKeyStateZ
-;   !byte 0
-;previousKeyStateX
-;   !byte 0
-;previousKeyStateRETURN
-;   !byte 0
-;previousKeyStateSpace
-;   !byte 0
-;previousKeyStateS
-;   !byte 0
-;previousKeyStateQ
-;   !byte 0
-;previousKeyStateEscape
-;   !byte 0
-;previousKeyStateShift
-;   !byte 0
-;
-;justPressedKeyStates
-;justPressedStateZ
-;   !byte 0
-;justPressedStateX
-;   !byte 0
-;justPressedStateRETURN
-;   !byte 0
-;justPressedStateSpace
-;   !byte 0
-;justPressedStateS
-;   !byte 0
-;justPressedStateQ
-;   !byte 0
-;justPressedStateEscape
-;   !byte 0
-;justPressedStateShift
-;    !byte 0
-
 ; ***************************************************************************************
 scroll_scrolltext
     ldx #>(text_message_address - $10)              ;
@@ -4631,8 +4584,6 @@ title_change_palette
 skip_title_colour_change
     rts                                             ;
 
-title_delay_before_restart
-    !byte 0
 
 ; ***************************************************************************************
 title_screen
@@ -4841,6 +4792,8 @@ start_rapid_decay
 
 is_rapid_decay
     !byte 0
+note_length
+    !byte $01
 
 ; ***************************************************************************************
 check_for_q_and_s_keys
@@ -4859,8 +4812,19 @@ play_silence
 q_not_pressed
     rts                                             ;
 
-note_length
-    !byte $06
+; ***************************************************************************************
+; Change the appearance of logical colour Y to physical colour A
+set_logical_colour_y_to_a
+    eor #7                                  ;
+    ora paletteLookupTable,Y                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$10                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$50                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    eor #$10                                ;
+    sta videoULAPaletteRegister             ; store actual colour in register
+    rts                                     ;
 
 ; ***************************************************************************************
 irq_routine
@@ -4942,6 +4906,7 @@ exit_irq
     !error "Alignment of room_palette is wrong"
 }
 
+; ***************************************************************************************
 !macro note .pitch, .dur {
     !byte .pitch + 16 * .dur
 }
@@ -4962,8 +4927,6 @@ f4  = 11
 fs4 = 12
 g4  = 13
 non = 14
-
-; ***************************************************************************************
 
 melody_table
     +note d4,  1        ; measure 1
@@ -5190,21 +5153,7 @@ pitch_table_second
     +pitch_second_byte 358         ; 349.16 Hz     10      F4  =  349.23 Hz
     +pitch_second_byte 338         ; 369.82 Hz     11      F#4 =  369.99 Hz
     +pitch_second_byte 319         ; 391.85 Hz     12      G4  =  392.00 Hz
-    !byte 0                        ;
-
-; ***************************************************************************************
-; Change the appearance of logical colour Y to physical colour A
-set_logical_colour_y_to_a
-    eor #7                                  ;
-    ora paletteLookupTable,Y                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$10                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$50                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$10                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    rts                                     ;
+    !byte 0                        ; [TODO: unused?]
 
 ; ***************************************************************************************
 ; per channel information

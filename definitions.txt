@@ -3243,17 +3243,19 @@ Room 48
     Conveyor direction: left
     Slope direction: /
     Rope present: yes
-    Deadly tile logical colours  : 2 0
+    Deadly tile logical colours  : 0 2
     Conveyor tile logical colours: 1 2
     Slope tile logical colours   : 0 2
     Wall tile logical colours    : 0 1
     Platform tile logical colours: 0 2
+    Scenery tile logical colours : 2 0
     Item tile sprite    : 117
-    Deadly tile sprite  : 15
+    Deadly tile sprite  : 241
     Conveyor tile sprite: 118
     Slope tile sprite   : 126
     Wall tile sprite    : 134
     Platform tile sprite: 137
+    Scenery tile sprite : 15
     Palette: blue, cyan, yellow, white
     Title: tab 12, "The Beach"
     Tile commands:
@@ -3268,6 +3270,8 @@ Room 48
         Use SLOPE
         Draw 1 single tile at (5,1)
         Use DEADLY
+        Draw 4 single tiles at (8,2) (13,2) (17,2) (21,2)
+        Use SCENERY
         Draw 4 single tiles at (8,1) (13,1) (17,1) (21,1)
         Use ITEM
         Draw 1 single tile at (22,2)
@@ -6748,6 +6752,16 @@ BackgroundSprite 240
     #.###.#.
     .#...#.#
     #.....##
+
+BackgroundSprite 241
+    ........                                             ; The Beach DEADLY
+    ........
+    ........
+    ........
+    ........
+    ........
+    ........
+    ##....##
 
 
 ; *** UNUSED ***
