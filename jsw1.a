@@ -4911,203 +4911,203 @@ exit_irq
     !byte .pitch + 16 * .dur
 }
 
-fs3 = 0
-g3  = 1
-gs3 = 2
-a3  = 3
-as3 = 4
-b3  = 5
-c4  = 6
-cs4 = 7
-d4  = 8
-ds4 = 9
-e4  = 10
-es4 = 11
-f4  = 11
-fs4 = 12
-g4  = 13
+fs4 = 0
+g4  = 1
+gs4 = 2
+a4  = 3
+as4 = 4
+b4  = 5
+c5  = 6
+cs5 = 7
+d5  = 8
+ds5 = 9
+e5  = 10
+es5 = 11
+f5  = 11
+fs5 = 12
+g5  = 13
 non = 14
 
 melody_table
-    +note d4,  1        ; measure 1
-    +note c4,  1
-    +note d4,  1
-    +note c4,  1
-    +note b3,  2
-    +note g3,  3
+    +note d5,  1        ; measure 1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note b4,  2
+    +note g4,  3
 
     +note non, 1        ; measure 2
-    +note b3,  1
-    +note c4,  1
-    +note d4,  1
-    +note c4,  1
-    +note d4,  1
-    +note c4,  1
+    +note b4,  1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
 
-    +note b3,  1        ; measure 3
-    +note c4,  1
-    +note d4,  1
-    +note e4,  1
-    +note es4, 1
-    +note e4,  1
-    +note es4, 1
-    +note e4,  1
+    +note b4,  1        ; measure 3
+    +note c5,  1
+    +note d5,  1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
 
-    +note d4,  4        ; measure 4
+    +note d5,  4        ; measure 4
     +note non, 4
 
-    +note ds4, 2        ; measure 5
-    +note d4,  2
-    +note cs4, 2
-    +note c4,  2
+    +note ds5, 2        ; measure 5
+    +note d5,  2
+    +note cs5, 2
+    +note c5,  2
 
-    +note as3, 1        ; measure 6
-    +note a3,  1
-    +note g3,  1
-    +note a3,  1
-    +note as3, 3
+    +note as4, 1        ; measure 6
+    +note a4,  1
+    +note g4,  1
+    +note a4,  1
+    +note as4, 3
     +note non, 1
 
-    +note as3, 1        ; measure 7
-    +note a3,  1
-    +note g3,  1
-    +note a3,  1
-    +note as3, 2
-    +note g3,  2
+    +note as4, 1        ; measure 7
+    +note a4,  1
+    +note g4,  1
+    +note a4,  1
+    +note as4, 2
+    +note g4,  2
 
-    +note d4,  4        ; measure 8
+    +note d5,  4        ; measure 8
     +note non, 4
 
-    +note d4,  1        ; measure 9
-    +note c4,  1
-    +note d4,  1
-    +note c4,  1
-    +note b3,  2
-    +note g3,  3
+    +note d5,  1        ; measure 9
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note b4,  2
+    +note g4,  3
 
     +note non, 1
-    +note b3,  1        ; measure 10
-    +note c4,  1
-    +note d4,  1
-    +note c4,  1
-    +note d4,  1
-    +note c4,  1
+    +note b4,  1        ; measure 10
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
 
-    +note b3,  1        ; measure 11
-    +note c4,  1
-    +note d4,  1
-    +note e4,  1
-    +note es4, 1
-    +note e4,  1
-    +note es4, 1
-    +note e4,  1
+    +note b4,  1        ; measure 11
+    +note c5,  1
+    +note d5,  1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
 
-    +note d4,  4        ; measure 12
+    +note d5,  4        ; measure 12
     +note non, 4
 
-    +note ds4, 2        ; measure 13
-    +note d4,  2
-    +note cs4, 2
-    +note c4,  2
+    +note ds5, 2        ; measure 13
+    +note d5,  2
+    +note cs5, 2
+    +note c5,  2
 
-    +note as3, 1        ; measure 14
-    +note a3,  1
-    +note g3,  1
-    +note a3,  1
-    +note as3, 2
+    +note as4, 1        ; measure 14
+    +note a4,  1
+    +note g4,  1
+    +note a4,  1
+    +note as4, 2
     +note non, 2
 
-    +note as3, 1        ; measure 15
-    +note a3,  1
-    +note g3,  1
-    +note as3, 1
-    +note a3,  1
-    +note g3,  1
-    +note fs3, 1
-    +note a3,  1
+    +note as4, 1        ; measure 15
+    +note a4,  1
+    +note g4,  1
+    +note as4, 1
+    +note a4,  1
+    +note g4,  1
+    +note fs4, 1
+    +note a4,  1
 
-    +note g3,  2        ; measure 16
+    +note g4,  2        ; measure 16
     +note non, 2
-    +note b3,  4
+    +note b4,  4
 
-    +note c4,  4        ; measure 17
-    +note d4,  4
+    +note c5,  4        ; measure 17
+    +note d5,  4
 
-    +note ds4, 2        ; measure 18
-    +note ds4, 2
-    +note ds4, 2
-    +note ds4, 2
+    +note ds5, 2        ; measure 18
+    +note ds5, 2
+    +note ds5, 2
+    +note ds5, 2
 
-    +note ds4, 2        ; measure 19
-    +note es4, 1
-    +note g4,  1
-    +note es4, 2
-    +note ds4, 2
+    +note ds5, 2        ; measure 19
+    +note es5, 1
+    +note g5,  1
+    +note es5, 2
+    +note ds5, 2
 
-    +note d4,  2        ; measure 20
-    +note d4,  1
-    +note d4,  1
-    +note d4,  1
-    +note c4,  1
-    +note as3, 1
-    +note c4,  1
+    +note d5,  2        ; measure 20
+    +note d5,  1
+    +note d5,  1
+    +note d5,  1
+    +note c5,  1
+    +note as4, 1
+    +note c5,  1
 
-    +note d4,  6        ; measure 21
-    +note d4,  2
+    +note d5,  6        ; measure 21
+    +note d5,  2
 
-    +note c4,  2        ; measure 22
-    +note c4,  2
-    +note c4,  2
-    +note c4,  2
+    +note c5,  2        ; measure 22
+    +note c5,  2
+    +note c5,  2
+    +note c5,  2
 
-    +note c4,  2        ; measure 23
-    +note d4,  1
-    +note ds4, 1
-    +note d4,  3
-    +note c4,  1
+    +note c5,  2        ; measure 23
+    +note d5,  1
+    +note ds5, 1
+    +note d5,  3
+    +note c5,  1
 
-    +note b3,  4        ; measure 24
+    +note b4,  4        ; measure 24
     +note non, 4
 
-    +note b3,  2        ; measure 25
-    +note c4,  2
-    +note d4,  2
+    +note b4,  2        ; measure 25
+    +note c5,  2
+    +note d5,  2
 
-    +note ds4, 2        ; measure 26
-    +note ds4, 2
-    +note ds4, 2
-    +note ds4, 2
+    +note ds5, 2        ; measure 26
+    +note ds5, 2
+    +note ds5, 2
+    +note ds5, 2
 
-    +note ds4, 2        ; measure 27
-    +note es4, 1
-    +note g4,  1
-    +note es4, 2
-    +note ds4, 2
+    +note ds5, 2        ; measure 27
+    +note es5, 1
+    +note g5,  1
+    +note es5, 2
+    +note ds5, 2
 
-    +note d4,  2        ; measure 28
-    +note d4,  1
-    +note d4,  1
-    +note d4,  1
-    +note c4,  1
-    +note as3, 1
-    +note c4,  1
+    +note d5,  2        ; measure 28
+    +note d5,  1
+    +note d5,  1
+    +note d5,  1
+    +note c5,  1
+    +note as4, 1
+    +note c5,  1
 
-    +note d4,  2        ; measure 29
+    +note d5,  2        ; measure 29
     +note non, 4
-    +note g3,  2
+    +note g4,  2
 
-    +note c4,  2        ; measure 30
-    +note c4,  2
-    +note c4,  1
-    +note c4,  2
+    +note c5,  2        ; measure 30
+    +note c5,  2
+    +note c5,  1
+    +note c5,  2
     +note non, 1
 
-    +note as3, 2        ; measure 31
-    +note a3,  2
-    +note g3,  2
-    +note as3, 2
+    +note as4, 2        ; measure 31
+    +note a4,  2
+    +note g4,  2
+    +note as4, 2
 
-    +note d4,  8        ; measure 32
+    +note d5,  8        ; measure 32
 melody_table_end
 
 ; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
