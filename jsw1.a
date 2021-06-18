@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-player_start_room                                   = 21        ; 21 = The Bathroom
-player_start_x                                      = 20 * 8    ;
-player_start_y                                      = 13 * 8    ;
+;player_start_room                                   = 21        ; 21 = The Bathroom
+;player_start_x                                      = 20 * 8    ;
+;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-;player_start_room                                   = 18        ;
-;player_start_x                                      = 14 * 8     ; must be even!
-;player_start_y                                      = 10 * 8    ;
+player_start_room                                   = 2        ;
+player_start_x                                      = 10 * 8     ; must be even!
+player_start_y                                      = 10 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;

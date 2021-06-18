@@ -693,7 +693,7 @@ Room 11
     Conveyor direction: left
     Slope direction: /
     Rope present: no
-    Deadly tile logical colours  : 0 3
+    Deadly tile logical colours  : 0 1
     Conveyor tile logical colours: 0 2
     Slope tile logical colours   : 0 3
     Wall tile logical colours    : 1 3
@@ -704,16 +704,21 @@ Room 11
     Slope tile sprite   : 72
     Wall tile sprite    : 180
     Platform tile sprite: 179
-    Palette: black, magenta, red, yellow
+    Palette: black, green, red, yellow
+    Palette change: 6 1 magenta
+    Palette change: 14 1 green
+    Palette change: 15 1 magenta
     Title: tab 10, "The Attic"
     Tile commands:
         Draw horizontal strip until X=31                 ; 'Draw strip' moves the cursor to the end tile
         Move to (0,9)
         Draw horizontal strip until X=13                 ; 'Draw strip' moves the cursor to the end tile
-        Draw 11 single tiles at (2,1) (2,3) (2,5) (2,7) (18,7) (19,7) (20,5) (21,5) (22,3) (31,7) (30,7)
+        Move to (0,1)
+        Draw horizontal strip until X=2
+        Draw 10 single tiles at (2,3) (2,5) (2,7) (18,7) (19,7) (20,5) (21,5) (22,3) (31,7) (30,7)
         Use WALL
         Draw 9 single tiles at (4,9) (11,9) (5,0) (8,0) (12,0) (15,0) (20,0) (27,0) (30,0)
-        Move to (0,1)
+        Move to (0,2)
         Draw block to (1,8)                              ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Use DEADLY
         Draw 5 single tiles at (7,1) (12,1) (16,1) (4,10) (11,10)
@@ -1327,7 +1332,7 @@ Room 20
             Sprite: 2
             Initial Pos: (12,2)
             Min Extent: 2
-            Max Extent: 8
+            Max Extent: 6
             Initial Dir: down
             Speed: 1
             Logical colour: 1
@@ -1406,9 +1411,9 @@ Room 21
             Logical colour: 2
         Enemy: 1
             Sprite: 28
-            Initial Pos: (15,3)
+            Initial Pos: (16,3)
             Min Extent: 0
-            Max Extent: 29
+            Max Extent: 28
             Initial Dir: left
             Speed: 2
             Logical colour: 1
@@ -1699,7 +1704,7 @@ Room 26
             Initial Pos: (10,7)
             Min Extent: 6
             Max Extent: 10
-            Initial Dir: down
+            Initial Dir: up
             Speed: 1
             Logical colour: 2
         Enemy: 2
@@ -1707,7 +1712,7 @@ Room 26
             Initial Pos: (13,7)
             Min Extent: 5
             Max Extent: 10
-            Initial Dir: up
+            Initial Dir: down
             Speed: 2
             Logical colour: 1
         Enemy: 3
@@ -1759,7 +1764,7 @@ Room 27
     Enemies: 7
         Enemy: 0
             Sprite: 23
-            Initial Pos: (8,3)
+            Initial Pos: (8,4)
             Min Extent: 0
             Max Extent: 11
             Initial Dir: up
@@ -1767,7 +1772,7 @@ Room 27
             Logical colour: 2
         Enemy: 1
             Sprite: 3
-            Initial Pos: (11,1)
+            Initial Pos: (11,2)
             Min Extent: 0
             Max Extent: 13
             Initial Dir: down
@@ -1775,31 +1780,31 @@ Room 27
             Logical colour: 1
         Enemy: 2
             Sprite: 1
-            Initial Pos: (14,10)
+            Initial Pos: (14,9)
             Min Extent: 0
-            Max Extent: 13
+            Max Extent: 12
             Initial Dir: down
-            Speed: 4
+            Speed: 3
             Logical colour: 3
         Enemy: 3
             Sprite: 3
-            Initial Pos: (17,6)
+            Initial Pos: (17,8)
             Min Extent: 1
-            Max Extent: 12
+            Max Extent: 13
             Initial Dir: up
-            Speed: 7
+            Speed: 4
             Logical colour: 1
         Enemy: 4
             Sprite: 3
-            Initial Pos: (20,2)
+            Initial Pos: (20,4)
             Min Extent: 0
-            Max Extent: 13
+            Max Extent: 11
             Initial Dir: up
             Speed: 2
             Logical colour: 2
         Enemy: 5
             Sprite: 3
-            Initial Pos: (23,1)
+            Initial Pos: (23,2)
             Min Extent: 0
             Max Extent: 13
             Initial Dir: down
@@ -1809,9 +1814,9 @@ Room 27
             Sprite: 3
             Initial Pos: (28,9)
             Min Extent: 0
-            Max Extent: 13
+            Max Extent: 12
             Initial Dir: down
-            Speed: 4
+            Speed: 3
             Logical colour: 3
     Arrows: 0
         Arrow: no
@@ -1828,12 +1833,14 @@ Room 28
     Slope tile logical colours   : 0 3
     Wall tile logical colours    : 2 1
     Platform tile logical colours: 0 1
+    Scenery tile logical colours : 2 1
     Item tile sprite    : 122
     Deadly tile sprite  : 122
     Conveyor tile sprite: 73
     Slope tile sprite   : 30
     Wall tile sprite    : 121
     Platform tile sprite: 120
+    Scenery tile sprite : 121
     Palette: black, yellow, blue, white
     Palette change: 14 1 green
     Title: tab 8, "First Landing"
@@ -1846,7 +1853,7 @@ Room 28
         Move to (31,0)
         Draw block to (24,1)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Use PLATFORM
-        Draw 4 single tiles at (30,1) (28,1) (26,1) (24,1)
+        Draw 5 single tiles at (31,1) (29,1) (27,1) (25,1) (24,1)
         Draw horizontal strip until X=21                 ; 'Draw strip' moves the cursor to the end tile
         Move to (23,15)
         Draw slope moving left until Y=1                 ; 'Draw slope' moves the cursor to the end tile
@@ -1854,6 +1861,8 @@ Room 28
         Move to (29,12)
         Draw vertical strip until Y=8                    ; 'Draw strip' moves the cursor to the end tile
         Draw 2 single tiles at (30,11) (28,11)
+        Use SCENERY
+        Draw 1 single tile at (24,1)
     Enemies: 1
         Enemy: 0
             Sprite: 21
@@ -2406,15 +2415,15 @@ Room 36
     Enemies: 6
         Enemy: 0
             Sprite: 14
-            Initial Pos: (21,12)
+            Initial Pos: (22,12)
             Min Extent: 0
-            Max Extent: 21
+            Max Extent: 30
             Initial Dir: left
             Speed: 2
             Logical colour: 2
         Enemy: 1
             Sprite: 28
-            Initial Pos: (3,9)
+            Initial Pos: (4,9)
             Min Extent: 2
             Max Extent: 7
             Initial Dir: right
@@ -2430,22 +2439,22 @@ Room 36
             Logical colour: 2
         Enemy: 3
             Sprite: 11
-            Initial Pos: (3,3)
+            Initial Pos: (4,3)
             Min Extent: 0
             Max Extent: 12
             Initial Dir: right
             Speed: 2
             Logical colour: 1
         Enemy: 4
-            Sprite: 26                  ; [Should be 36, but that's too many enemies]
-            Initial Pos: (16,6)
-            Min Extent: 11
+            Sprite: 26
+            Initial Pos: (22,6)
+            Min Extent: 12
             Max Extent: 25
             Initial Dir: left
             Speed: 2
             Logical colour: 3
         Enemy: 5
-            Sprite: 26
+            Sprite: 26              ; [Should be 36, but that's too many enemies]
             Initial Pos: (10,9)
             Min Extent: 9
             Max Extent: 18
@@ -2505,7 +2514,7 @@ Room 37
     Enemies: 3
         Enemy: 0
             Sprite: 30
-            Initial Pos: (6,10)
+            Initial Pos: (6,8)
             Min Extent: 6
             Max Extent: 11
             Initial Dir: up
@@ -2513,7 +2522,7 @@ Room 37
             Logical colour: 2
         Enemy: 1
             Sprite: 30
-            Initial Pos: (14,8)
+            Initial Pos: (14,7)
             Min Extent: 6
             Max Extent: 12
             Initial Dir: down
@@ -2521,7 +2530,7 @@ Room 37
             Logical colour: 3
         Enemy: 2
             Sprite: 27
-            Initial Pos: (22,11)
+            Initial Pos: (24,11)
             Min Extent: 16
             Max Extent: 27
             Initial Dir: left
@@ -4149,7 +4158,7 @@ Room 59
     Palette: black, yellow, blue, white
     Palette change: 9 1 green
     Palette change: 10 1 red
-    Palette change: 11 1 yellow
+    Palette change: 11 1 cyan
     Palette change: 14 1 green
     Title: tab 9, "Under the Drive"
     Tile commands:
@@ -4219,7 +4228,7 @@ Room 60
     Slope tile sprite   : 30
     Wall tile sprite    : 205
     Platform tile sprite: 204
-    Palette: black, magenta, cyan, white
+    Palette: black, magenta, yellow, white
     Palette change: 4 2 green
     Palette change: 11 2 cancel
     Palette change: 14 2 red
@@ -5829,7 +5838,7 @@ BackgroundSprite 148
     ....##..
     ........
     ..##..#.
-    .....###
+    .....#.#
     ##....#.
     ........
 
