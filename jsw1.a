@@ -11,9 +11,9 @@
 ;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 2        ;
-player_start_x                                      = 10 * 8     ; must be even!
-player_start_y                                      = 10 * 8    ;
+player_start_room                                   = 53       ;
+player_start_x                                      = 30 * 8     ; must be even!
+player_start_y                                      = 11 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;
@@ -363,7 +363,16 @@ initialise_room
     jsr initialise_room_data                        ;
     jsr initialise_enemies                          ;
     jsr initialise_arrows                           ;
-    jmp calculate_screen_address_of_conveyor        ;
+    jsr calculate_screen_address_of_conveyor        ;
+
+    jsr plot_enemies                                ;
+
+    ; wait for vsync
+    lda vsync_counter                               ;
+-
+    cmp vsync_counter                               ;
+    beq -
+    rts                                             ;
 
 ; ***************************************************************************************
 initialise_room_data
@@ -1234,6 +1243,11 @@ calculate_frame
     ldx enemies_y,Y                                 ;
     rts                                             ;
 
+temp_test_for_direction
+    !byte 0
+temp_old_position
+    !byte 0
+
 ; ***************************************************************************************
 move_enemy
     lda enemy_to_consider2                          ;
@@ -1243,29 +1257,50 @@ move_enemy
     adc #9                                          ; Use vertical variables for vertically moving enemies
 enemy_moving_horizontally1
     tay                                             ;
+    lda enemies_x,Y                                 ;
+    sta temp_old_position                           ;
     lda enemies_speed,X                             ;
+    sta temp_test_for_direction                     ;
     sta enemies_previous_speed,X                    ;
     clc                                             ;
     adc enemies_x,Y                                 ;
-    cmp enemies_direction,X                         ;
-    bcs at_edge_of_screen                           ;
     sta enemies_x,Y                                 ;
-at_edge_of_screen
+check_extents
     cmp enemies_minimum,X                           ;
-    bcc flip_direction                              ;
+    bcc make_speed_positive                         ; if (new pos < minimum) then branch
     beq flip_direction                              ;
     cmp enemies_maximum,X                           ;
-    bcc update_position                             ;
+    bcc leave30                                     ; if (new pos < maximum) then branch (leave)
+
+make_speed_negative
+    bit temp_test_for_direction                     ;
+    bmi leave30                                     ; if (moving in the correct direction) then branch (leave)
+
+    ; restore previous position, flip direction and try again
+    lda temp_old_position                           ;
+    sta enemies_x,Y                                 ; restore old position
+    jsr flip_direction                              ;
+    lda enemies_maximum,X                           ; check that the minimum and maximum are not the same
+    cmp enemies_minimum,X                           ;
+    bne move_enemy                                  ; try again in the new direction
+leave30
+    rts                                             ;
+
 flip_direction
     lda enemies_speed,X                             ;
     eor #$ff                                        ;
     sec                                             ;
     adc #0                                          ;
     sta enemies_speed,X                             ;
-    lda enemies_x,Y                                 ;
-update_position
-    sta enemies_x,Y                                 ;
     rts                                             ;
+
+make_speed_positive
+    bit temp_test_for_direction                     ;
+    bpl leave30                                     ; if (moving in the correct direction) then branch (leave)
+    lda enemies_minimum,X                           ;
+    sta enemies_x,Y                                 ; set position to the minimum
+    jmp flip_direction                              ;
+
 
 ; ***************************************************************************************
 plot_or_unplot_player_sprite
@@ -2219,7 +2254,7 @@ check_rows_of_player_against_tile1
     tya                                             ;
     clc                                             ;
     adc #$20                                        ;
-    sta item_state                                  ; next_tile_offset ; Consider tile immediately below when next called
+    sta next_tile_offset                            ; Consider tile immediately below when next called
     lda (tile_address_low1),Y                       ;
     sta tile1                                       ;
     bpl tile_is_background                          ;
@@ -2425,13 +2460,14 @@ start_conveying_player
 leave22
     rts                                             ;
 
+; ***************************************************************************************
 check_for_player_leaving_room
     ldy #0                                          ;
     lda player_x_in_enemies                         ;
-    beq player_at_left_or_right_edge_of_room        ;
+    beq player_at_left_edge_of_room                 ;
     iny                                             ;
     cmp #$f6                                        ;
-    beq player_at_left_or_right_edge_of_room        ;
+    beq player_at_right_edge_of_room                ;
     iny                                             ;
     ldx #$68                                        ;
     lda player_y_in_enemies                         ;
@@ -2449,8 +2485,9 @@ check_for_player_leaving_room
     bcc player_at_top_or_bottom_edge_of_room        ;
     sta player_entered_room_falling_too_far         ;
     jmp player_at_top_or_bottom_edge_of_room        ;
-player_at_left_or_right_edge_of_room
-    eor #$f4                                        ;
+player_at_right_edge_of_room
+    lda #6                                          ; new position on left edge of next screen
+store_new_x
     sta player_x_in_enemies                         ;
     jmp change_room                                 ;
 player_at_top_or_bottom_edge_of_room
@@ -2465,6 +2502,9 @@ goto_room
     jsr initialise_room                             ;
 leave23
     rts                                             ;
+player_at_left_edge_of_room
+    lda #$f0                                        ; new position on right edge of next screen
+    bne store_new_x                                 ; ALWAYs branch
 
 cycle_item_colours
     !byte 1,2,3,1,2,3,1,2,3,1,2,3
@@ -4613,6 +4653,9 @@ title_screen
     sta scrolltext_address_high                     ;
     lda #<title_screen_press_space                  ;
     sta scrolltext_address_low                      ;
+    lda #0                                          ;
+    sta title_delay_before_restart                  ;
+
     jmp scroll_the_message                          ;
 
 restart_scrolltext
@@ -4831,7 +4874,8 @@ irq_routine
     txa                                             ;
     pha                                             ;
     tya                                             ;
-    pha
+    pha                                             ;
+
     lda systemVIAInterruptFlagRegister              ; get interrupt flag register
     and #$c0                                        ;
     cmp #$c0                                        ;

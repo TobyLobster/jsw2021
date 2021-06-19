@@ -2583,11 +2583,11 @@ Room 38
     Enemies: 5
         Enemy: 0
             Sprite: 30
-            Initial Pos: (5,10)
-            Min Extent: 7
-            Max Extent: 12
+            Initial Pos: (5,9)
+            Min Extent: 6
+            Max Extent: 11
             Initial Dir: up
-            Speed: 4
+            Speed: 3
             Logical colour: 1
         Enemy: 1
             Sprite: 30
@@ -2602,12 +2602,12 @@ Room 38
             Initial Pos: (24,10)
             Min Extent: 14
             Max Extent: 30
-            Initial Dir: left
+            Initial Dir: right
             Speed: 2
             Logical colour: 1
         Enemy: 3
             Sprite: 30
-            Initial Pos: (11,10)
+            Initial Pos: (11,9)
             Min Extent: 9
             Max Extent: 12
             Initial Dir: down
@@ -3593,19 +3593,19 @@ Room 52
         Use WALL
         Draw horizontal strip until X=1                  ; 'Draw strip' moves the cursor to the end tile
         Move to (6,0)
-        Draw horizontal strip until X=30                 ; 'Draw strip' moves the cursor to the end tile
+        Draw horizontal strip until X=29                 ; 'Draw strip' moves the cursor to the end tile
         Draw block to (31,1)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Move to (31,6)
-        Draw block to (28,5)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
-        Draw block to (26,3)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
-        Move to (23,6)
-        Draw block to (20,3)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
-        Move to (17,6)
+        Draw block to (27,5)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
+        Draw block to (25,3)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
+        Move to (22,6)
+        Draw block to (19,3)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
+        Move to (16,6)
         Draw vertical strip until Y=3                    ; 'Draw strip' moves the cursor to the end tile
-        Move to (14,6)
+        Move to (13,6)
         Draw vertical strip until Y=3                    ; 'Draw strip' moves the cursor to the end tile
-        Move to (11,6)
-        Draw block to (9,3)                              ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
+        Move to (10,6)
+        Draw block to (8,3)                              ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Draw horizontal strip until X=5                  ; 'Draw strip' moves the cursor to the end tile
         Move to (0,15)
         Draw vertical strip until Y=10                   ; 'Draw strip' moves the cursor to the end tile
@@ -3616,42 +3616,43 @@ Room 52
         Draw slope moving right until Y=8                ; 'Draw slope' moves the cursor to the end tile
         Use PLATFORM
         Move to (5,7)
-        Draw horizontal strip until X=11                 ; 'Draw strip' moves the cursor to the end tile
-        Move to (14,7)
-        Draw horizontal strip until X=23                 ; 'Draw strip' moves the cursor to the end tile
+        Draw horizontal strip until X=10                 ; 'Draw strip' moves the cursor to the end tile
+        Draw 2 single tiles at (13,7) (16,7)
+        Move to (19,7)
+        Draw horizontal strip until X=22                 ; 'Draw strip' moves the cursor to the end tile
         Move to (31,7)
-        Draw horizontal strip until X=26                 ; 'Draw strip' moves the cursor to the end tile
+        Draw horizontal strip until X=25                 ; 'Draw strip' moves the cursor to the end tile
         Use CONVEYOR
         Move to (31,2)
-        Draw horizontal strip until X=30                 ; 'Draw strip' moves the cursor to the end tile
+        Draw horizontal strip until X=29                 ; 'Draw strip' moves the cursor to the end tile
     Enemies: 4
         Enemy: 0
             Sprite: 41
-            Initial Pos: (12,11)
+            Initial Pos: (11,8)
             Min Extent: 6
-            Max Extent: 13
-            Initial Dir: down
-            Speed: 1
-            Logical colour: 1
-        Enemy: 1
-            Sprite: 41
-            Initial Pos: (15,8)
-            Min Extent: 5
             Max Extent: 13
             Initial Dir: down
             Speed: 2
+            Logical colour: 1
+        Enemy: 1
+            Sprite: 41
+            Initial Pos: (14,8)
+            Min Extent: 5
+            Max Extent: 13
+            Initial Dir: down
+            Speed: 1
             Logical colour: 2
         Enemy: 2
             Sprite: 41
-            Initial Pos: (18,7)
+            Initial Pos: (17,6)
             Min Extent: 6
-            Max Extent: 13
+            Max Extent: 12
             Initial Dir: down
             Speed: 4
             Logical colour: 3
         Enemy: 3
             Sprite: 41
-            Initial Pos: (24,11)
+            Initial Pos: (23,10)
             Min Extent: 6
             Max Extent: 13
             Initial Dir: down
@@ -3706,14 +3707,14 @@ Room 53
         Enemy: 0
             Sprite: 14
             Initial Pos: (15,13)
-            Min Extent: 11
+            Min Extent: 10
             Max Extent: 31
             Initial Dir: right
             Speed: 2
             Logical colour: 3
         Enemy: 1
             Sprite: 36
-            Initial Pos: (21,11)
+            Initial Pos: (22,11)
             Min Extent: 16
             Max Extent: 30
             Initial Dir: left
@@ -3729,17 +3730,17 @@ Room 53
             Logical colour: 2
         Enemy: 3
             Sprite: 36
-            Initial Pos: (7,8)
-            Min Extent: 6
+            Initial Pos: (8,8)
+            Min Extent: 5
             Max Extent: 30
             Initial Dir: left
             Speed: 2
             Logical colour: 2
         Enemy: 4
             Sprite: 36
-            Initial Pos: (19,5)
+            Initial Pos: (20,5)
             Min Extent: 0
-            Max Extent: 31
+            Max Extent: 11
             Initial Dir: left
             Speed: 2
             Logical colour: 3
@@ -3802,7 +3803,7 @@ Room 54
     Enemies: 4
         Enemy: 0
             Sprite: 22
-            Initial Pos: (8,13)
+            Initial Pos: (9,13)
             Min Extent: 4
             Max Extent: 15
             Initial Dir: left
@@ -3810,27 +3811,27 @@ Room 54
             Logical colour: 1
         Enemy: 1
             Sprite: 40
-            Initial Pos: (2,7)
-            Min Extent: 5
-            Max Extent: 11
-            Initial Dir: up
-            Speed: 2
+            Initial Pos: (2,5)
+            Min Extent: 4
+            Max Extent: 12
+            Initial Dir: down
+            Speed: 5
             Logical colour: 2
         Enemy: 2
             Sprite: 40
-            Initial Pos: (5,7)
+            Initial Pos: (5,6)
             Min Extent: 3
             Max Extent: 10
             Initial Dir: up
-            Speed: 2
+            Speed: 6
             Logical colour: 2
         Enemy: 3
             Sprite: 40
-            Initial Pos: (8,10)
+            Initial Pos: (8,8)
             Min Extent: 3
             Max Extent: 11
-            Initial Dir: up
-            Speed: 2
+            Initial Dir: down
+            Speed: 3
             Logical colour: 1
     Arrows: 0
         Arrow: no
