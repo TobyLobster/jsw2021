@@ -1207,7 +1207,7 @@ Room 18
             Logical colour: 3
         Enemy: 1
             Sprite: 5
-            Initial Pos: (7,7)
+            Initial Pos: (7,6)
             Min Extent: 5
             Max Extent: 11
             Initial Dir: down
@@ -3886,11 +3886,11 @@ Room 55
     Enemies: 3
         Enemy: 0
             Sprite: 30
-            Initial Pos: (14,10)
+            Initial Pos: (14,9)
             Min Extent: 6
-            Max Extent: 12
-            Initial Dir: down
-            Speed: 4
+            Max Extent: 11
+            Initial Dir: up
+            Speed: 3
             Logical colour: 1
         Enemy: 1
             Sprite: 23
@@ -3902,7 +3902,7 @@ Room 55
             Logical colour: 2
         Enemy: 2
             Sprite: 27
-            Initial Pos: (15,13)
+            Initial Pos: (14,13)
             Min Extent: 0
             Max Extent: 31
             Initial Dir: left
@@ -3957,25 +3957,25 @@ Room 56
             Sprite: 36
             Initial Pos: (8,10)
             Min Extent: 0
-            Max Extent: 10
+            Max Extent: 11
             Initial Dir: left
             Speed: 2
             Logical colour: 2
         Enemy: 1
             Sprite: 36
-            Initial Pos: (19,10)
+            Initial Pos: (20,10)
             Min Extent: 14
             Max Extent: 30
-            Initial Dir: left
+            Initial Dir: right
             Speed: 2
             Logical colour: 3
         Enemy: 2
             Sprite: 29
             Initial Pos: (12,4)
             Min Extent: 1
-            Max Extent: 11
+            Max Extent: 12
             Initial Dir: down
-            Speed: 7
+            Speed: 6
             Logical colour: 1
     Arrows: 0
         Arrow: no
@@ -4041,10 +4041,10 @@ Room 57
             Logical colour: 3
         Enemy: 2
             Sprite: 38
-            Initial Pos: (28,7)
+            Initial Pos: (29,7)
             Min Extent: 19
             Max Extent: 30
-            Initial Dir: right
+            Initial Dir: left
             Speed: 2
             Logical colour: 2
     Arrows: 0
@@ -4115,24 +4115,24 @@ Room 58
             Sprite: 31
             Initial Pos: (2,11)
             Min Extent: 0
-            Max Extent: 11
-            Initial Dir: up
+            Max Extent: 12
+            Initial Dir: down
             Speed: 1
             Logical colour: 1
         Enemy: 1
             Sprite: 32
             Initial Pos: (4,11)
             Min Extent: 0
-            Max Extent: 11
-            Initial Dir: up
+            Max Extent: 12
+            Initial Dir: down
             Speed: 1
             Logical colour: 1
         Enemy: 2
             Sprite: 33
             Initial Pos: (3,13)
             Min Extent: 2
-            Max Extent: 13
-            Initial Dir: up
+            Max Extent: 14
+            Initial Dir: down
             Speed: 1
             Logical colour: 1
     Arrows: 0
@@ -4186,7 +4186,7 @@ Room 59
     Enemies: 3
         Enemy: 0
             Sprite: 36
-            Initial Pos: (14,11)
+            Initial Pos: (16,11)
             Min Extent: 12
             Max Extent: 30
             Initial Dir: left
@@ -4197,7 +4197,7 @@ Room 59
             Initial Pos: (22,8)
             Min Extent: 21
             Max Extent: 31
-            Initial Dir: right
+            Initial Dir: left
             Speed: 1
             Logical colour: 3
         Enemy: 2
@@ -4281,15 +4281,15 @@ Room 60
             Logical colour: 3
         Enemy: 2
             Sprite: 27
-            Initial Pos: (18,9)
+            Initial Pos: (19,9)
             Min Extent: 15
             Max Extent: 24
-            Initial Dir: left
+            Initial Dir: right
             Speed: 2
             Logical colour: 3
         Enemy: 3
             Sprite: 25
-            Initial Pos: (26,9)
+            Initial Pos: (25,9)
             Min Extent: 4
             Max Extent: 9
             Initial Dir: up
