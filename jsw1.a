@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-player_start_room                                   = 21        ; 21 = The Bathroom
-player_start_x                                      = 20 * 8    ;
-player_start_y                                      = 13 * 8    ;
+;player_start_room                                   = 21        ; 21 = The Bathroom
+;player_start_x                                      = 20 * 8    ;
+;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-;player_start_room                                   = 53       ;
-;player_start_x                                      = 30 * 8     ; must be even!
-;player_start_y                                      = 11 * 8    ;
+player_start_room                                   = 53       ;
+player_start_x                                      = 30 * 8     ; must be even!
+player_start_y                                      = 11 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;
@@ -121,7 +121,7 @@ white = 7
 FramePeriod     = 312*64-2
 
 ; Calculate here the timer value to interrupt at the desired line
-Timer1Value      = 68*64 + 37
+Timer1Value      = 76*64 + 39
 
 ; This is the delay between interrupts (one character row = 8 pixel rows)
 ShortTimerValue  = 8*64 - 2
@@ -4006,11 +4006,6 @@ game_over_palette
     !byte yellow
     !byte white
     !byte blue
-border_palette
-    !byte red
-    !byte red
-    !byte red
-    !byte red
 
 ; ***************************************************************************************
 initialise_room_background_tiles_and_title
@@ -4891,10 +4886,6 @@ irq_routine
     inx                                             ;
     cpx #13*3                                       ;
     bcc +                                           ;
-
-    lda #0                                          ; change to room palette
-    jsr change_all_palette                          ;
-
     jsr update_sound                                ; update all audio
     jsr update_music                                ;
     ldx #0                                          ;
@@ -4904,8 +4895,7 @@ irq_routine
     bne +                                           ;
     inc vsync_counter                               ;
     lda #4                                          ; change to footer palette
-    jsr change_all_palette                          ;
-    jmp exit_irq                                    ;
+    jmp change_all_palette                          ;
 
 +
     bcs +                                           ;
@@ -4932,8 +4922,22 @@ irq_routine
     cpx #21                                         ;
     bne exit_irq                                    ;
 
-    lda #16                                         ; change to border palette
-    jsr change_all_palette                          ;
+change_all_room_palette
+    lda #0                                          ; change to room palette
++
+change_all_palette
+    clc                                             ;
+    adc #<room_palette                              ;
+    sta change_palette_low                          ;
+    ldy #0                                          ;
+-
+change_palette_low = * + 1
+    lda room_palette,Y                              ;
+    jsr set_logical_colour_y_to_a                   ;
+    iny                                             ;
+    cpy #4                                          ;
+    bne -                                           ;
+
 exit_irq
     pla                                             ;
     tay                                             ;
@@ -4941,71 +4945,6 @@ exit_irq
     tax                                             ;
     lda irq_accumulator                             ;
     rti                                             ;
-
-; ***************************************************************************************
-change_all_palette
-;    clc                                             ;
-;    adc #<room_palette                              ;
-;    sta change_palette_low                          ;
-    tay                                             ;
-;-
-;change_palette_low = * + 1
-;    lda room_palette,Y                              ;
-;    eor #7                                          ;
-;    ora paletteLookupTable,Y                        ;
-;    sta videoULAPaletteRegister                     ; store actual colour in register
-;    eor #$10                                        ;
-;    sta videoULAPaletteRegister                     ; store actual colour in register
-;    eor #$50                                        ;
-;    sta videoULAPaletteRegister                     ; store actual colour in register
-;    eor #$10                                        ;
-;    sta videoULAPaletteRegister                     ; store actual colour in register
-    lda room_palette+0,Y                            ;
-    eor #7                                          ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$50                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-
-    lda room_palette+1,Y                            ;
-    eor #7                                          ;
-    ora #$20                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$50                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-
-    lda room_palette+2,Y                            ;
-    eor #7                                          ;
-    ora #$80                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$50                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-
-    lda room_palette+3,Y                            ;
-    eor #7                                          ;
-    ora #$a0                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$50                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-    eor #$10                                        ;
-    sta videoULAPaletteRegister                     ; store actual colour in register
-;    iny                                             ;
-;    cpy #4                                          ;
-;    bne -                                           ;
-    rts                                             ;
 
 !if ((>room_palette) != (>(room_palette + 4))) {
     !error "Alignment of room_palette is wrong"
@@ -5670,14 +5609,14 @@ register_CRTC_array
     !byte 40                                        ; R3 = The sync width register
     !byte 38                                        ; R4 = Vertical total register
     !byte 0                                         ; R5 = Vertical total adjust register
-    !byte 32 - 3                                    ; R6 = Vertical displayed register (number of visible character rows)
-    !byte 35 - 0                                    ; R7 = Vertical sync position (*TV)
+    !byte 32 - 11                                   ; R6 = Vertical displayed register (number of visible character rows)
+    !byte 35 - 5                                    ; R7 = Vertical sync position (*TV)
     !byte 0                                         ; R8 = Interlace and delay register
     !byte 7                                         ; R9 = Scan lines per character
     !byte $20                                       ; R10 = Cursor start register
     !byte 0                                         ; R11 = The cursor end register
-    !byte >((screen_memory_start - 4 * $200) / 8)                ; R12 = Displayed screen start address/8 register (High)
-    !byte <((screen_memory_start - 4 * $200) / 8)                ; R13 = Displayed screen start address/8 register (low)
+    !byte >(screen_memory_start / 8)                ; R12 = Displayed screen start address/8 register (High)
+    !byte <(screen_memory_start / 8)                ; R13 = Displayed screen start address/8 register (low)
     !byte 15                                        ; R14 = Cursor position register
     !byte 80                                        ; R15 = Cursor position register
 
