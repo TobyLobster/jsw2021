@@ -11,9 +11,9 @@
 ;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 53       ;
-player_start_x                                      = 30 * 8     ; must be even!
-player_start_y                                      = 11 * 8    ;
+player_start_room                                   = 17       ;
+player_start_x                                      = 3 * 8     ; must be even!
+player_start_y                                      = 6 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;
@@ -1212,10 +1212,10 @@ enemy_moving_vertically                             ; For vertically moving enem
     bmi skip_inversion4                             ;
     eor #$ff                                        ;
 skip_inversion4
-    clc                                             ;
-    adc enemies_y,X                                 ; use the vertical position to calculate frame
+;    clc                                             ;
+;    adc enemies_y,X                                 ; use the vertical position to calculate frame
+    lsr
     and #7                                          ;
-    lsr                                             ;
 calculate_frame
     dec sprite_frames                               ;
     and sprite_frames                               ;
@@ -4858,16 +4858,16 @@ q_not_pressed
 ; ***************************************************************************************
 ; Change the appearance of logical colour Y to physical colour A
 set_logical_colour_y_to_a
-    eor #7                                  ;
-    ora paletteLookupTable,Y                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$10                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$50                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    eor #$10                                ;
-    sta videoULAPaletteRegister             ; store actual colour in register
-    rts                                     ;
+    eor #7                                          ;
+    ora paletteLookupTable,Y                        ;
+    sta videoULAPaletteRegister                     ; store actual colour in register
+    eor #$10                                        ;
+    sta videoULAPaletteRegister                     ; store actual colour in register
+    eor #$50                                        ;
+    sta videoULAPaletteRegister                     ; store actual colour in register
+    eor #$10                                        ;
+    sta videoULAPaletteRegister                     ; store actual colour in register
+    rts                                             ;
 
 ; ***************************************************************************************
 irq_routine
@@ -5077,7 +5077,8 @@ melody_table
     +note c5,  4        ; measure 17
     +note d5,  4
 
-    +note ds5, 2        ; measure 18
+    +note ds5, 1        ; measure 18
+    +note non, 1
     +note ds5, 2
     +note ds5, 2
     +note ds5, 2
@@ -5099,7 +5100,8 @@ melody_table
     +note d5,  6        ; measure 21
     +note d5,  2
 
-    +note c5,  2        ; measure 22
+    +note c5,  1        ; measure 22
+    +note non, 1
     +note c5,  2
     +note c5,  2
     +note c5,  2
@@ -5142,8 +5144,9 @@ melody_table
 
     +note c5,  2        ; measure 30
     +note c5,  2
+    +note c5,  1
     +note c5,  2
-    +note c5,  2
+    +note non, 1
 
     +note as4, 2        ; measure 31
     +note a4,  2
