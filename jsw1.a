@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-;player_start_room                                   = 21        ; 21 = The Bathroom
-;player_start_x                                      = 20 * 8    ;
-;player_start_y                                      = 13 * 8    ;
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_x                                      = 20 * 8    ;
+player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 60       ;
-player_start_x                                      = 14 * 8     ; must be even!
-player_start_y                                      = 11 * 8    ;
+;player_start_room                                   = 33       ;
+;player_start_x                                      = 14 * 8     ; must be even!
+;player_start_y                                      = 11 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;
@@ -3421,9 +3421,14 @@ handle_rope_time_and_events
     lda #0                                          ;
     sta rope_pixel_touched                          ;
     sta rope_end_y                                  ;
-    ldx rope_position                               ;
-    lda #$80                                        ;
+    lda #$80                                        ; centre rope on screen
+    ldx player_room                                 ;
+    cpx #48                                         ; "The Beach"
+    bne +                                           ;
+    lda #$70                                        ; The rope on 'The Beach' is further left
++
     sta rope_end_x                                  ;
+    ldx rope_position                               ;
     lda #$20                                        ;
     sta rope_pixel_to_consider                      ;
 update_rope_pixels_loop
@@ -3494,10 +3499,6 @@ skip_inversion1
 
     ; plot pixel
     jmp plot_rope_pixel                             ;
-
-; ***************************************************************************************
-skip_update_position
-    jmp skip_floor1                                 ;
 
 temp_rope
     !byte 0
@@ -3577,7 +3578,7 @@ check_for_player_contact_with_rope
     stx player_entered_room_falling_too_far         ;
     lda player_y_in_enemies                         ;
     clc                                             ;
-    adc #5                                          ;
+    adc #4                                          ;
 check_y_loop
     inx                                             ;
     cmp rope_pixels_y,X                             ;
@@ -5331,6 +5332,101 @@ skip_enemy
 leave11
     rts                                             ;
 
+; ***************************************************************************************
+; Each pixel of the rope is at an offset from the previous one.
+; X and Y offsets are given in the following two tables.
+; The rope is animated by starting to draw the rope at different offsets into these tables
+; (a sliding window). The first set of entries in each table are all the same so we deal
+; with that in code. The full uncompressed table is 86 entries:
+;
+; rope_position    dx    dy
+; -------------------------
+; $d4               0     3
+; $d5               0     3
+; $d6               0     3
+; $d7               0     3
+; $d8               0     3
+; $d9               0     3
+; $da               0     3
+; $db               0     3
+; $dc               0     3
+; $dd               0     3
+; $de               0     3
+; $df               0     3
+; $e0               0     3
+; $e1               0     3
+; $e2               0     3
+; $e3               0     3
+; $e4               0     3
+; $e5               0     3
+; $e6               0     3
+; $e7               0     3
+; $e8               0     3
+; $e9               0     3
+; $ea               0     3
+; $eb               0     3
+; $ec               0     3
+; $ed               0     3
+; $ee               0     3
+; $ef               0     3
+; $f0               0     3
+; $f1               0     3
+; $f2               0     3
+; $f3               0     3
+; $f4               1     3
+; $f5               1     3
+; $f6               1     3
+; $f7               1     3
+; $f8               1     3
+; $f9               1     3
+; $fa               1     3
+; $fb               1     3
+; $fc               1     3
+; $fd               1     3
+; $fe               1     3
+; $ff               1     3
+; $00               2     3
+; $01               2     3
+; $02               2     3
+; $03               2     3
+; $04               2     2
+; $05               2     3
+; $06               2     3
+; $07               2     2
+; $08               2     3
+; $09               2     2
+; $0a               2     3
+; $0b               2     2
+; $0c               2     3
+; $0d               2     2
+; $0e               2     2
+; $0f               2     2
+; $10               2     3
+; $11               2     2
+; $12               2     2
+; $13               2     2
+; $14               2     2
+; $15               2     2
+; $16               1     2
+; $17               2     2
+; $18               2     2
+; $19               1     2
+; $1a               1     2
+; $1b               2     2
+; $1c               1     2
+; $1d               1     2
+; $1e               2     2
+; $1f               2     2
+; $20               3     2
+; $21               2     2
+; $22               3     2
+; $23               2     2
+; $24               3     2
+; $25               3     2
+; $26               3     2
+; $27               3     2
+; $28               3     2
+; $29               3     2
 ; ***************************************************************************************
 rope_x_delta_table
     !byte 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2
