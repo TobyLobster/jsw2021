@@ -3411,6 +3411,12 @@ jump_parabola_table
 handle_rope_time_and_events
     lda room_contains_rope                          ;
     beq no_rope                                     ;
+
+    ; wait until the electron beam has passed by the rope
+-
+    lda irq_counter                                 ;
+    cmp #12                                         ;
+    bcc -
     jsr unplot_rope                                 ;
     lda #0                                          ;
     sta rope_pixel_touched                          ;
@@ -3487,8 +3493,7 @@ skip_inversion1
     sta rope_pixels_x,Y                             ;
 
     ; plot pixel
-    jsr plot_rope_pixel                             ;
-    rts                                             ;
+    jmp plot_rope_pixel                             ;
 
 ; ***************************************************************************************
 skip_update_position
@@ -3525,8 +3530,9 @@ rope_not_touching_player
     sta (screen_address_low),Y                      ;
 
     ; remember address (to unplot later)
-    ldx rope_pixel_to_consider                      ;
+    lda rope_pixel_values_table,X                   ;
     eor #$ff                                        ;
+    ldx rope_pixel_to_consider                      ;
     sta rope_pixels_mask_table,X                    ;
     lda screen_address_low                          ;
     sta rope_pixels_screen_address_low_table,X      ;
@@ -3571,7 +3577,7 @@ check_for_player_contact_with_rope
     stx player_entered_room_falling_too_far         ;
     lda player_y_in_enemies                         ;
     clc                                             ;
-    adc #8                                          ;
+    adc #5                                          ;
 check_y_loop
     inx                                             ;
     cmp rope_pixels_y,X                             ;
@@ -4928,7 +4934,7 @@ irq_routine
 
     ldx irq_counter                                 ;
     inx                                             ;
-    cpx #13*3                                       ;
+    cpx #39                                         ;
     bcc +                                           ;
     jsr update_sound                                ; update all audio
     jsr update_music                                ;
