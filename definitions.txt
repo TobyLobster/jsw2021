@@ -2163,7 +2163,7 @@ Room 33
     Enemies: 4
         Enemy: 0
             Sprite: 37
-            Initial Pos: (15,13)
+            Initial Pos: (16,13)
             Min Extent: 0
             Max Extent: 25
             Initial Dir: left
@@ -2171,7 +2171,7 @@ Room 33
             Logical colour: 1
         Enemy: 1
             Sprite: 34
-            Initial Pos: (3,9)
+            Initial Pos: (4,9)
             Min Extent: 0
             Max Extent: 6
             Initial Dir: right
@@ -2179,17 +2179,17 @@ Room 33
             Logical colour: 3
         Enemy: 2
             Sprite: 37
-            Initial Pos: (2,6)
+            Initial Pos: (3,6)
             Min Extent: 0
-            Max Extent: 8
-            Initial Dir: left
+            Max Extent: 7
+            Initial Dir: right
             Speed: 2
             Logical colour: 1
         Enemy: 3
             Sprite: 34
-            Initial Pos: (7,3)
+            Initial Pos: (8,3)
             Min Extent: 0
-            Max Extent: 11
+            Max Extent: 10
             Initial Dir: right
             Speed: 2
             Logical colour: 2
@@ -2270,10 +2270,10 @@ Room 34
         Enemy: 3
             Sprite: 24
             Initial Pos: (27,4)
-            Min Extent: 0
+            Min Extent: 1
             Max Extent: 13
             Initial Dir: down
-            Speed: 4
+            Speed: 3
             Logical colour: 2
     Arrows: 0
         Arrow: no
@@ -2329,10 +2329,10 @@ Room 35
         Enemy: 0
             Sprite: 24
             Initial Pos: (3,4)
-            Min Extent: 0
+            Min Extent: 1
             Max Extent: 13
             Initial Dir: down
-            Speed: 4
+            Speed: 3
             Logical colour: 2
         Enemy: 1
             Sprite: 24
@@ -2344,7 +2344,7 @@ Room 35
             Logical colour: 3
         Enemy: 2
             Sprite: 24
-            Initial Pos: (15,7)
+            Initial Pos: (15,8)
             Min Extent: 0
             Max Extent: 13
             Initial Dir: up
@@ -2353,10 +2353,10 @@ Room 35
         Enemy: 3
             Sprite: 24
             Initial Pos: (20,4)
-            Min Extent: 0
+            Min Extent: 1
             Max Extent: 13
             Initial Dir: down
-            Speed: 4
+            Speed: 3
             Logical colour: 2
     Arrows: 0
         Arrow: no

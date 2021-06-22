@@ -11,8 +11,8 @@
 ;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 17       ;
-player_start_x                                      = 3 * 8     ; must be even!
+player_start_room                                   = 33       ;
+player_start_x                                      = 30 * 8     ; must be even!
 player_start_y                                      = 6 * 8    ;
 
 ; Tree Root
@@ -380,7 +380,6 @@ initialise_room_data
     sta room_data_offset                            ;
     sta bits_remaining_in_room_data_byte            ;
     sta player_rope_pixel                           ;
-    sta rope_position_relative_to_centre            ;
     sta game_timer                                  ;
     ldx player_room                                 ;
     jsr calculate_room_data_address                 ;
@@ -389,10 +388,12 @@ initialise_room_data
     jsr initialise_room_background_tiles_and_title  ;
     lda #$ff                                        ;
     sta item_number                                 ;
-    lda #$d2                                        ;
+    lda #$ee                                        ;
     sta rope_position                               ;
-    lda #1                                          ;
+    lda #$ff                                        ;
     sta rope_velocity_relative_to_centre            ;
+    sta rope_position_relative_to_centre            ;
+    lda #1                                          ;
     sta player_not_plotted                          ; Mark player as not needing to be unplotted
     lda out_of_time                                 ;
     sta player_killed                               ;
@@ -1603,7 +1604,7 @@ end_of_scenery
 ; ***************************************************************************************
 update_game
     lda player_rope_pixel                           ;
-    bne consider_keys                               ; player can't jump when on the rope
+    bne consider_keys                               ; player can jump when on the rope
     lda player_is_jumping                           ;
     ora player_jump_timer                           ;
     bne skip_keys                                   ; Player can't start jump or move when jumping
@@ -3394,9 +3395,9 @@ paletteLookupTable
     !byte $00, $20, $80, $a0
 
 ; ***************************************************************************************
-; This is what the jump parabola should be, but the engine has trouble with odd increments it seems.
-; See West of Kitchen jumping up into The Banyan Tree; In Tree Root, jumping onto the cyan platform can cause problems.
-; And other cases too.
+; This commented out data is what the jump parabola should be, but the engine has trouble
+; with odd increments it seems. See West of Kitchen jumping up into The Banyan Tree; In
+; Tree Root, jumping onto the yellow platform can cause problems. And other cases too.
 ;
 ;jump_parabola_table
 ;    !byte $00, $04, $04, $03, $03, $02, $02, $01, $01, $00, $00, $ff, $ff, $fe, $fe, $fd, $fd
@@ -3411,31 +3412,31 @@ handle_rope_time_and_events
     lda room_contains_rope                          ;
     beq no_rope                                     ;
     jsr unplot_rope                                 ;
-    lda #$80                                        ;
-    sta rope_end_x                                  ;
     lda #0                                          ;
     sta rope_pixel_touched                          ;
     sta rope_end_y                                  ;
     ldx rope_position                               ;
-    lda #$1f                                        ;
+    lda #$80                                        ;
+    sta rope_end_x                                  ;
+    lda #$20                                        ;
     sta rope_pixel_to_consider                      ;
 update_rope_pixels_loop
     jsr update_rope_pixel                           ;
     dec rope_pixel_to_consider                      ;
-    bne update_rope_pixels_loop                     ;
+    bpl update_rope_pixels_loop                     ;
     lda rope_velocity_relative_to_centre            ;
     asl                                             ;
     clc                                             ;
     adc rope_position                               ;
-    tay                                             ;
-    cmp #$d2                                        ;
+    tay                                             ; Y is the new rope position
+    cmp #$d4                                        ;
     bne rope_didnt_change_sides                     ;
     lda rope_position_relative_to_centre            ;
     eor #$ff                                        ;
     sta rope_position_relative_to_centre            ;
-    lda #8                                          ;
+    lda #10                                         ;
 rope_didnt_change_sides
-    cmp #8                                          ;
+    cmp #10                                         ;
     bne rope_didnt_reach_end                        ;
     lda rope_velocity_relative_to_centre            ;
     eor #$ff                                        ;
@@ -3451,16 +3452,22 @@ no_rope
 ; ***************************************************************************************
 update_rope_pixel
     stx rope_pixel_position                         ;
+    lda rope_pixel_to_consider                      ;
+    cmp #$20                                        ;
+    bne +                                           ;
+    ldx #2 + rope_x_delta_table_end - rope_x_delta_table    ;
++
+    ; update pixel position
     txa                                             ;
-    bpl skip_floor1                                 ;
-    ldx #$26                                        ;
-    cmp #$f0                                        ;
-    bcs skip_floor1                                 ;
-    ldx #$27                                        ;
+    bpl skip_floor1                                 ; if (current offset within sliding window of rope values is positivie) then branch
+    ldx #rope_x_delta_table_end - rope_x_delta_table; use the final but one value
+    cmp #$f4                                        ;
+    bcs skip_floor1                                 ; if (near the actual array of offsets start) then branch (use offset 54, value one)
+    ldx #1 + rope_x_delta_table_end - rope_x_delta_table ; else use offset 55 (value zero)
 skip_floor1
     lda rope_x_delta_table,X                        ;
     cmp rope_position_relative_to_centre            ;
-    bcc skip_inversion1                             ;
+    bcc skip_inversion1                             ; if (heading towards centre) then branch
     eor #$ff                                        ;
 skip_inversion1
     adc rope_end_x                                  ;
@@ -3468,52 +3475,85 @@ skip_inversion1
     lda rope_end_y                                  ;
     clc                                             ;
     adc rope_y_delta_table,X                        ;
+    cmp #$60                                        ; }
+    bcc +                                           ; } Make sure the rope doesn't trail in 'Swimming Pool' water.
+    lda #$5f                                        ; }
++                                                   ; }
     sta rope_end_y                                  ;
     ldy rope_pixel_to_consider                      ;
     sta rope_pixels_y,Y                             ;
     tax                                             ;
     lda rope_end_x                                  ;
     sta rope_pixels_x,Y                             ;
+
+    ; plot pixel
     jsr plot_rope_pixel                             ;
-    lda screen_address_low                          ;
-    ldx rope_pixel_to_consider                      ;
-    sta rope_pixels_screen_address_low_table,X      ;
-    lda screen_address_high                         ;
-    sta rope_pixels_screen_address_high_table,X     ;
-    ldx rope_pixel_position                         ;
-    inx                                             ;
     rts                                             ;
+
+; ***************************************************************************************
+skip_update_position
+    jmp skip_floor1                                 ;
+
+temp_rope
+    !byte 0
 
 ; ***************************************************************************************
 plot_rope_pixel
     sta rope_pixel_x                                ;
     jsr calculate_screen_address                    ;
-    ldy #0                                          ;
-    lda (screen_address_low),Y                      ;
-    beq rope_not_touching_player                    ; [Bug: triggers for enemies too (e.g. Cold Store)]
-    lda rope_pixel_to_consider                      ;
-    sta rope_pixel_touched                          ;
-rope_not_touching_player
     lda rope_pixel_x                                ;
     and #3                                          ;
     tax                                             ;
+    lda rope_bit_table,X                            ;
+    sta temp_rope                                   ;
+
+    ldy #0                                          ;
+    lda (screen_address_low),Y                      ;
+    lsr                                             ; check for white pixels only
+    lsr                                             ; fixes bug where rope touching the enemies
+    lsr                                             ; causes the player to attach to the rope
+    lsr                                             ;
+    and (screen_address_low),Y                      ;
+    and temp_rope                                   ;
+    beq rope_not_touching_player                    ;
+
+    lda rope_pixel_to_consider                      ;
+    sta rope_pixel_touched                          ;
+rope_not_touching_player
     lda rope_pixel_values_table,X                   ;
+    ora (screen_address_low),Y                      ;
     sta (screen_address_low),Y                      ;
+
+    ; remember address (to unplot later)
+    ldx rope_pixel_to_consider                      ;
+    eor #$ff                                        ;
+    sta rope_pixels_mask_table,X                    ;
+    lda screen_address_low                          ;
+    sta rope_pixels_screen_address_low_table,X      ;
+    lda screen_address_high                         ;
+    sta rope_pixels_screen_address_high_table,X     ;
+
+    ldx rope_pixel_position                         ;
+    inx                                             ;
     rts                                             ;
 
 rope_pixel_values_table
     !byte $88, $44, $22, $11
 
+rope_bit_table
+    !byte $08, $04, $02, $01
+
 ; ***************************************************************************************
 unplot_rope
-    ldx #$1f                                        ;
+    ldx #$20                                        ;
     ldy #0                                          ;
 unplot_rope_loop
     lda rope_pixels_screen_address_low_table,X      ;
     sta rope_pixels_screen_address_low              ;
     lda rope_pixels_screen_address_high_table,X     ;
     sta rope_pixels_screen_address_high             ;
-    lda #0                                          ;
+    lda (rope_pixels_screen_address_low),Y          ;
+    and rope_pixels_mask_table,X                    ;
     sta (rope_pixels_screen_address_low),Y          ;
     dex                                             ;
     bpl unplot_rope_loop                            ;
@@ -3525,9 +3565,13 @@ check_for_player_contact_with_rope
     bne player_already_on_rope                      ;
     lda rope_pixel_touched                          ;
     beq leave1                                      ;
+
+    ; player is now on the rope
     ldx #0                                          ;
     stx player_entered_room_falling_too_far         ;
     lda player_y_in_enemies                         ;
+    clc                                             ;
+    adc #8                                          ;
 check_y_loop
     inx                                             ;
     cmp rope_pixels_y,X                             ;
@@ -3549,7 +3593,7 @@ player_already_on_rope
     sta player_x_in_enemies                         ;
     lda rope_pixels_y,X                             ;
     sec                                             ;
-    sbc #6                                          ;
+    sbc #8                                          ;
     bpl skip_floor2                                 ;
     lda #$c0                                        ;
 skip_floor2
@@ -5283,94 +5327,136 @@ leave11
 
 ; ***************************************************************************************
 rope_x_delta_table
-    !byte $02, $01, $01, $02, $02, $02, $02, $02, $02, $01, $02, $02, $02, $01, $02, $02
-    !byte $02, $02, $01, $02, $02, $01, $01, $02, $01, $01, $03, $02, $02, $03, $02, $03
-    !byte $02, $03, $03, $03, $03, $03, $01, $00
+    !byte 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2
+    !byte 2,2,1,2, 2,1,1,2, 1,1,2,2, 3,2,3,2, 3,3,3,3
+    !byte 3,3
+rope_x_delta_table_end
+    !byte 1, 0          ; these values are used for the straight/almost straight part of the rope
+    !byte 0             ; this value is used to update the position (0 = don't move) before the first pixel of the rope
 
 rope_y_delta_table
-    !byte $03, $03, $03, $03, $02, $03, $03, $02, $02, $03, $02, $02, $02, $03, $02, $02
-    !byte $02, $02, $03, $02, $02, $03, $03, $02, $03, $03, $01, $03, $03, $01, $02, $01
-    !byte $02, $01, $02, $02, $02, $02, $03, $03
-
-; ***************************************************************************************
-rope_pixels_screen_address_low_table
-    !byte <screen_memory_start + $01
-    !byte <screen_memory_start + $b9
-    !byte <screen_memory_start + $bf
-    !byte <screen_memory_start + $c4
-    !byte <screen_memory_start + $c2
-    !byte <screen_memory_start + $c8
-    !byte <screen_memory_start + $cd
-    !byte <screen_memory_start + $d2
-    !byte <screen_memory_start + $d0
-    !byte <screen_memory_start + $dd
-    !byte <screen_memory_start + $da
-    !byte <screen_memory_start + $df
-    !byte <screen_memory_start + $e4
-    !byte <screen_memory_start + $e1
-    !byte <screen_memory_start + $e6
-    !byte <screen_memory_start + $e3
-    !byte <screen_memory_start + $e8
-    !byte <screen_memory_start + $ed
-    !byte <screen_memory_start + $ea
-    !byte <screen_memory_start + $ef
-    !byte <screen_memory_start + $f4
-    !byte <screen_memory_start + $f1
-    !byte <screen_memory_start + $f6
-    !byte <screen_memory_start + $f3
-    !byte <screen_memory_start + $f8
-    !byte <screen_memory_start + $fd
-    !byte <screen_memory_start + $fa
-    !byte <screen_memory_start + $ff
-    !byte <screen_memory_start + $04
-    !byte <screen_memory_start + $01
-    !byte <screen_memory_start + $06
-    !byte <screen_memory_start + $03
-
-rope_pixels_screen_address_high_table
-    !byte >screen_memory_start + $00
-    !byte >screen_memory_start + $16
-    !byte >screen_memory_start + $14
-    !byte >screen_memory_start + $14
-    !byte >screen_memory_start + $14
-    !byte >screen_memory_start + $14
-    !byte >screen_memory_start + $12
-    !byte >screen_memory_start + $12
-    !byte >screen_memory_start + $12
-    !byte >screen_memory_start + $10
-    !byte >screen_memory_start + $10
-    !byte >screen_memory_start + $0e
-    !byte >screen_memory_start + $0e
-    !byte >screen_memory_start + $0e
-    !byte >screen_memory_start + $0c
-    !byte >screen_memory_start + $0c
-    !byte >screen_memory_start + $0c
-    !byte >screen_memory_start + $0a
-    !byte >screen_memory_start + $0a
-    !byte >screen_memory_start + $08
-    !byte >screen_memory_start + $08
-    !byte >screen_memory_start + $08
-    !byte >screen_memory_start + $06
-    !byte >screen_memory_start + $06
-    !byte >screen_memory_start + $06
-    !byte >screen_memory_start + $04
-    !byte >screen_memory_start + $04
-    !byte >screen_memory_start + $02
-    !byte >screen_memory_start + $03
-    !byte >screen_memory_start + $03
-    !byte >screen_memory_start + $01
-    !byte >screen_memory_start + $01
-
+    !byte 3,3,3,3, 2,3,3,2, 3,2,3,2, 3,2,2,2, 3,2,2,2
+    !byte 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2
+    !byte 2,2
+rope_y_delta_table_end
+    !byte 3, 3          ; these values are used for the straight/almost straight part of the rope
+    !byte 0             ; this value is used to update the position (0 = don't move) before the first pixel of the rope
 
 ; ***************************************************************************************
 rope_pixels_x
-    !byte $30, $5d, $5f, $60, $62, $64, $66, $68, $6a, $6c, $6d, $6e, $70, $71, $72, $73
-    !byte $74, $75, $76, $77, $78, $79, $7a, $7b, $7c, $7d, $7e, $7f, $80, $80, $80, $80
+    !byte 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0
 
 ; ***************************************************************************************
 rope_pixels_y
-    !byte $00, $59, $57, $54, $52, $50, $4d, $4a, $48, $45, $42, $3f, $3c, $39, $36, $33
-    !byte $30, $2d, $2a, $27, $24, $21, $1e, $1b, $18, $15, $12, $0f, $0c, $09, $06, $03
+    !byte 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0
+
+; ***************************************************************************************
+rope_pixels_screen_address_low_table
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+    !byte <(screen_memory_start + $0100)
+
+rope_pixels_screen_address_high_table
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+    !byte >(screen_memory_start + $0100)
+
+rope_pixels_mask_table
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+    !byte 0
+
+
 
 ; ***************************************************************************************
 ; Tile types:
