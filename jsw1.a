@@ -11,9 +11,9 @@
 ;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 33       ;
-player_start_x                                      = 30 * 8     ; must be even!
-player_start_y                                      = 6 * 8    ;
+player_start_room                                   = 60       ;
+player_start_x                                      = 14 * 8     ; must be even!
+player_start_y                                      = 11 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;

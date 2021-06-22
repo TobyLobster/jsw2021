@@ -1145,7 +1145,7 @@ Room 17
         Enemy: 0
             Sprite: 20
             Initial Pos: (9,9)
-            Min Extent: 7
+            Min Extent: 8
             Max Extent: 13
             Initial Dir: up
             Speed: 2
@@ -4161,7 +4161,7 @@ Room 59
     Palette change: 10 1 red
     Palette change: 11 1 cyan
     Palette change: 14 1 green
-    Title: tab 9, "Under the Drive"
+    Title: tab 10, "Under the Drive"
     Tile commands:
         Use WALL
         Draw block to (1,15)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
@@ -4175,8 +4175,8 @@ Room 59
         Draw block to (30,8)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Draw block to (28,9)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Use PLATFORM
-        Move to (16,7)
-        Draw horizontal strip until X=15                 ; 'Draw strip' moves the cursor to the end tile
+        Move to (17,7)
+        Draw horizontal strip until X=16                 ; 'Draw strip' moves the cursor to the end tile
         Draw 5 single tiles at (17,10) (20,9) (21,9) (22,12) (23,12)
         Use CONVEYOR
         Move to (31,5)
@@ -4233,7 +4233,7 @@ Room 60
     Palette change: 4 2 green
     Palette change: 11 2 cancel
     Palette change: 14 2 red
-    Title: tab 12, "Tree Root"
+    Title: tab 11, "Tree Root"
     Tile commands:
         Use WALL
         Draw horizontal strip until X=31                 ; 'Draw strip' moves the cursor to the end tile
