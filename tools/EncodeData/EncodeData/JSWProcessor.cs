@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -11,6 +12,7 @@ namespace EncodeData
         None = 0,
         Room,
         BackgroundSprite,
+        FontSprite,
         Enemies
     }
 
@@ -168,10 +170,54 @@ namespace EncodeData
     {
         public string spriteId;
         public List<int> bytes = new List<int>();
+        public int width;
+        public int height;
 
-        public Sprite(string name)
+        public Sprite(string name, int width, int height)
         {
             spriteId = name;
+            this.width = width;
+            this.height = height;
+            Debug.Assert((width == 8) || (width == 16));
+            Debug.Assert((height == 8) || (height == 16));
+        }
+
+        public void AddRow(int val)
+        {
+            Debug.Assert(val >= 0);
+            if (width == 8)
+            {
+                Debug.Assert(val < 256);
+                bytes.Add(val);
+            }
+            else if (width == 16)
+            {
+                Debug.Assert(val < 65536);
+
+                bytes.Add(val % 256);
+                bytes.Add(val / 256);
+            }
+            else
+            {
+                Debug.Assert(false);
+            }
+        }
+
+        public int GetRow(int rowIndex)
+        {
+            if (width == 8)
+            {
+                return bytes[rowIndex];
+            }
+            else if (width == 16)
+            {
+                return bytes[rowIndex*2] + 256 * bytes[1 + (rowIndex*2)];
+            }
+            else
+            {
+                Debug.Assert(false);
+                return 0;
+            }
         }
     }
 
@@ -448,7 +494,9 @@ namespace EncodeData
         Room currentRoom;
         List<Room> rooms;
         public List<Sprite> backgroundSprites = new List<Sprite>();
+        public List<Sprite> fontSprites = new List<Sprite>();
         public bool isBackgroundSpriteLine = false;
+        public bool isFontSpriteLine = false;
         public List<EnemySprites> enemies = new List<EnemySprites>();
         public bool isEnemyLine = false;
 
@@ -943,7 +991,7 @@ namespace EncodeData
             line = line.Trim();
             if (IsMatch(line, @"BackgroundSprite +(\d+)", out var results))
             {
-                backgroundSprites.Add(new Sprite(results[0]));
+                backgroundSprites.Add(new Sprite(results[0], 8, 8));
                 isBackgroundSpriteLine = true;
             }
             else if (IsMatch(line, @"^([\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#])$", out results))
@@ -962,11 +1010,44 @@ namespace EncodeData
                         val += 1 << (7-i);
                     }
                 }
-                backgroundSprites.Last().bytes.Add(val);
+                backgroundSprites.Last().AddRow(val);
             }
             else if (!string.IsNullOrEmpty(line))
             {
                 isBackgroundSpriteLine = false;
+            }
+        }
+
+        // ********************************************************************
+        public void ParseFontSpriteLine(string line)
+        {
+            line = line.Trim();
+            if (IsMatch(line, @"FontSprite *", out var results))
+            {
+                fontSprites.Add(new Sprite("", 8, 8));
+                isFontSpriteLine = true;
+            }
+            else if (IsMatch(line, @"^([\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#])$", out results))
+            {
+                if (!isFontSpriteLine)
+                {
+                    Console.WriteLine("WARNING: Could not parse font sprite '" + fontSprites.Last().spriteId + "'");
+                }
+
+                // Get bits into bytes
+                var val = 0;
+                for(int i = 0; i < 8; i++)
+                {
+                    if (results[0][i] == '#')
+                    {
+                        val += 1 << (7-i);
+                    }
+                }
+                fontSprites.Last().AddRow(val);
+            }
+            else if (!string.IsNullOrEmpty(line))
+            {
+                isFontSpriteLine = false;
             }
         }
 
@@ -981,7 +1062,7 @@ namespace EncodeData
             }
             else if (line == "Sprite")
             {
-                enemies.Last().sprites.Add(new Sprite(""));
+                enemies.Last().sprites.Add(new Sprite("", 16, 16));
                 isEnemyLine = true;
             }
             else if (IsMatch(line, @"^([\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#][\.\#])$", out results))
@@ -1000,7 +1081,7 @@ namespace EncodeData
                         val += 1 << (15-i);
                     }
                 }
-                enemies.Last().sprites.Last().bytes.Add(val);
+                enemies.Last().sprites.Last().AddRow(val);
             }
             else if (!string.IsNullOrEmpty(line))
             {
@@ -1015,10 +1096,12 @@ namespace EncodeData
 
             var roomPattern = new Regex(@"^Room +([A-Za-z0-9_]+)$");
             var backgroundSpritePattern = new Regex(@"^BackgroundSprite +([A-Za-z0-9_]+)$");
+            var fontSpritePattern = new Regex(@"^FontSprite *$");
             var enemyPattern = new Regex(@"^Enemy +([A-Za-z0-9_]+)$");
 
             rooms = new List<Room>();
             backgroundSprites = new List<Sprite>();
+            fontSprites = new List<Sprite>();
 
             foreach(var rawLine in lines)
             {
@@ -1036,6 +1119,11 @@ namespace EncodeData
                 {
                     ChangeState(State.BackgroundSprite, backgroundSpriteMatch.Groups[1].Value);
                 }
+                var fontSpriteMatch = fontSpritePattern.Match(line);
+                if (fontSpriteMatch.Success)
+                {
+                    ChangeState(State.FontSprite, fontSpriteMatch.Groups[1].Value);
+                }
 
                 var enemyMatch = enemyPattern.Match(line);
                 if (enemyMatch.Success)
@@ -1050,6 +1138,9 @@ namespace EncodeData
                         break;
                     case State.BackgroundSprite:
                         ParseBackgroundSpriteLine(line);
+                        break;
+                    case State.FontSprite:
+                        ParseFontSpriteLine(line);
                         break;
                     case State.Enemies:
                         ParseEnemiesLine(line);
@@ -1069,21 +1160,6 @@ namespace EncodeData
             }
             mess = mess.TrimEnd();
             output.WriteLine(mess);
-        }
-
-        // ********************************************************************
-        public static string ToBinaryString(int val, int digits = 8)
-        {
-            string result = "";
-
-            for(int i = 0; i < digits; i++)
-            {
-                char c = ((val & 1) != 0) ? '#' : '.';
-                result = c + result;
-                val = val / 2;
-            }
-
-            return result;
         }
 
         // ********************************************************************
@@ -1163,25 +1239,92 @@ namespace EncodeData
                 }
 
                 WriteLine(outputFile, 0, "; ***************************************************************************************");
-                WriteLine(outputFile, 0, "packed_enemy_sprites");
-                int enemyNum = 1;
+                WriteLine(outputFile, 0, "; Enemies");
+                WriteLine(outputFile, 0, "");
+
+                int enemyNum = 0;
+                int spriteIndex = 0;
+                var outputLines = new List<string>();
                 foreach(var enemy in enemies)
                 {
                     int frame = 0;
+                    outputLines.Clear();
+
+                    var spriteMessage = "";
+
+                    if (enemy.sprites.Count == 1)
+                    {
+                        spriteMessage = " (Sprite " + spriteIndex + ") ";
+                    }
+                    else
+                    { 
+                        spriteMessage = " (Sprites " + spriteIndex + "-" + (spriteIndex + enemy.sprites.Count - 1) + ") ";
+                    }
+
+                    WriteLine(outputFile, 0, "; Enemy " + enemyNum + spriteMessage + (enemy.withReverse ? " (plus reverse frames)" : ""));
+
+                    for(int i = 0; i < enemy.sprites[0].height; i++)
+                    {
+                        outputLines.Add("; ");
+                    }
                     foreach(var sprite in enemy.sprites)
                     {
-                        WriteLine(outputFile, 0, "enemy_sprite_" + enemyNum.ToString("x2") + "_frame_" + frame);
-                        for(int i = 0; i < sprite.bytes.Count; i++)
+                        for(int i = 0; i < sprite.height; i++)
                         {
-                            var binary = Convert.ToString(sprite.bytes[i], 2).PadLeft(16, '0').Replace('0','.').Replace('1','#');
-                            WriteLine(outputFile, 4, "!word %" + binary);
+                            var binary = Convert.ToString(sprite.GetRow(i), 2).PadLeft(16, '0').Replace('0','.').Replace('1','#');
+                            outputLines[i] += binary + "    ";
                         }
                         frame++;
-                        WriteLine(outputFile, 0, "");
                     }
+                    foreach(var line in outputLines)
+                    { 
+                        WriteLine(outputFile, 0, line);
+                    }
+                    WriteLine(outputFile, 0, "");
                     enemyNum++;
+                    spriteIndex += enemy.sprites.Count;
                 }
-                WriteLine(outputFile, 0, "packed_enemy_sprites_end");
+
+                // Background sprites
+                spriteIndex = 0;
+                WriteLine(outputFile, 0, "; Background Sprites");
+                int fromIndex = 0;
+                foreach(var sprite in backgroundSprites)
+                {
+                    if ((spriteIndex % 10) == 0)
+                    { 
+                        outputLines.Clear();
+                        for(int i = 0; i < 8; i++)
+                        {
+                            outputLines.Add("; ");
+                        }
+                    }
+                    int index = 0;
+                    foreach(var by in sprite.bytes)
+                    { 
+                        var binary = Convert.ToString(by, 2).PadLeft(8, '0').Replace('0','.').Replace('1','#');
+                        outputLines[index] += binary + "    ";
+                        index++;
+                    }
+                    spriteIndex++;
+                    if (((spriteIndex % 10) == 0) || (spriteIndex == backgroundSprites.Count))
+                    {
+                        // Output stuff
+                        string title = "; ";
+                        for(int i = fromIndex; i < Math.Min(spriteIndex, backgroundSprites.Count); i++)
+                        {
+                            title += i.ToString().PadRight(8) + "    ";
+                        }
+                        WriteLine(outputFile, 0, title);
+                        foreach(var line in outputLines)
+                        { 
+                            WriteLine(outputFile, 0, line.TrimEnd());
+                        }
+                        WriteLine(outputFile, 0, "");
+                        fromIndex = spriteIndex;
+                    }
+                }
+
                 WriteLine(outputFile, 0, "");
                 WriteLine(outputFile, 0, "; ***************************************************************************************");
                 WriteLine(outputFile, 0, "; number of frames for each enemy sprite");
@@ -1239,25 +1382,442 @@ namespace EncodeData
                 WriteLine(outputFile, 0, "enemy_sprites_frame_offsets_end");
                 WriteLine(outputFile, 0, "");
 
-                // Background sprites
-                WriteLine(outputFile, 0, "; ***************************************************************************************");
-                WriteLine(outputFile, 0, "background_sprite_data");
-                int spriteIndex = 0;
-                foreach(var sprite in backgroundSprites)
+                var num_enemy_sprites = 0;
+                foreach(var enemy in enemies)
                 {
-                    WriteLine(outputFile, 0, "background_sprite_" + spriteIndex);
-                    foreach(var by in sprite.bytes)
-                    { 
-                        var binary = Convert.ToString(by, 2).PadLeft(8, '0').Replace('0','.').Replace('1','#');
-                        WriteLine(outputFile, 4, "!byte %" + binary);
-                    }
-                    WriteLine(outputFile, 0, "");
-                    spriteIndex++;
+                    num_enemy_sprites += enemy.sprites.Count;
                 }
-                WriteLine(outputFile, 0, "background_sprite_data_end");
+                WriteLine(outputFile, 0, "num_enemy_sprites = " + num_enemy_sprites);
+                WriteLine(outputFile, 0, "");
+
+                // Output all sprites
+                OutputCompressedSprites(outputFile);
+
             }
 
             Console.WriteLine("Encoding finished");
+        }
+
+        // ********************************************************************
+        public class ByteEncoding
+        {
+            public bool isValid = false;
+            public List<int> encoding = new List<int>();
+
+            public ByteEncoding()
+            {
+            }
+
+            public ByteEncoding(int numLeadingZeros, int code, int originalByte)
+            {
+                isValid = true;
+
+                if (numLeadingZeros > 1)
+                {
+                    numLeadingZeros = 1;
+                    encoding.Add(0);
+                    encoding.Add(originalByte % 16);
+                    encoding.Add(originalByte / 16);
+                    return;
+                }
+                for(int i = 0; i < numLeadingZeros; i++)
+                {
+                    encoding.Add(0);
+                }
+                Debug.Assert(code >= 0);
+                Debug.Assert(code < 16);
+                encoding.Add(code);
+            }
+        }
+
+        // ********************************************************************
+        public List<KeyValuePair<int, int>> GetSortedList(List<Sprite> sprites)
+        {
+            var conc = new Dictionary<int, int>();
+
+            // Create concordance (dictionary) of bytes and their usage counts
+            foreach(var sprite in sprites)
+            {
+                foreach(var val in sprite.bytes)
+                { 
+                    if (conc.ContainsKey(val))
+                    {
+                        conc[val]++;
+                    }
+                    else
+                    {
+                        conc.Add(val, 1);
+                    }
+                }
+            }
+
+            return (from entry in conc orderby entry.Value descending select entry).ToList();
+        }
+
+        // ********************************************************************
+        public List<KeyValuePair<int, int>> FindCommonestBytes(List<Sprite> sprites, out List<KeyValuePair<int, int>> sortedList)
+        {
+            var conc = new Dictionary<int, int>();
+            var previousBytes = new List<int>();
+
+            previousBytes.Add(0);
+            previousBytes.Add(0);
+            previousBytes.Add(0);
+            previousBytes.Add(0);
+
+            // Create concordance (dictionary) of bytes and their usage counts
+            foreach(var sprite in sprites)
+            {
+                foreach(var val in sprite.bytes)
+                {
+                    var skip = false;
+                    var prev = previousBytes[3];
+
+                    // if this value is not one of the previous bytes, then add to the concordance
+                    if (previousBytes.Contains(val))
+                    {
+                        skip = true;
+                    }
+
+                    // Check if the previous value is a rolled version of the current value
+                    var rollRight = (val >> 1) + 128 * (val & 1);
+                    var rollLeft = ((val << 1) & 255) + ((val & 128) >> 7);
+                    if ((rollRight == prev) || (rollLeft == prev))
+                    {
+                        skip = true;
+                    }
+
+                    // If value is worth noting, then note it in the concordance
+                    if (!skip)
+                    { 
+                        if (conc.ContainsKey(val))
+                        {
+                            conc[val]++;
+                        }
+                        else
+                        {
+                            conc.Add(val, 1);
+                        }
+                    }
+
+                    // Add new value to previous bytes array, but if not already the previous entry
+                    if (prev != val)
+                    {
+                        previousBytes.Add(val);
+                        previousBytes.RemoveAt(0);
+                    }
+                }
+            }
+
+            sortedList = (from entry in conc orderby entry.Value descending select entry).ToList();
+            return sortedList;
+        }
+
+        // ********************************************************************
+        public List<ByteEncoding> EncodeFontStyle(List<Sprite> sprites, out List<KeyValuePair<int, int>> sortedList)
+        {
+            sortedList = GetSortedList(sprites);
+
+            var byteEncodings = new List<ByteEncoding>();
+
+            int leadingZeroNybbles = 0;
+            int codesSoFar = 0;
+
+            for(int i = 0; i < 256; i++)
+            {
+                byteEncodings.Add(new ByteEncoding());
+            }
+
+
+            int byteCount = 0;
+            int offset = 0;
+            foreach (var entry in sortedList)
+            {
+                offset++;
+                byteCount++;
+                byteEncodings[entry.Key] = new ByteEncoding(leadingZeroNybbles, offset, entry.Key);
+
+                // move on to next code
+                codesSoFar++;
+
+                if (offset == 15)
+                {
+                    offset = 0;
+                    leadingZeroNybbles++;
+                }
+            }
+            return byteEncodings;
+        }
+
+        // ********************************************************************
+        public string ToBinary(int val, int width)
+        {
+            Debug.Assert(val >= 0);
+            Debug.Assert(val < (1 << width));
+            return Convert.ToString(val, 2).PadLeft(width, '0').Replace("0", ".").Replace("1", "#");
+        }
+
+        // ********************************************************************
+        public void OutputCompressedSprites(StreamWriter outputFile)
+        {
+            WriteLine(outputFile, 0, "; ***************************************************************************************");
+            //int offset = 0;
+            //int leadingZeroNybbles = 0;
+
+            int numberOfPreviousBytes = 4;
+            var numVeryCommonItems = 8 - numberOfPreviousBytes;
+
+            //
+            // ALL SPRITES
+            //
+
+            var allSprites = new List<Sprite>();
+            foreach(var enemy in enemies)
+            {
+                allSprites.AddRange(enemy.sprites);
+            }
+            allSprites.AddRange(backgroundSprites);
+            //allSprites.AddRange(fontSprites);
+
+            {
+                var commonestBytesAndOccurrences = FindCommonestBytes(allSprites, out var sortedList).Take(80 + numVeryCommonItems);
+                var commonest5 = commonestBytesAndOccurrences.Take(numVeryCommonItems).Select((x) => x.Key).ToList();
+                var commonestBytes = commonestBytesAndOccurrences.Skip(numVeryCommonItems).Take(80).Select((x) => x.Key).ToList();
+
+                WriteLine(outputFile, 0, "sprite_decode_table");
+                int byteCount = 0;
+                foreach(var common in commonestBytesAndOccurrences)
+                {
+                    WriteLine(outputFile, 4, "!byte %" + ToBinary(common.Key, 8), common.Value + " useful occurrences");
+                    byteCount++;
+                }
+                WriteLine(outputFile, 0, "sprite_decode_table_end");
+                WriteLine(outputFile, 0, "");
+                var nybbles = new List<int>();
+                var previousBytes = new List<int>();
+
+                var hist = new List<int>();
+                for(int i = 0; i < 16; i++)
+                {
+                    hist.Add(0);
+                }
+
+                var histEncodedSizes = new List<int>();
+                for(int i = 0; i < 100; i++)
+                {
+                    histEncodedSizes.Add(0);
+                }
+
+                var shortcutTable = new List<int>();
+                int shortcutInterval = 8;
+
+                //Console.WriteLine("Hardest sprites:");
+                int spriteIndex = 0;
+                foreach(var sprite in allSprites)
+                {
+                    if ((spriteIndex % shortcutInterval) == 0)
+                    {
+                        shortcutTable.Add(nybbles.Count/2 + (nybbles.Count & 1) * 0x8000);
+                    }
+
+                    previousBytes.Clear();
+                    for(int i = 0; i < numberOfPreviousBytes; i++)
+                    {
+                        previousBytes.Add(-1);
+                    }
+                    var newNybbles = new List<int>();
+                    foreach(var val in sprite.bytes)
+                    {
+                        var prev = previousBytes[numberOfPreviousBytes-1];
+
+                        var rollRight = (val >> 1) + 128 * (val & 1);
+                        var rollLeft = ((val << 1) & 255) + ((val & 128) >> 7);
+
+                        var index = previousBytes.IndexOf(val);
+                        if (index >= 0)
+                        {
+                            newNybbles.Add(index);
+                            hist[index]++;
+                        }
+                        else if (prev == rollRight)
+                        {
+                            // Roll left
+                            newNybbles.Add(numberOfPreviousBytes);
+                            hist[numberOfPreviousBytes]++;
+                        }
+                        else if (prev == rollLeft)
+                        {
+                            // Roll right
+                            newNybbles.Add(numberOfPreviousBytes + 1);
+                            hist[numberOfPreviousBytes + 1]++;
+                        }
+                        else if (commonest5.Contains(val))
+                        {
+                            index = commonest5.IndexOf(val);
+                            newNybbles.Add(numberOfPreviousBytes + 2 + index);
+                            hist[numberOfPreviousBytes + 2 + index]++;
+                        }
+                        else if (commonestBytes.Contains(val))
+                        {
+                            index = commonestBytes.IndexOf(val);
+                            var firstNybble = 10 + index/16;
+                            var secondNybble = index & 15;
+                            Debug.Assert(firstNybble >= 10);
+                            Debug.Assert(firstNybble <= 14);
+                            newNybbles.Add(firstNybble);
+                            newNybbles.Add(secondNybble);
+                            hist[firstNybble]++;
+                        }
+                        else
+                        {
+                            newNybbles.Add(15);
+                            newNybbles.Add(val % 16);
+                            newNybbles.Add(val / 16);
+                            hist[15]++;
+                        }
+
+                        if (val != previousBytes[3])
+                        {
+                            previousBytes.Add(val);
+                            previousBytes.RemoveAt(0);
+                        }
+                    }
+
+                    // if the encoding is too long, use a raw encoding
+                    var limit = (1 + 2 * sprite.bytes.Count);
+                    if (newNybbles.Count > limit)
+                    {
+                        newNybbles.Clear();
+                        newNybbles.Add(0);
+                        foreach(var val in sprite.bytes)
+                        { 
+                            newNybbles.Add(val % 16);
+                            newNybbles.Add(val / 16);
+                        }
+                    }
+                    nybbles.AddRange(newNybbles);
+                    histEncodedSizes[newNybbles.Count]++;
+
+                    spriteIndex++;
+
+                    /* output hardest sprites to compress
+                    if (newNybbles.Count == limit)
+                    {
+                        Console.WriteLine("Sprite:");
+                        for(int row = 0; row < sprite.height; row++)
+                        {
+                            Console.WriteLine(ToBinary(sprite.GetRow(row), sprite.width));
+                        }
+                        Console.WriteLine();
+                    }
+                    */
+                }
+
+                WriteLine(outputFile, 0, "; Occurrences of first nybble N:");
+                for(int i = 0; i < 16; i++)
+                {
+                    WriteLine(outputFile, 0, ";     " + i + ": " + hist[i] + " occurrences");
+                }
+
+                WriteLine(outputFile, 0, "");
+                WriteLine(outputFile, 0, "; Occurrences of different encoding sizes:");
+                for(int i = 0; i < 100; i++)
+                {
+                    if (histEncodedSizes[i] > 0)
+                    { 
+                        WriteLine(outputFile, 0, ";     " + i + ": " + histEncodedSizes[i] + " occurrences");
+                    }
+                }
+                WriteLine(outputFile, 0, "");
+                WriteLine(outputFile, 0, "shortcut_interval = " + shortcutInterval.ToString());
+                WriteLine(outputFile, 0, "");
+
+                WriteLine(outputFile, 0, "shortcut_table_low");
+                foreach(var entry in shortcutTable)
+                {
+                    WriteLine(outputFile, 4, "!byte <(sprite_data + $" + entry.ToString("X4").ToLowerInvariant() + ")");
+                }
+                WriteLine(outputFile, 0, "shortcut_table_high");
+                foreach(var entry in shortcutTable)
+                {
+                    WriteLine(outputFile, 4, "!byte >(sprite_data + $" + entry.ToString("X4").ToLowerInvariant() + ")");
+                }
+                WriteLine(outputFile, 0, "");
+
+                // Output bytes
+                WriteLine(outputFile, 0, "sprite_data");
+                if ((nybbles.Count & 1) == 1)
+                {
+                    nybbles.Add(0);
+                }
+                for(int i = 0; i < nybbles.Count; i += 2)
+                {
+                    WriteLine(outputFile, 4, "!byte $" + (nybbles[i] + 16 * nybbles[i+1]).ToString("x2"));
+                    byteCount++;
+                }
+                WriteLine(outputFile, 0, "sprite_data_end");
+                WriteLine(outputFile, 0, "");
+                WriteLine(outputFile, 0, "; Sprites: " + byteCount + " bytes");
+            }
+
+            WriteLine(outputFile, 0, "total_sprites = " + allSprites.Count);
+
+            //
+            // OLD UTF-4 FONT COMPRESSION
+            //
+            /*
+            { 
+                int byteCount = 0;
+                var byteEncodings = EncodeFontStyle(fontSprites, out var sortedList);
+
+                WriteLine(outputFile, 0, "font_sprite_decode_table");
+                foreach (var entry in sortedList)
+                {
+                    if (offset == 0)
+                    {
+                        WriteLine(outputFile, 0, "");
+                        WriteLine(outputFile, 0, "; fifteen values with " + leadingZeroNybbles + " leading nybbles");
+                    }
+                    offset++;
+                    WriteLine(outputFile, 4, "!byte %" + Convert.ToString(entry.Key, 2).PadLeft(8, '0').Replace("0", ".").Replace("1", "#") + "         ; " + entry.Value + " occurrences");
+                    // move on to next code
+                    if (offset == 15)
+                    {
+                        offset = 0;
+                        leadingZeroNybbles++;
+                    }
+                }
+                WriteLine(outputFile, 0, "font_sprite_decode_table_end");
+                WriteLine(outputFile, 0, "");
+                WriteLine(outputFile, 0, "font_sprite_data");
+
+                // Create list of all nybbles
+                List<int> nybbles = new List<int>();
+                foreach(var sprite in fontSprites)
+                {
+                    foreach(var val in sprite.bytes)
+                    {
+                        Debug.Assert(byteEncodings[val].isValid);
+                        nybbles.AddRange(byteEncodings[val].encoding);
+                    }
+                }
+
+                // Output bytes
+                if ((nybbles.Count & 1) == 1)
+                {
+                    nybbles.Add(0);
+                }
+                for(int i = 0; i < nybbles.Count; i+=2)
+                {
+                    WriteLine(outputFile, 4, "!byte " + (nybbles[i] + 16 * nybbles[i+1]));
+                    byteCount++;
+                }
+                WriteLine(outputFile, 0, "font_sprite_data_end");
+                WriteLine(outputFile, 0, "; number of compressed font sprite bytes = " + byteCount);
+                WriteLine(outputFile, 0, "");
+                Console.WriteLine("Font sprites: " + byteCount + " bytes");
+            }
+            */
         }
 
         // ********************************************************************
@@ -1270,6 +1830,9 @@ namespace EncodeData
             }
             ReadInput(inputFilepath);
             WriteOutput(outputFilepath);
+
+            var checker = new JSWChecker();
+            checker.CheckOutputFile(outputFilepath);
         }
     }
 }

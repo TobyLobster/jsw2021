@@ -1,4 +1,4 @@
-; $.JSW1   001100 002f7e
+; Jet Set Willy
 ;
 ; Reassembly by TobyLobster, 2021
 ;
@@ -12,8 +12,8 @@ player_start_y                                      = 13 * 8    ;
 
 ; Temp start
 ;player_start_room                                   = 33       ;
-;player_start_x                                      = 14 * 8     ; must be even!
-;player_start_y                                      = 11 * 8    ;
+;player_start_x                                      = 30 * 8     ; must be even!
+;player_start_y                                      = 5 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60        ;
@@ -292,7 +292,6 @@ player_y                                            = $8e
 player_horizontal_speed                             = $8f
 sprite_address_low1                                 = $90
 tile_address_low2                                   = $90
-sprite_address                                      = $90
 rope_pixels_screen_address_low                      = $90
 tile_address2                                       = $90
 screen_address_low                                  = $90
@@ -350,6 +349,25 @@ scenery_len                                         = $ae
 final_strip_offset                                  = $af
 move_title_down_loop_counter                        = $b0
 title_delay_before_restart                          = $b1
+sprite_counter_low                                  = $b2
+sprite_counter_high                                 = $b3
+compressed_data_low                                 = $b4
+compressed_data_high                                = $b5
+enemy_sprite_counter                                = $b6
+size_in_bytes                                       = $b7
+decoded                                             = $b8
+is_start_of_sprite                                  = $b9
+val                                                 = $ba
+previous_bytes                                      = $bb
+previous_bytes1                                     = $bc
+previous_bytes2                                     = $bd
+previous_bytes3                                     = $be
+size_in_bytes_minus_one                             = $bf
+nybble_offset                                       = $c0
+temp_test_for_direction                             = $c1
+temp_old_position                                   = $c2
+temp_rope                                           = $c3
+enemy_sprite_to_decompress                          = $c4
 
 screen_memory_start                                 = $5600
 screen_address_title                                = screen_memory_start + 16 * $0200  ; row 16
@@ -837,26 +855,16 @@ first_enemy                                         ;
     clc                                             ;
     adc unpacked_sprite_offset                      ;
     sta unpacked_sprite_offset                      ; unpacked_sprite_offset += number of frames
-    lda enemy_sprites_frame_offsets,Y               ;
-    lsr                                             ;
-    ror tmp                                         ;
-    lsr                                             ;
-    ror tmp                                         ;
-    lsr                                             ;
-    ror tmp                                         ;
-    clc                                             ;
-    adc #>packed_enemy_sprites                      ;
-    sta sprite_address_high1                        ;
-    lda tmp                                         ;
-    and #$e0                                        ; just the top three bits (frame_offset * 32)
-    clc                                             ;
-    adc #<packed_enemy_sprites                      ;
-    sta sprite_address_low1                         ;
-    bcc unpack_frames_loop                          ;
-    inc sprite_address_high1                        ;
 
+    lda enemy_sprites_frame_offsets,Y               ;
+    sta enemy_sprite_to_decompress                  ;
     ; unpack each sprite in a loop
 unpack_frames_loop
+    lda enemy_sprite_to_decompress                  ;
+    inc enemy_sprite_to_decompress                  ;
+    ldx #0                                          ;
+    jsr decompress_enemy_sprite                     ;
+
     jsr unpack_enemy_sprite                         ;
     dec number_of_frames                            ; unpack a frame each time round this loop
     bne unpack_frames_loop                          ;
@@ -870,6 +878,9 @@ consider_next_enemy1
 
 leave9
     rts                                             ;
+
+decompressed_sprite
+    !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 ; ***************************************************************************************
 update_temp_address
@@ -970,7 +981,7 @@ unpack_enemy_sprite_loop
     sty tempY                                       ; remember Y
     txa                                             ;
     tay                                             ; Y = X
-    lda (sprite_address),Y                          ; get byte from 1bpp sprite
+    lda (sprite_address_low1),Y                     ; get byte from 1bpp sprite
     jsr unpack_byte_of_sprite_data                  ; unpack into two bytes of 2bpp data
     ldy unpacked_byte_two                           ; }
     sta unpacked_byte_two                           ; } swap A and unpacked_byte_two
@@ -1106,21 +1117,297 @@ leave10
     rts                                             ;
 
 ; ***************************************************************************************
-calculate_background_sprite_address
-    asl                                             ;
-    rol sprite_address_high1                        ;
-    asl                                             ;
-    rol sprite_address_high1                        ;
-    asl                                             ;
-    rol sprite_address_high1                        ;
+decompress_background_sprite
+    ldx #0                                          ;
     clc                                             ;
-    adc #<background_sprite_data                    ;
+    adc #num_enemy_sprites                          ;
+    bcc +                                           ;
+    inx                                             ;
++
+decompress_enemy_sprite
+    jsr decompress_sprite_xa                        ;
+    lda #<decompressed_sprite                       ;
     sta sprite_address_low1                         ;
-    lda sprite_address_high1                        ;
-    and #7                                          ;
-    adc #>background_sprite_data                    ;
+    lda #>decompressed_sprite                       ;
     sta sprite_address_high1                        ;
     rts                                             ;
+
+; ***************************************************************************************
+add_to_decoded_bytes
+    ldy decoded                                     ;
+    sta decompressed_sprite,Y                       ;
+    inc decoded                                     ; decoded++
+    cmp previous_bytes + 3                          ;
+    beq +                                           ;
+
+    tay                                             ;
+    lda previous_bytes + 1                          ;
+    sta previous_bytes                              ;
+    lda previous_bytes + 2                          ;
+    sta previous_bytes + 1                          ;
+    lda previous_bytes + 3                          ;
+    sta previous_bytes + 2                          ;
+    sty previous_bytes + 3                          ;
++
+    rts                                             ;
+
+; ***************************************************************************************
+get_next_nybble
+    ldy #0                                          ;
+    lda nybble_offset                               ;
+    beq get_low_nybble                              ;
+    dec nybble_offset                               ;
+    lda (compressed_data_low),Y
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    inc compressed_data_low                         ;
+    beq +                                           ;
+    rts                                             ;
++
+    inc compressed_data_high                        ;
+    rts                                             ;
+
+get_low_nybble
+    inc nybble_offset                               ;
+    lda (compressed_data_low),Y                     ;
+    and #15                                         ;
+    rts                                             ;
+
+; ***************************************************************************************
+previous_decompressed_low
+    !byte 255
+previous_decompressed_high
+    !byte 255
+shortcut_table_entry
+    !byte 0
+
+; ***************************************************************************************
+decompress_sprite_xa
+    cmp previous_decompressed_low                   ;
+    bne +                                           ;
+    cpx previous_decompressed_high                  ;
+    bne +                                           ;
+    rts                                             ;
+
++
+    sta previous_decompressed_low                   ;
+    stx previous_decompressed_high                  ;
+
+    ldy #num_enemy_sprites                          ;
+    sty enemy_sprite_counter                        ; enemy_sprite_counter = 0
+    ldy #0                                          ;
+    sty shortcut_table_entry                        ;
+--
+    cpx #0                                          ;
+    bne +                                           ;
+    cmp #shortcut_interval                          ;
+    bcs +                                           ;
+    jmp got_offset                                  ;
++
+    ldy #shortcut_interval-1
+-
+    dec enemy_sprite_counter                        ;
+    dey                                             ;
+    bpl -                                           ;
+    inc shortcut_table_entry                        ;
+    sec                                             ;
+    sbc #shortcut_interval                          ;
+    bcs --                                          ;
+    dex                                             ;
+    jmp --                                          ;
+got_offset
+    sta sprite_counter_low                          ;
+    stx sprite_counter_high                         ; sprite_counter = XA
+    ldy shortcut_table_entry                        ;
+    lda shortcut_table_low,Y                        ;
+    sta compressed_data_low                         ;
+    lda shortcut_table_high,Y                       ;
+    and #%01111111                                  ;
+    sta compressed_data_high                        ;
+    ldx #0
+    lda shortcut_table_high,Y                       ;
+    bpl +                                           ;
+    ldx #1                                          ;
++
+    stx nybble_offset                               ;
+    ldx #32                                         ;
+    cpy #(num_enemy_sprites + shortcut_interval - 1)/shortcut_interval        ;
+    bcc +                                           ;
+    lda #0                                          ;
+    sta enemy_sprite_counter                        ;
+    ldx #8                                          ;
++
+    stx size_in_bytes                               ; size_in_bytes = 32
+    dex                                             ;
+    stx size_in_bytes_minus_one                     ;
+
+    lda #0                                          ;
+    sta decoded                                     ; decoded = 0
+
+;    lda #<sprite_data                               ;
+;    sta compressed_data_low                         ;
+;    lda #>sprite_data                               ;
+;    sta compressed_data_high                        ;
+find_sprite_loop
+    lda size_in_bytes_minus_one                     ;
+    and decoded                                     ;
+    sta is_start_of_sprite                          ;
+    bne done_start_of_sprite_code                   ; if (not start of sprite) then branch
+    lda enemy_sprite_counter                        ;
+    bne +                                           ; if (enemy_sprite_counter != 0) then branch
+    lda #8                                          ;
+    sta size_in_bytes                               ; size_in_bytes = 8
+    lda #7                                          ;
+    sta size_in_bytes_minus_one                     ;
+
++
+    lda sprite_counter_low                          ;
+    ora sprite_counter_high                         ;
+    beq found_sprite                                ; if (sprite_counter == 0) then branch
+
+    lda sprite_counter_low                          ; }
+    bne +                                           ; }
+    dec sprite_counter_high                         ; } sprite_counter--
++                                                   ; }
+    dec sprite_counter_low                          ; }
+
+    lda enemy_sprite_counter                        ; }
+    beq done_start_of_sprite_code                   ; } if (enemy_sprite_counter > 0) enemy_sprite_counter--
+    dec enemy_sprite_counter                        ; }
+done_start_of_sprite_code
+    jsr get_next_nybble                             ;
+    inc decoded                                     ; decoded++
+    cmp #4                                          ;
+    bcc handle_skip_repeat                          ;
+    cmp #10                                         ;
+    bcc find_sprite_loop                            ;
+
+handle_skip_multi_nybble
+    cmp #15                                         ;
+    bne +                                           ;
+    jsr get_next_nybble                             ;
++
+    jsr get_next_nybble                             ;
+    jmp find_sprite_loop                            ;
+
+handle_skip_repeat
+    lda is_start_of_sprite                          ;
+    bne find_sprite_loop                            ; if (not start of sprite) then branch
+    dec decoded                                     ;
+    lda compressed_data_low
+    clc
+    adc size_in_bytes                               ;
+    sta compressed_data_low                         ;
+    bcc +                                           ;
+    inc compressed_data_high                        ;
++
+    jmp find_sprite_loop                            ;
+
+
+found_sprite
+    lda #0                                          ;
+    ldx #3                                          ;
+-
+    sta previous_bytes,X                            ;
+    dex                                             ;
+    bpl -                                           ;
+    sta decoded                                     ;
+    lda #255                                        ;
+    sta is_start_of_sprite                          ;
+decode_sprite_loop
+    jsr get_next_nybble                             ;
+    cmp #4                                          ;
+    bcc handle_repeat                               ;
+    beq handle_rol                                  ;
+    cmp #5                                          ;
+    beq handle_ror                                  ;
+    cmp #10                                         ;
+    bcc handle_commonmost                           ;
+    cmp #15                                         ;
+    bcc handle_common                               ;
+    beq handle_raw                                  ; ALWAYS branch
+
+after_handler
+    inc is_start_of_sprite                          ;
+    lda decoded                                     ;
+    cmp size_in_bytes                               ;
+    bcc decode_sprite_loop                          ;
+    rts                                             ;
+
+handle_repeat
+    bit is_start_of_sprite                          ;
+    bpl real_repeat                                 ; if (not start of sprite) then branch
+    ldx size_in_bytes                               ;
+-
+    jsr get_next_nybble                             ;
+    sta val                                         ;
+    jsr get_next_nybble                             ;
+    asl                                             ;
+    asl                                             ;
+    asl                                             ;
+    asl                                             ;
+    ora val                                         ;
+    jsr add_to_decoded_bytes                        ;
+    dex                                             ;
+    bne -                                           ;
+    beq after_handler                               ; ALWAYS branch
+
+real_repeat
+    tax                                             ;
+    lda previous_bytes,X                            ;
+store_and_continue
+    jsr add_to_decoded_bytes                        ;
+    jmp after_handler                               ;
+
+handle_rol
+    lda previous_bytes + 3                          ;
+    cmp #$80                                        ;
+    rol                                             ;
+    jmp store_and_continue                          ;
+
+handle_ror
+    lda previous_bytes + 3                          ;
+    lsr                                             ;
+    bcc +                                           ;
+    ora #$80                                        ;
++
+    jmp store_and_continue                          ;
+
+handle_commonmost
+    sec                                             ;
+    sbc #6                                          ;
+look_up_store_and_continue
+    tax                                             ;
+    lda sprite_decode_table,X                       ;
+    jmp store_and_continue                          ;
+
+handle_common
+    sec                                             ; } [use a table here instead]
+    sbc #10                                         ; }
+    asl                                             ; }
+    asl                                             ; } A = ((A-10) * 16)
+    asl                                             ; }
+    asl                                             ; }
+    sta val                                         ;
+    jsr get_next_nybble                             ;
+    ora val                                         ;
+    clc                                             ;
+    adc #4                                          ;
+    jmp look_up_store_and_continue                  ;
+
+handle_raw
+    jsr get_next_nybble                             ;
+    sta val                                         ;
+    jsr get_next_nybble                             ;
+    asl                                             ;
+    asl                                             ;
+    asl                                             ;
+    asl                                             ;
+    ora val                                         ;
+    jmp store_and_continue                          ;
+
 
 ; ***************************************************************************************
 ;
@@ -1134,16 +1421,18 @@ calculate_background_sprite_address
 ;
 ; ***************************************************************************************
 plot_background_sprite
-    jsr calculate_background_sprite_address         ;
+    pha                                             ;
     lda colour_mask_values,X                        ;
     sta sprite_colour                               ;
     lda colour_mask_values,Y                        ;
     sta sprite_colour_eor                           ;
     eor sprite_colour                               ;
     sta sprite_colour                               ;
+    pla                                             ;
+    jsr decompress_background_sprite                ;
     ldy #7                                          ;
 unpack_background_sprite_loop
-    lda (sprite_address),Y                          ;
+    lda (sprite_address_low1),Y                     ;
     jsr unpack_byte_of_sprite_data                  ;
     sta unpacked_background_sprite + 8,Y            ;
     lda unpacked_byte_two                           ;
@@ -1243,11 +1532,6 @@ calculate_frame
     tay                                             ;
     ldx enemies_y,Y                                 ;
     rts                                             ;
-
-temp_test_for_direction
-    !byte 0
-temp_old_position
-    !byte 0
 
 ; ***************************************************************************************
 move_enemy
@@ -2720,7 +3004,7 @@ compare_tile_with_four
 ; ***************************************************************************************
 prepare_conveyor_sprites
     lda background_tiles_sprites + 3                ;
-    jsr calculate_background_sprite_address         ;
+    jsr decompress_background_sprite                ;
     ldx background_tiles_colours_fg + 3             ;
     lda colour_mask_values,X                        ;
     sta conveyor_colour                             ;
@@ -2755,7 +3039,7 @@ leave26
 
 ; ***************************************************************************************
 prepare_right_conveyor_bytes
-    lda (sprite_address),Y                          ;
+    lda (sprite_address_low1),Y                     ;
     sta packed_byte2                                ;
     lda #7                                          ;
     sta count                                       ;
@@ -2767,7 +3051,7 @@ prepare_right_conveyor_bytes_loop
     rts                                             ;
 
 prepare_left_conveyor_bytes
-    lda (sprite_address),Y                          ;
+    lda (sprite_address_low1),Y                     ;
     sta packed_byte2                                ;
     lda #7                                          ;
     sta count                                       ;
@@ -2911,7 +3195,7 @@ set_text_position
 ; ***************************************************************************************
 ; Write character A at current character position
 ; Text Source address = character_set_definitions_start + (8 * A)
-; Preserves A,X,Y and flags
+; Preserves A,X,Y
 write_char
     sta temp3                                   ;
     stx temp4                                   ;
@@ -3396,7 +3680,7 @@ paletteLookupTable
 
 ; ***************************************************************************************
 ; This commented out data is what the jump parabola should be, but the engine has trouble
-; with odd increments it seems. See West of Kitchen jumping up into The Banyan Tree; In
+; with odd Y increments it seems. See West of Kitchen jumping up into The Banyan Tree; In
 ; Tree Root, jumping onto the yellow platform can cause problems. And other cases too.
 ;
 ;jump_parabola_table
@@ -3415,7 +3699,7 @@ handle_rope_time_and_events
     ; wait until the electron beam has passed by the rope
 -
     lda irq_counter                                 ;
-    cmp #12                                         ;
+    cmp #11                                         ;
     bcc -
     jsr unplot_rope                                 ;
     lda #0                                          ;
@@ -3500,8 +3784,6 @@ skip_inversion1
     ; plot pixel
     jmp plot_rope_pixel                             ;
 
-temp_rope
-    !byte 0
 
 ; ***************************************************************************************
 plot_rope_pixel
@@ -4787,11 +5069,11 @@ leave
 
 ; ***************************************************************************************
 title_screen_scrolltext
-    !text "...Jetset Willy was written for the BBC Micro by Chris Robson..."
+    !text "...Jet Set Willy was written for the BBC Micro by Chris Robson..."
     !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects "
-    !text    "and is copyright to Software Projects..."
+    !text "and is copyright to Software Projects..."
     !text "...You must guide Willy to collect all the items around the house before "
-    !text    "midnight so that Maria will let you go to bed..."
+    !text "midnight so that Maria will let you go to bed..."
 title_screen_press_space
     !text "  ++++ Press SPACE to start ++++"
     !byte 0
@@ -4865,17 +5147,17 @@ set_melody_vol
     jsr send_to_sound_chip                          ; volume byte
 
     ; update volume
-    lda melody_note_volume                          ;
-    beq +                                           ;
     dec melody_note_volume                          ;
-    beq +                                           ;
     lda is_rapid_decay                              ;
     beq +                                           ;
     dec melody_note_volume                          ;
-    beq +                                           ;
     dec melody_note_volume                          ;
-    beq +                                           ;
     dec melody_note_volume                          ;
++
+    lda melody_note_volume                          ;
+    bpl +                                           ;
+    lda #0                                          ;
+    sta melody_note_volume                          ;
 +
     rts                                             ;
 
@@ -5427,6 +5709,7 @@ leave11
 ; $27               3     2
 ; $28               3     2
 ; $29               3     2
+;
 ; ***************************************************************************************
 rope_x_delta_table
     !byte 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2, 2,2,2,2
@@ -5677,14 +5960,14 @@ entry_point
     jsr OSBYTE                                      ;
 
     lda #0                                          ; }
-    cpx #3                                          ; }
-    bcc +                                           ; } Make is_master $00 if executing on a BBC B/B+
-    lda #$ff                                        ; }             or $ff on a Master
+    cpx #3                                          ; } Set 'is_master' to:
+    bcc +                                           ; }     $00 if executing on a BBC B/B+
+    lda #$ff                                        ; }  or $ff on a Master
 +                                                   ; }
     sta is_master                                   ; }
 
     ; relocate code
-    sei
+    sei                                             ;
     ldy #<$1100                                     ;
     sty $70                                         ;
     ldx #>$1100                                     ;
@@ -5788,6 +6071,7 @@ copy_zero_page_values_loop                          ;
     sta irq_counter                                 ;
 
     lda #1                                          ;
+    sta note_length                                 ;
     sta melody_active                               ;
 
     jmp real_entry_point                            ;
