@@ -314,7 +314,6 @@ sprite_size_in_bytes                                = $94
 sprite_width                                        = $95
 rows_to_check                                       = $96
 previous_sprite_address_high                        = $96
-packed_byte1                                        = $96
 x2                                                  = $96
 value                                               = $96
 rope_pixel_position                                 = $96
@@ -330,7 +329,6 @@ invert                                              = $97
 start_of_word                                       = $97
 bit_for_item                                        = $97
 rope_pixel_x                                        = $97
-packed_byte2                                        = $97
 seven                                               = $98
 melody_active                                       = $99
 player_entered_room_falling_too_far                 = $9a
@@ -384,6 +382,8 @@ temp_addr_high                                      = $c8
 sprite_address_low1                                 = $c9
 sprite_address_high1                                = $ca
 tmp2                                                = $cb
+packed_byte1                                        = $cc
+packed_byte2                                        = $cd
 
 
 screen_memory_start                                 = $5600
