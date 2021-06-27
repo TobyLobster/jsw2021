@@ -1577,7 +1577,8 @@ namespace EncodeData
                 allSprites.AddRange(enemy.sprites);
             }
             allSprites.AddRange(backgroundSprites);
-            //allSprites.AddRange(fontSprites);
+            var firstSpriteOfFont = allSprites.Count();
+            allSprites.AddRange(fontSprites);
 
             {
                 var commonestBytesAndOccurrences = FindCommonestBytes(allSprites, out var sortedList).Take(80 + numVeryCommonItems);
@@ -1760,6 +1761,7 @@ namespace EncodeData
                 WriteLine(outputFile, 0, "; Sprites: " + byteCount + " bytes");
             }
 
+            WriteLine(outputFile, 0, "first_sprite_of_font = " + firstSpriteOfFont);
             WriteLine(outputFile, 0, "total_sprites = " + allSprites.Count);
 
             //

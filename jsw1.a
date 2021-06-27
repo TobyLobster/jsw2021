@@ -12,20 +12,32 @@ player_start_y                                      = 13 * 8    ;
 
 ; Temp start
 ;player_start_room                                   = 33       ;
-;player_start_x                                      = 30 * 8     ; must be even!
+;player_start_x                                      = 30 * 8   ; must be even!
 ;player_start_y                                      = 5 * 8    ;
 
 ; Tree Root
-;player_start_room                                   = 60        ;
-;player_start_x                                      = 23 * 8 - 2     ; must be even!
-;player_start_y                                      = 11 * 8    ;
+;player_start_room                                   = 60           ;
+;player_start_x                                      = 23 * 8 - 2   ; must be even!
+;player_start_y                                      = 11 * 8       ;
 
 ; West of Kitchen
-;player_start_room                                   = 34        ;
-;player_start_x                                      = 11 * 8     ; must be even!
-;player_start_y                                      = 1 * 8    ;
+;player_start_room                                   = 34           ;
+;player_start_x                                      = 11 * 8       ; must be even!
+;player_start_y                                      = 1 * 8        ;
 
-
+charA          = 0
+charT          = 17
+chara          = 26
+chare          = 30
+charh          = 33
+char0          = 52
+charApostrophe = 62
+charSpace      = 63
+charColon      = 64
+charFullStop   = 65
+charPlus       = 66
+charFuzzy      = 67
+charTab        = 68
 
 ; ***************************************************************************************
 ; os variables
@@ -104,14 +116,14 @@ userVIAInterruptEnableRegister                      = $fe6e     ; Interrupt enab
 OSBYTE                                              = $fff4     ; used during program initialization only
 
 ; physical colours
-black = 0
-red = 1
-green = 2
-yellow = 3
-blue = 4
+black   = 0
+red     = 1
+green   = 2
+yellow  = 3
+blue    = 4
 magenta = 5
-cyan = 6
-white = 7
+cyan    = 6
+white   = 7
 
 ; ***************************************************************************************
 ; This is the number of timer ticks per frame (num PAL scanlines * 64us/line)
@@ -266,7 +278,6 @@ player_y_fraction                                   = $7b
 mod_three                                           = $7b
 previous_tile_address_low                           = $7b
 rope_pixel_touched                                  = $7b
-blocks_to_copy                                      = $7b
 direction                                           = $7c
 triangle_direction                                  = $7d
 x_skip                                              = $7e
@@ -290,14 +301,12 @@ player_started_jump                                 = $8c
 player_x                                            = $8d
 player_y                                            = $8e
 player_horizontal_speed                             = $8f
-sprite_address_low1                                 = $90
 tile_address_low2                                   = $90
 rope_pixels_screen_address_low                      = $90
 tile_address2                                       = $90
 screen_address_low                                  = $90
 rope_pixels_screen_address_high                     = $91
 tile_address_high2                                  = $91
-sprite_address_high1                                = $91
 screen_address_high                                 = $91
 sprite_address_low2                                 = $92
 sprite_address_high2                                = $93
@@ -368,14 +377,21 @@ temp_test_for_direction                             = $c1
 temp_old_position                                   = $c2
 temp_rope                                           = $c3
 enemy_sprite_to_decompress                          = $c4
+palette_loop_counter                                = $c5
+blocks_to_copy                                      = $c6
+temp_addr_low                                       = $c7
+temp_addr_high                                      = $c8
+sprite_address_low1                                 = $c9
+sprite_address_high1                                = $ca
+tmp2                                                = $cb
+
 
 screen_memory_start                                 = $5600
 screen_address_title                                = screen_memory_start + 16 * $0200  ; row 16
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
 
-* = $1100
+* = $0208
 
-!pseudopc $0208 {
 ; ***************************************************************************************
 initialise_room
     jsr initialise_room_data                        ;
@@ -449,7 +465,7 @@ calculate_routine_number_loop                       ; Reading two bits at a time
     sec                                             ;
     sbc times_three                                 ;
     cmp #6                                          ;
-    beq leave8                                      ;
+    beq finish_up_tiles                             ;
     asl                                             ;
     tax                                             ;
     lda background_initialisation_routines_address_table,X      ;
@@ -459,8 +475,18 @@ calculate_routine_number_loop                       ; Reading two bits at a time
 
 background_initialisation_routine_address_low = * + 1
 background_initialisation_routine_address_high = * + 2
-    jsr $ffff                                       ; [overwritten before use] JSR background_initialisation_routine_address
+    jsr $ffff                                       ; [overwritten before use]
     jmp initialise_background_scenery_loop          ;
+
+finish_up_tiles
+    ; Set item graphic
+    ldx #15                                         ;
+-
+    lda unpacked_background_sprite,X                ;
+    sta room_item_sprite,X                          ;
+    dex                                             ;
+    bpl -                                           ;
+
 null_routine
 leave8
     rts                                             ;
@@ -863,7 +889,7 @@ unpack_frames_loop
     lda enemy_sprite_to_decompress                  ;
     inc enemy_sprite_to_decompress                  ;
     ldx #0                                          ;
-    jsr decompress_enemy_sprite                     ;
+    jsr decompress_sprite_xa_and_set_sprite_address ;
 
     jsr unpack_enemy_sprite                         ;
     dec number_of_frames                            ; unpack a frame each time round this loop
@@ -1016,21 +1042,21 @@ tempY = * + 1
 unpack_byte_of_sprite_data
     sta packed_byte1                                ;
     and #$f0                                        ;
-    sta tmp                                         ;
+    sta tmp2                                        ;
     lsr                                             ;
     lsr                                             ;
     lsr                                             ;
     lsr                                             ;
-    ora tmp                                         ;
+    ora tmp2                                        ;
     sta unpacked_byte_two                           ;
     lda packed_byte1                                ;
     and #$0f                                        ;
-    sta tmp                                         ;
+    sta tmp2                                        ;
     asl                                             ;
     asl                                             ;
     asl                                             ;
     asl                                             ;
-    ora tmp                                         ;
+    ora tmp2                                        ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -1091,7 +1117,7 @@ plot_sprite_group_loop
 plot_sprite_loop
 plot_sprite_address_low = * + 1
 plot_sprite_address_high = * + 2
-    lda $1111,X                                     ; [address overwritten before use: LDA plot_sprite_address,X]
+    lda $ffff,X                                     ; [address overwritten before use: LDA plot_sprite_address,X]
     and sprite_colour                               ;
     sta (screen_address_low),Y                      ;
     dex                                             ;
@@ -1124,7 +1150,7 @@ decompress_background_sprite
     bcc +                                           ;
     inx                                             ;
 +
-decompress_enemy_sprite
+decompress_sprite_xa_and_set_sprite_address
     jsr decompress_sprite_xa                        ;
     lda #<decompressed_sprite                       ;
     sta sprite_address_low1                         ;
@@ -1384,7 +1410,7 @@ look_up_store_and_continue
     jmp store_and_continue                          ;
 
 handle_common
-    sec                                             ; } [use a table here instead]
+    sec                                             ; } [use a table here instead?]
     sbc #10                                         ; }
     asl                                             ; }
     asl                                             ; } A = ((A-10) * 16)
@@ -1408,10 +1434,22 @@ handle_raw
     ora val                                         ;
     jmp store_and_continue                          ;
 
+; ***************************************************************************************
+unpack_small_sprite
+    ldy #7                                          ;
+unpack_background_sprite_loop
+    lda (sprite_address_low1),Y                     ;
+    jsr unpack_byte_of_sprite_data                  ;
+    sta unpacked_background_sprite + 8,Y            ;
+    lda unpacked_byte_two                           ;
+    sta unpacked_background_sprite,Y                ;
+    dey                                             ;
+    bpl unpack_background_sprite_loop               ;
+    rts                                             ;
 
 ; ***************************************************************************************
 ;
-; Plot an 8x8 sprite
+; Plot an 8x8 background sprite
 ;
 ; On Entry:
 ;
@@ -1430,15 +1468,9 @@ plot_background_sprite
     sta sprite_colour                               ;
     pla                                             ;
     jsr decompress_background_sprite                ;
-    ldy #7                                          ;
-unpack_background_sprite_loop
-    lda (sprite_address_low1),Y                     ;
-    jsr unpack_byte_of_sprite_data                  ;
-    sta unpacked_background_sprite + 8,Y            ;
-    lda unpacked_byte_two                           ;
-    sta unpacked_background_sprite,Y                ;
-    dey                                             ;
-    bpl unpack_background_sprite_loop               ;
+
+plot_decompressed_sprite
+    jsr unpack_small_sprite                         ;
     lda #$0f                                        ;
     sec                                             ;
     sbc tile_y                                      ;
@@ -1451,6 +1483,8 @@ unpack_background_sprite_loop
     asl                                             ;
     asl                                             ;
     jsr calculate_screen_address                    ;
+
+raw_plot_small_sprite
     ldy #$0f                                        ;
 plot_background_sprite_loop
     lda unpacked_background_sprite,Y                ;
@@ -1462,8 +1496,40 @@ plot_background_sprite_loop
     rts                                             ;
 
 ; ***************************************************************************************
-colour_mask_values
-    !byte $00, $0f, $f0, $ff
+plot_font_sprite
+    pha                                             ;
+    lda text_colour_mask                            ; text drawn on colour 0
+    sta sprite_colour                               ;
+    lda #0                                          ;
+    sta sprite_colour_eor                           ;
+    pla                                             ;
+
+    ldx #>first_sprite_of_font                      ;
+    clc                                             ;
+    adc #<first_sprite_of_font                      ;
+    bcc +                                           ;
+    inx                                             ;
++
+    jsr decompress_sprite_xa_and_set_sprite_address ;
+    jsr unpack_small_sprite                         ;
+
+    lda screen_address_low                          ;
+    sta temp_addr_low                               ;
+    lda screen_address_high                         ; remember screen address
+    sta temp_addr_high                              ;
+
+    lda text_screen_low                             ;
+    sta screen_address_low                          ;
+    lda text_screen_high                            ; set screen address and plot
+    sta screen_address_high                         ;
+    jsr raw_plot_small_sprite                       ;
+
+    lda temp_addr_low                               ;
+    sta screen_address_low                          ;
+    lda temp_addr_high                              ; restore screen address
+    sta screen_address_high                         ;
+
+    rts                                             ;
 
 ; ***************************************************************************************
 ;
@@ -2606,7 +2672,7 @@ tile_is_item                                        ; If the tile is an item,
     sta items_colour,X                              ; If not, remove it from the screen
     stx item_number                                 ;
     jsr collect_item                                ;
-    bpl leave_with_initial_x_and_y                  ;
+    jmp leave_with_initial_x_and_y                  ;
 tile_is_space
     lda room_contains_rope                          ;
     bne leave_with_initial_x_and_y                  ;
@@ -2639,7 +2705,7 @@ item_collected1
 
     ldy #$0f                                        ; loop counter
 plot_item_loop
-    lda unpacked_background_sprite,Y                ;
+    lda room_item_sprite,Y                          ;
     and sprite_colour                               ;
     sta (screen_address_low),Y                      ;
     dey                                             ;
@@ -2656,7 +2722,7 @@ plot_item_loop
 skip_item
     dec item_number                                 ;
     bpl leave21                                     ;
-    lda #$0b                                        ; [maximum number of items in a room?]
+    lda #$0b                                        ; maximum number of items in a room
     sta item_number                                 ;
 leave21
     rts                                             ;
@@ -3197,96 +3263,28 @@ set_text_position
 ; Text Source address = character_set_definitions_start + (8 * A)
 ; Preserves A,X,Y
 write_char
-    sta temp3                                   ;
-    stx temp4                                   ;
-    sty temp5                                   ;
-    cmp #9                                      ;
-    bne +                                       ;
-    jsr move_to_next_screen_cell                ;
-    jsr move_to_next_screen_cell                ;
-    jmp finish_up_write_char                    ;
-+
-    cmp #32                                     ;
-    bcc finish_up_write_char                    ;
-    ldx #$bf                                    ;
-    lda is_master                               ;
-    beq +                                       ; if (bbc b) then branch
-    lda ROMSEL                                  ;
-    sta old_romsel                              ;
-    lda #128                                    ;
-    sta ROMSEL                                  ;
-    ldx #$88                                    ;
-+
-    stx origin_of_character_definitions_high    ;
-    lda temp3                                   ;
-    asl                                         ;
-    asl                                         ;
-    rol character_definitions_high              ;
-    asl                                         ;
-    rol character_definitions_high              ;
-    sta character_definitions_low               ;
-    lda character_definitions_high              ;
-    and #3                                      ;
-    clc                                         ;
-origin_of_character_definitions_high = * + 1
-    adc #$bf                                    ; $bf => $c000 for BBC B, $88 => $8900 for Master
-    sta character_definitions_high              ;
+    sta temp3                                           ;
+    stx temp4                                           ;
+    sty temp5                                           ;
 
-write_char_internal
-    ; leftmost four pixels of character
-    ldy #7                                      ;
--
-    lda (character_definitions_low), Y          ;
+    cmp #charTab                                        ;
+    beq move_to_next_screen_cell                        ;
 
-    and #$f0                                    ; }
-    sta temp2                                   ; }
-    lsr                                         ; }
-    lsr                                         ; }
-    lsr                                         ; } adjust colour to white
-    lsr                                         ; }
-    clc                                         ; }
-    adc temp2                                   ; }
-    and text_colour_mask                        ; set colour
-    sta (text_screen_low), Y                    ; store byte to screen
-    dey                                         ;
-    bpl -                                       ;
-
-    jsr move_to_next_screen_cell                ; move to right hand side of character
-
-    ; do rightmost four pixels of each character
-    ldy #7                                      ;
--
-    lda (character_definitions_low), Y          ;
-
-    and #15                                     ; }
-    sta temp2                                   ; }
-    asl                                         ; }
-    asl                                         ; }
-    asl                                         ; } adjust colour to white
-    asl                                         ; }
-    clc                                         ; }
-    adc temp2                                   ; }
-    and text_colour_mask                        ; set colour
-    sta (text_screen_low), Y                    ; store byte to screen
-    dey                                         ;
-    bpl -                                       ;
-
-    jsr move_to_next_screen_cell                ; move to next cell
-finish_up_write_char
-    ldy temp5                                   ;
-    ldx temp4                                   ;
-    lda temp3                                   ;
-    rts                                         ;
+    jsr plot_font_sprite                                ;
 
 move_to_next_screen_cell
-    lda text_screen_low                         ;
-    clc                                         ;
-    adc #8                                      ;
-    sta text_screen_low                         ; move to next character cell
-    bcc +                                       ;
-    inc text_screen_high                        ;
+    lda text_screen_low                                 ;
+    clc                                                 ;
+    adc #16                                             ;
+    sta text_screen_low                                 ; move to next character cell
+    bcc +                                               ;
+    inc text_screen_high                                ;
 +
-    rts                                         ;
+finish_up_write_char
+    ldy temp5                                           ;
+    ldx temp4                                           ;
+    lda temp3                                           ;
+    rts                                                 ;
 
 ; ***************************************************************************************
 ;
@@ -3398,6 +3396,8 @@ unpacked_conveyor_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 unpacked_background_sprite
+    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+room_item_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ***************************************************************************************
@@ -3915,21 +3915,24 @@ leave1
 
 ; ***************************************************************************************
 write_status_line
-    ldx #0                                          ;
-    ldy #20                                         ;
-    jsr set_text_position                           ;
-    ldx #$ff                                        ;
+    ldx #0                                              ;
+    ldy #20                                             ;
+    jsr set_text_position                               ;
+    ldx #$ff                                            ;
 write_items_collected_loop
-    inx                                             ;
-    lda items_collected_string,X                    ;
-    jsr write_char                                  ;
-    cmp #0                                          ;
-    bne write_items_collected_loop                  ;
-    jsr write_items_collected                       ;
-    jmp write_time                                  ;
+    inx                                                          ;
+    lda items_collected_string,X                                 ;
+    jsr write_char                                               ;
+    cpx #items_collected_string_end - items_collected_string - 1 ;
+    bne write_items_collected_loop                      ;
+    jsr write_items_collected                           ;
+    jmp write_time                                      ;
 
 items_collected_string
-    !text "Items collected 000 Time  7:00pm", 0     ;
+    !convtab "string_table.bin" {
+        !text "Items collected 000 Time  7:00pm"    ;
+    }
+items_collected_string_end
 
 ; ***************************************************************************************
 collect_item
@@ -3947,7 +3950,7 @@ collect_item
     bcc write_items_collected                       ;
     inc house_clear                                 ; 80 items needed to clear house
 write_items_collected
-    ldx #$11                                        ;
+    ldx #17                                         ;
     ldy items_collected_high                        ;
     jsr write_digit_y_at_status_line_column_x       ;
     lda items_collected_low                         ;
@@ -3961,7 +3964,7 @@ write_digit_y_at_status_line_column_x
     lda temp5                                       ;
 write_digit_a
     clc                                             ;
-    adc #'0'                                        ;
+    adc #char0                                      ;
     jmp write_char                                  ;
 
 ; ***************************************************************************************
@@ -4005,7 +4008,7 @@ write_time
     jsr write_digit_y_at_status_line_column_x       ;
     lda hours_low                                   ;
     jsr write_digit_a                               ;
-    lda #':'                                        ;
+    lda #charColon                                  ;
     jsr write_char                                  ;
     lda minutes_high                                ;
     jsr write_digit_a                               ;
@@ -4030,7 +4033,7 @@ reset_game
     sta swimming_pool_item_collected                ;
     lda #2                                          ;
     sta player_speed                                ; face right
-    lda #$f0                                        ;
+    lda #0                                          ;
     sta hours_high                                  ;
     lda #7                                          ; Game starts at 7:00pm
     sta hours_low                                   ;
@@ -4216,7 +4219,7 @@ plot_arrow
 plot_arrow_loop
 arrow_sprite_address_low = * + 1
 arrow_sprite_address_high = * + 2
-    lda sprite_arrow_left,Y                         ; [address is overwritten before use]
+    lda $ffff,Y                                     ; [address is overwritten before use]
     eor (screen_address_low),Y                      ;
     sta (screen_address_low),Y                      ;
     dey                                             ;
@@ -4314,9 +4317,6 @@ palette_changes
     !byte $ff                                       ; row 14
     !byte $ff                                       ; row 15
 
-palette_loop_counter
-    !byte 0
-
 ; ***************************************************************************************
 start_of_palettes
 room_palette
@@ -4406,7 +4406,7 @@ write_room_title_loop
 ; ***************************************************************************************
 is_1b_1c_1d_1e_or_1f
     bne is_1c_1d_1e_or_1f                           ;
-    lda #$27                                        ; "'" ; $1b writes "'"
+    lda #charApostrophe                             ; $1b writes "'"
     jsr write_char                                  ;
     jmp write_room_title_loop                       ;
 
@@ -4485,25 +4485,26 @@ is_1e_or_1f
     bne is_1f                                       ;
     inc buffer_offset                               ; start_of_word ; $1e writes " ", resetting case
 is_1d
-    lda #' '                                        ; $1d writes " ", keeping lower case
+    lda #charSpace                                  ; $1d writes " ", keeping lower case
     jsr write_char                                  ;
     jmp write_room_title_loop                       ;
 is_1f
     lda #$13                                        ; "t" ; $1f writes "The"
     jsr write_letter                                ;
-    lda #'h'                                        ;
+    lda #charh                                      ;
     jsr write_char                                  ;
-    lda #'e'                                        ;
+    lda #chare                                      ;
     jsr write_char                                  ;
     jmp write_room_title_loop                       ;
 
 ; ***************************************************************************************
 write_letter
     clc                                             ;
-    adc #'a'                                        ;
+    adc #chara                                      ;
     ldy start_of_word                               ;
     beq lower_case                                  ;
-    and #$df                                        ;
+    sec                                             ;
+    sbc #26                                         ; convert to upper case
     ldx #0                                          ;
     stx start_of_word                               ;
 lower_case
@@ -4565,7 +4566,7 @@ fill_enemy_with_water_loop
     ldy #1                                          ; after movement) to be the same. Use tile 1 for space
 fill_space_sprite                                   ; so player can stand on swimming pool water.
     sty space_tile                                  ;
-    ldx #$3f                                        ; [Bug: fills half of player_background_buffer too]
+    ldx #$1f                                        ;
 fill_space_sprite_loop
     sta space_sprite,X                              ;
     dex                                             ;
@@ -4657,7 +4658,12 @@ leave7
 
 ; ***************************************************************************************
 game_over_string
-    !text "Game", 9, 9, "Over"                      ;
+    !convtab "string_table.bin" {
+        !text "Game"                            ;
+        !byte charTab                           ;
+        !byte charTab                           ;
+        !text "Over"                            ;
+    }
 game_over_string_end
 
 ; ***************************************************************************************
@@ -4828,6 +4834,17 @@ target_address_high = * + 2
 
 ; ***************************************************************************************
 plot_title_screen_logo
+    ldx #2                                          ;
+    ldy #14                                         ;
+    jsr set_text_position                           ; TAB
+    ldy #0                                          ;
+-
+    lda title_message,Y                             ;
+    iny                                             ;
+    jsr write_char                                  ;
+    cpy #title_message_end - title_message + 1      ;
+    bne -                                           ;
+
     ldx #0                                          ;
     ldy #1                                          ; TAB
     jsr set_text_position                           ;
@@ -4839,18 +4856,12 @@ plot_title_screen_logo_loop
     sta blocks_to_copy                              ;
     ldy #7                                          ; loop counter
 unpack_byte_loop
-    lsr blocks_to_copy                              ;
+    asl blocks_to_copy                              ;
     bcc skip_block                                  ;
 
     ; draw block
-    lda #<fuzzy_block                               ;
-    sta character_definitions_low                   ;
-    lda #>fuzzy_block                               ;
-    sta character_definitions_high                  ;
-    sta temp3                                       ;
-    stx temp4                                       ;
-    sty temp5                                       ;
-    jsr write_char_internal                         ;
+    lda #charFuzzy                                  ;
+    jsr write_char                                  ;
 next_byte
     dey                                             ;
     bpl unpack_byte_loop                            ;
@@ -4858,35 +4869,19 @@ next_byte
     cpx #title_screen_logo_end - title_screen_logo  ;
     bne plot_title_screen_logo_loop                 ;
 
-    ldx #2                                          ;
-    ldy #14                                         ;
-    jsr set_text_position                           ; TAB
-    ldy #0                                          ;
--
-    lda title_message,Y                             ;
-    iny                                             ;
-    jsr write_char                                  ;
-    bne -                                           ;
-+
     rts                                             ;
 
 skip_block
-    lda #9                                          ;
+    lda #charTab                                    ;
     jsr write_char                                  ;
     jmp next_byte                                   ;
 
 title_message
-    !text "2021 Edition by TobyLobster",0
+    !convtab "string_table.bin" {
+        !text "2021 Edition by TobyLobster"
+    }
+title_message_end
 
-fuzzy_block
-    !byte %11111111
-    !byte %11010101
-    !byte %10101010
-    !byte %11010101
-    !byte %10101010
-    !byte %11010101
-    !byte %10101010
-    !byte %11010101
 
 ; ***************************************************************************************
 clear_room_palette_changes
@@ -5018,6 +5013,7 @@ title_screen_loop
     bne wait_for_vsyncs                             ;
     ldy scrolltext_offset                           ;
     lda (scrolltext_address_low),Y                  ; Write character of scrolltext
+    cmp #255                                        ;
     beq end_of_scrolltext                           ;
     jsr write_char                                  ;
     inc scrolltext_offset                           ;
@@ -5069,29 +5065,32 @@ leave
 
 ; ***************************************************************************************
 title_screen_scrolltext
-    !text "...Jet Set Willy was written for the BBC Micro by Chris Robson..."
-    !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects "
-    !text "and is copyright to Software Projects..."
-    !text "...You must guide Willy to collect all the items around the house before "
-    !text "midnight so that Maria will let you go to bed..."
+    !convtab "string_table.bin" {
+        !text "...Jet Set Willy was written for the BBC Micro by Chris Robson..."
+        !text "...Jet Set Willy was prepared by Tynesoft under licence from Software Projects "
+        !text "and is copyright to Software Projects..."
+        !text "...You must guide Willy to collect all the items around the house before "
+        !text "midnight so that Maria will let you go to bed..."
 title_screen_press_space
-    !text "  ++++ Press SPACE to start ++++"
-    !byte 0
+        !text "  ++++ Press SPACE to start ++++"
+    }
+title_screen_scrolltext_end
+    !byte 255
 
 ; ***************************************************************************************
 title_screen_logo
-    !le32 %....###.###.###..###.###.###....
-    !le32 %.....#....#...#...#....#..#.....
-    !le32 %.....#..###.###...#..###..#.....
-    !le32 %.....#....#.#.....#....#..#.....
-    !le32 %.....#..###.###...#..###..##....
-    !le32 %................................
-    !le32 %................................
-    !le32 %......#...#..#...#.#.#...#......
-    !le32 %......#...#..#...#.#.#...#......
-    !le32 %......#####..#...#.#.#.#.#......
-    !le32 %........#....#...#.#.#.#.#......
-    !le32 %........#..###.###.#.#####......
+    !be32 %....###.###.###..###.###.###....
+    !be32 %.....#..#....#...#...#....#.....
+    !be32 %.....#..###..#...###.###..#.....
+    !be32 %.....#..#....#.....#.#....#.....
+    !be32 %....##..###..#...###.###..#.....
+    !be32 %................................
+    !be32 %................................
+    !be32 %......#...#.#.#...#..#...#......
+    !be32 %......#...#.#.#...#..#...#......
+    !be32 %......#.#.#.#.#...#..#####......
+    !be32 %......#.#.#.#.#...#....#........
+    !be32 %......#####.#.###.###..#........
 
 title_screen_logo_end
 
@@ -5282,257 +5281,6 @@ exit_irq
 !if ((>room_palette) != (>(room_palette + 4))) {
     !error "Alignment of room_palette is wrong"
 }
-
-; ***************************************************************************************
-!macro note .pitch, .dur {
-    !byte .pitch + 16 * .dur
-}
-
-fs4 = 0
-g4  = 1
-gs4 = 2
-a4  = 3
-as4 = 4
-b4  = 5
-c5  = 6
-cs5 = 7
-d5  = 8
-ds5 = 9
-e5  = 10
-es5 = 11
-f5  = 11
-fs5 = 12
-g5  = 13
-non = 14
-
-melody_table
-    +note d5,  1        ; measure 1
-    +note c5,  1
-    +note d5,  1
-    +note c5,  1
-    +note b4,  2
-    +note g4,  3
-
-    +note non, 1        ; measure 2
-    +note b4,  1
-    +note c5,  1
-    +note d5,  1
-    +note c5,  1
-    +note d5,  1
-    +note c5,  1
-
-    +note b4,  1        ; measure 3
-    +note c5,  1
-    +note d5,  1
-    +note e5,  1
-    +note es5, 1
-    +note e5,  1
-    +note es5, 1
-    +note e5,  1
-
-    +note d5,  4        ; measure 4
-    +note non, 4
-
-    +note ds5, 2        ; measure 5
-    +note d5,  2
-    +note cs5, 2
-    +note c5,  2
-
-    +note as4, 1        ; measure 6
-    +note a4,  1
-    +note g4,  1
-    +note a4,  1
-    +note as4, 3
-    +note non, 1
-
-    +note as4, 1        ; measure 7
-    +note a4,  1
-    +note g4,  1
-    +note a4,  1
-    +note as4, 2
-    +note g4,  2
-
-    +note d5,  4        ; measure 8
-    +note non, 4
-
-    +note d5,  1        ; measure 9
-    +note c5,  1
-    +note d5,  1
-    +note c5,  1
-    +note b4,  2
-    +note g4,  3
-
-    +note non, 1
-    +note b4,  1        ; measure 10
-    +note c5,  1
-    +note d5,  1
-    +note c5,  1
-    +note d5,  1
-    +note c5,  1
-
-    +note b4,  1        ; measure 11
-    +note c5,  1
-    +note d5,  1
-    +note e5,  1
-    +note es5, 1
-    +note e5,  1
-    +note es5, 1
-    +note e5,  1
-
-    +note d5,  4        ; measure 12
-    +note non, 4
-
-    +note ds5, 2        ; measure 13
-    +note d5,  2
-    +note cs5, 2
-    +note c5,  2
-
-    +note as4, 1        ; measure 14
-    +note a4,  1
-    +note g4,  1
-    +note a4,  1
-    +note as4, 2
-    +note non, 2
-
-    +note as4, 1        ; measure 15
-    +note a4,  1
-    +note g4,  1
-    +note as4, 1
-    +note a4,  1
-    +note g4,  1
-    +note fs4, 1
-    +note a4,  1
-
-    +note g4,  2        ; measure 16
-    +note non, 2
-    +note b4,  4
-
-    +note c5,  4        ; measure 17
-    +note d5,  4
-
-    +note ds5, 1        ; measure 18
-    +note non, 1
-    +note ds5, 2
-    +note ds5, 2
-    +note ds5, 2
-
-    +note ds5, 2        ; measure 19
-    +note es5, 1
-    +note g5,  1
-    +note es5, 2
-    +note ds5, 2
-
-    +note d5,  2        ; measure 20
-    +note d5,  1
-    +note d5,  1
-    +note d5,  1
-    +note c5,  1
-    +note as4, 1
-    +note c5,  1
-
-    +note d5,  6        ; measure 21
-    +note d5,  2
-
-    +note c5,  1        ; measure 22
-    +note non, 1
-    +note c5,  2
-    +note c5,  2
-    +note c5,  2
-
-    +note c5,  2        ; measure 23
-    +note d5,  1
-    +note ds5, 1
-    +note d5,  3
-    +note c5,  1
-
-    +note b4,  4        ; measure 24
-    +note non, 4
-
-    +note b4,  2        ; measure 25
-    +note c5,  2
-    +note d5,  2
-
-    +note ds5, 2        ; measure 26
-    +note ds5, 2
-    +note ds5, 2
-    +note ds5, 2
-
-    +note ds5, 2        ; measure 27
-    +note es5, 1
-    +note g5,  1
-    +note es5, 2
-    +note ds5, 2
-
-    +note d5,  2        ; measure 28
-    +note d5,  1
-    +note d5,  1
-    +note d5,  1
-    +note c5,  1
-    +note as4, 1
-    +note c5,  1
-
-    +note d5,  2        ; measure 29
-    +note non, 4
-    +note g4,  2
-
-    +note c5,  2        ; measure 30
-    +note c5,  2
-    +note c5,  1
-    +note c5,  2
-    +note non, 1
-
-    +note as4, 2        ; measure 31
-    +note a4,  2
-    +note g4,  2
-    +note as4, 2
-
-    +note d5,  8        ; measure 32
-melody_table_end
-
-; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
-; write second byte:  top 6 bits of pitch P
-!macro pitch_first_byte .pitch {
-    !byte 128 + 32 * 0 + (.pitch % 16)
-}
-
-!macro pitch_second_byte .pitch {
-    !byte .pitch / 16
-}
-
-; ***************************************************************************************
-pitch_table_first
-    +pitch_first_byte 338          ; 369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
-    +pitch_first_byte 319          ; 391.85 Hz           G4  =  392.00 Hz            0.15 Hz
-    +pitch_first_byte 301          ; 415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
-    +pitch_first_byte 284          ; 440.14 Hz           A4  =  440.00 Hz            0.14 Hz
-    +pitch_first_byte 268          ; 466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
-    +pitch_first_byte 253          ; 494.07 Hz           B4  =  493.88 Hz            0.19 Hz
-    +pitch_first_byte 239          ; 523.01 Hz           C5  =  523.25 Hz            0.24 Hz
-    +pitch_first_byte 225          ; 555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
-    +pitch_first_byte 213          ; 586.85 Hz           D5  =  587.33 Hz            0.48 Hz
-    +pitch_first_byte 201          ; 621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
-    +pitch_first_byte 190          ; 657.89 Hz           E5  =  659.26 Hz            1.36 Hz
-    +pitch_first_byte 179          ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
-    +pitch_first_byte 169          ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
-    +pitch_first_byte 159          ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
-
-pitch_table_second
-    +pitch_second_byte 338         ;  369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
-    +pitch_second_byte 319         ;  391.85 Hz           G4  =  392.00 Hz            0.15 Hz
-    +pitch_second_byte 301         ;  415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
-    +pitch_second_byte 284         ;  440.14 Hz           A4  =  440.00 Hz            0.14 Hz
-    +pitch_second_byte 268         ;  466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
-    +pitch_second_byte 253         ;  494.07 Hz           B4  =  493.88 Hz            0.19 Hz
-    +pitch_second_byte 239         ;  523.01 Hz           C5  =  523.25 Hz            0.24 Hz
-    +pitch_second_byte 225         ;  555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
-    +pitch_second_byte 213         ;  586.85 Hz           D5  =  587.33 Hz            0.48 Hz
-    +pitch_second_byte 201         ;  621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
-    +pitch_second_byte 190         ;  657.89 Hz           E5  =  659.26 Hz            1.36 Hz
-    +pitch_second_byte 179         ;  698.32 Hz           F5  =  698.46 Hz            0.13 Hz
-    +pitch_second_byte 169         ;  739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
-    +pitch_second_byte 159         ;  786.16 Hz           G5  =  783.99 Hz            2.17 Hz
-
-
 
 
 ; ***************************************************************************************
@@ -5841,8 +5589,6 @@ rope_pixels_mask_table
     !byte 0
     !byte 0
 
-
-
 ; ***************************************************************************************
 ; Tile types:
 ;  0 = PLATFORM
@@ -5852,6 +5598,7 @@ rope_pixels_mask_table
 ;  4 = DEADLY
 ;  5 = SCENERY
 ;  6 = ITEM
+
 background_tiles_colours_fg
     !byte $01, $02, $03, $03, $02, $00, $00 ;
 background_tiles_colours_bg
@@ -5926,16 +5673,17 @@ items_tile_address_low
 items_tile_address_high
     !byte $6f, $6f, $6f, $6f, $6f, $6f, $6f, $08, $08, $08, $08, $08
 
+colour_mask_values
 life_colours
-    ;      KK,  RR,  YY,  WW
     !byte $00, $0f, $f0, $ff
 end_of_real_code
 
 !if (* > screen_memory_start) {
     !error "Code too long by ", * - screen_memory_start
 }
-}
 free_before_screen = screen_memory_start - end_of_real_code
+
+!pseudopc * - $0208 + $1100 {
 
 ; ***************************************************************************************
 ;
@@ -5947,6 +5695,24 @@ free_before_screen = screen_memory_start - end_of_real_code
 
 ; ***************************************************************************************
 entry_point
+    ldx #$ff                                        ; } reset the stack pointer
+    txs                                             ; }
+
+    lda #$aa                                        ; }
+    ldx #0                                          ; }
+-                                                   ; }
+    dex                                             ; } just for debugging purposes, fill page 1
+    sta $0100,X                                     ; } (below the stack) with $aa
+    bne -                                           ; }
+
+    ldx #copy_melody_end - copy_melody              ; }
+-                                                   ; }
+    dex                                             ; }
+    lda copy_melody,X                               ; }
+    sta $0100,X                                     ; }
+    cpx #0                                          ; }
+    bne -                                           ; }
+
     lda #140                                        ;
     ldx #12                                         ; *TAPE
     jsr OSBYTE                                      ;
@@ -6182,5 +5948,260 @@ initial_zero_page_values
     !byte $00                                       ; $9e  house_clear
     !byte $00                                       ; $9f  player_rope_pixel
 initial_zero_page_values_end
+
+; ***************************************************************************************
+!macro note .pitch, .dur {
+    !byte .pitch + 16 * .dur
+}
+
+fs4 = 0
+g4  = 1
+gs4 = 2
+a4  = 3
+as4 = 4
+b4  = 5
+c5  = 6
+cs5 = 7
+d5  = 8
+ds5 = 9
+e5  = 10
+es5 = 11
+f5  = 11
+fs5 = 12
+g5  = 13
+non = 14
+
+copy_melody
+!pseudopc $0100 {
+melody_table
+    +note d5,  1        ; measure 1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note b4,  2
+    +note g4,  3
+
+    +note non, 1        ; measure 2
+    +note b4,  1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+
+    +note b4,  1        ; measure 3
+    +note c5,  1
+    +note d5,  1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
+
+    +note d5,  4        ; measure 4
+    +note non, 4
+
+    +note ds5, 2        ; measure 5
+    +note d5,  2
+    +note cs5, 2
+    +note c5,  2
+
+    +note as4, 1        ; measure 6
+    +note a4,  1
+    +note g4,  1
+    +note a4,  1
+    +note as4, 3
+    +note non, 1
+
+    +note as4, 1        ; measure 7
+    +note a4,  1
+    +note g4,  1
+    +note a4,  1
+    +note as4, 2
+    +note g4,  2
+
+    +note d5,  4        ; measure 8
+    +note non, 4
+
+    +note d5,  1        ; measure 9
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note b4,  2
+    +note g4,  3
+
+    +note non, 1
+    +note b4,  1        ; measure 10
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+    +note d5,  1
+    +note c5,  1
+
+    +note b4,  1        ; measure 11
+    +note c5,  1
+    +note d5,  1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
+    +note es5, 1
+    +note e5,  1
+
+    +note d5,  4        ; measure 12
+    +note non, 4
+
+    +note ds5, 2        ; measure 13
+    +note d5,  2
+    +note cs5, 2
+    +note c5,  2
+
+    +note as4, 1        ; measure 14
+    +note a4,  1
+    +note g4,  1
+    +note a4,  1
+    +note as4, 2
+    +note non, 2
+
+    +note as4, 1        ; measure 15
+    +note a4,  1
+    +note g4,  1
+    +note as4, 1
+    +note a4,  1
+    +note g4,  1
+    +note fs4, 1
+    +note a4,  1
+
+    +note g4,  2        ; measure 16
+    +note non, 2
+    +note b4,  4
+
+    +note c5,  4        ; measure 17
+    +note d5,  4
+
+    +note ds5, 1        ; measure 18
+    +note non, 1
+    +note ds5, 2
+    +note ds5, 2
+    +note ds5, 2
+
+    +note ds5, 2        ; measure 19
+    +note es5, 1
+    +note g5,  1
+    +note es5, 2
+    +note ds5, 2
+
+    +note d5,  2        ; measure 20
+    +note d5,  1
+    +note d5,  1
+    +note d5,  1
+    +note c5,  1
+    +note as4, 1
+    +note c5,  1
+
+    +note d5,  6        ; measure 21
+    +note d5,  2
+
+    +note c5,  1        ; measure 22
+    +note non, 1
+    +note c5,  2
+    +note c5,  2
+    +note c5,  2
+
+    +note c5,  2        ; measure 23
+    +note d5,  1
+    +note ds5, 1
+    +note d5,  3
+    +note c5,  1
+
+    +note b4,  4        ; measure 24
+    +note non, 4
+
+    +note b4,  2        ; measure 25
+    +note c5,  2
+    +note d5,  2
+
+    +note ds5, 2        ; measure 26
+    +note ds5, 2
+    +note ds5, 2
+    +note ds5, 2
+
+    +note ds5, 2        ; measure 27
+    +note es5, 1
+    +note g5,  1
+    +note es5, 2
+    +note ds5, 2
+
+    +note d5,  2        ; measure 28
+    +note d5,  1
+    +note d5,  1
+    +note d5,  1
+    +note c5,  1
+    +note as4, 1
+    +note c5,  1
+
+    +note d5,  2        ; measure 29
+    +note non, 4
+    +note g4,  2
+
+    +note c5,  2        ; measure 30
+    +note c5,  2
+    +note c5,  1
+    +note c5,  2
+    +note non, 1
+
+    +note as4, 2        ; measure 31
+    +note a4,  2
+    +note g4,  2
+    +note as4, 2
+
+    +note d5,  8        ; measure 32
+melody_table_end
+
+; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
+; write second byte:  top 6 bits of pitch P
+!macro pitch_first_byte .pitch {
+    !byte 128 + 32 * 0 + (.pitch % 16)
+}
+
+!macro pitch_second_byte .pitch {
+    !byte .pitch / 16
+}
+
+; ***************************************************************************************
+pitch_table_first
+    +pitch_first_byte 338          ; 369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
+    +pitch_first_byte 319          ; 391.85 Hz           G4  =  392.00 Hz            0.15 Hz
+    +pitch_first_byte 301          ; 415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
+    +pitch_first_byte 284          ; 440.14 Hz           A4  =  440.00 Hz            0.14 Hz
+    +pitch_first_byte 268          ; 466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
+    +pitch_first_byte 253          ; 494.07 Hz           B4  =  493.88 Hz            0.19 Hz
+    +pitch_first_byte 239          ; 523.01 Hz           C5  =  523.25 Hz            0.24 Hz
+    +pitch_first_byte 225          ; 555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
+    +pitch_first_byte 213          ; 586.85 Hz           D5  =  587.33 Hz            0.48 Hz
+    +pitch_first_byte 201          ; 621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
+    +pitch_first_byte 190          ; 657.89 Hz           E5  =  659.26 Hz            1.36 Hz
+    +pitch_first_byte 179          ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
+    +pitch_first_byte 169          ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
+    +pitch_first_byte 159          ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
+
+pitch_table_second
+    +pitch_second_byte 338         ;  369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
+    +pitch_second_byte 319         ;  391.85 Hz           G4  =  392.00 Hz            0.15 Hz
+    +pitch_second_byte 301         ;  415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
+    +pitch_second_byte 284         ;  440.14 Hz           A4  =  440.00 Hz            0.14 Hz
+    +pitch_second_byte 268         ;  466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
+    +pitch_second_byte 253         ;  494.07 Hz           B4  =  493.88 Hz            0.19 Hz
+    +pitch_second_byte 239         ;  523.01 Hz           C5  =  523.25 Hz            0.24 Hz
+    +pitch_second_byte 225         ;  555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
+    +pitch_second_byte 213         ;  586.85 Hz           D5  =  587.33 Hz            0.48 Hz
+    +pitch_second_byte 201         ;  621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
+    +pitch_second_byte 190         ;  657.89 Hz           E5  =  659.26 Hz            1.36 Hz
+    +pitch_second_byte 179         ;  698.32 Hz           F5  =  698.46 Hz            0.13 Hz
+    +pitch_second_byte 169         ;  739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
+    +pitch_second_byte 159         ;  786.16 Hz           G5  =  783.99 Hz            2.17 Hz
+
+}
+copy_melody_end
+}
 
 free_total = free_before_screen
