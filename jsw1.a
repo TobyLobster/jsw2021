@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-player_start_room                                   = 21        ; 21 = The Bathroom
-player_start_x                                      = 20 * 8    ;
-player_start_y                                      = 13 * 8    ;
+;player_start_room                                   = 21        ; 21 = The Bathroom
+;player_start_x                                      = 20 * 8    ;
+;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-;player_start_room                                   = 33       ;
-;player_start_x                                      = 30 * 8   ; must be even!
-;player_start_y                                      = 5 * 8    ;
+player_start_room                                   = 1       ;
+player_start_x                                      = 16 * 8   ; must be even!
+player_start_y                                      = 13 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60           ;
@@ -30,6 +30,7 @@ charT          = 17
 chara          = 26
 chare          = 30
 charh          = 33
+charp          = 41
 char0          = 52
 charApostrophe = 62
 charSpace      = 63
@@ -38,6 +39,32 @@ charFullStop   = 65
 charPlus       = 66
 charFuzzy      = 67
 charTab        = 68
+
+; notes
+fs4 = 0
+g4  = 1
+gs4 = 2
+a4  = 3
+as4 = 4
+b4  = 5
+c5  = 6
+cs5 = 7
+d5  = 8
+ds5 = 9
+e5  = 10
+es5 = 11
+f5  = 11
+fs5 = 12
+g5  = 13
+non = 14
+
+!macro note .pitch, .dur {
+    !byte .pitch + 32 * .dur
+}
+
+!macro end_melody {
+    !byte 0
+}
 
 ; ***************************************************************************************
 ; os variables
@@ -155,8 +182,8 @@ temp4                                               = $0c
 temp5                                               = $0d
 minutes_low                                         = $0e
 minutes_high                                        = $0f
-hours_low                                           = $10
-hours_high                                          = $11
+hours                                               = $10
+; $11 unused
 time_fraction                                       = $12
 items_collected_low                                 = $13
 items_collected_high                                = $14
@@ -187,10 +214,9 @@ pitch_increment_for_channel_x                       = $29
 pitch_increment_for_channel_x_1                     = $2a
 pitch_increment_for_channel_x_2                     = $2b
 pitch_increment_for_channel_x_3                     = $2c
-melody_note_volume                                  = $2d
+sound_temp_y                                        = $2d
 sound_variables_end                                 = $2d
-
-; $2e unused
+hours_am                                            = $2e
 
 ; player state on entry into the current room (reset to these values on death)
 entry_horizontal_speed                              = $2f
@@ -200,7 +226,8 @@ entry_y                                             = $32
 entry_is_jumping                                    = $33
 
 temp_high                                           = $34
-note_number                                         = $35
+
+; $35 - $4c [unused]
 
 ; initialised values
 life_y                                              = $4d
@@ -384,6 +411,21 @@ sprite_address_high1                                = $ca
 tmp2                                                = $cb
 packed_byte1                                        = $cc
 packed_byte2                                        = $cd
+
+; per channel melody variables
+current_channel                                     = $ce
+note_number                                         = $cf
+note_number1                                        = $d0
+note_number2                                        = $d1
+note_length                                         = $d2
+note_length1                                        = $d3
+note_length2                                        = $d4
+note_volume                                         = $d5
+note_volume1                                        = $d6
+note_volume2                                        = $d7
+is_rapid_decay                                      = $d8
+is_rapid_decay1                                     = $d9
+is_rapid_decay2                                     = $da
 
 
 screen_memory_start                                 = $5600
@@ -1953,13 +1995,13 @@ end_of_scenery
 
 ; ***************************************************************************************
 update_game
+    jsr read_keys                                   ;
     lda player_rope_pixel                           ;
     bne consider_keys                               ; player can jump when on the rope
     lda player_is_jumping                           ;
     ora player_jump_timer                           ;
     bne skip_keys                                   ; Player can't start jump or move when jumping
 consider_keys
-    jsr read_keys                                   ;
     jsr handle_player_keys                          ;
 skip_keys
     jsr handle_rope_time_and_events                 ;
@@ -3307,6 +3349,7 @@ finish_up_write_char
 ;
 ; ***************************************************************************************
 send_to_sound_chip
+    sty sound_temp_y                                    ;
     ldy #$ff                                            ; }
     sty systemVIADataDirectionRegisterA                 ; } set data direction to all outputs
     sta systemVIARegisterANoHandshake                   ; send data byte to sound chip
@@ -3320,6 +3363,7 @@ send_to_sound_chip
                                                         ; required by the sound chip hardware)
     ldy #8                                              ; }
     sty systemVIARegisterB                              ; } pull the write enable line high (inactive)
+    ldy sound_temp_y                                    ;
 +
     rts                                                 ;
 
@@ -3930,7 +3974,7 @@ write_items_collected_loop
 
 items_collected_string
     !convtab "string_table.bin" {
-        !text "Items collected 000 Time  7:00pm"    ;
+        !text "Items collected 000 Time  7:00am"    ;
     }
 items_collected_string_end
 
@@ -3951,17 +3995,14 @@ collect_item
     inc house_clear                                 ; 80 items needed to clear house
 write_items_collected
     ldx #17                                         ;
-    ldy items_collected_high                        ;
-    jsr write_digit_y_at_status_line_column_x       ;
+    ldy #20                                         ;
+    jsr set_text_position                           ;
+    lda items_collected_high                        ;
+    jsr write_digit_a                               ;
     lda items_collected_low                         ;
     jmp write_digit_a                               ;
 
 ; ***************************************************************************************
-write_digit_y_at_status_line_column_x
-    sty temp5                                       ;
-    ldy #20                                         ;
-    jsr set_text_position                           ;
-    lda temp5                                       ;
 write_digit_a
     clc                                             ;
     adc #char0                                      ;
@@ -3970,13 +4011,19 @@ write_digit_a
 ; ***************************************************************************************
 handle_time
     dec game_timer                                  ;
+    lda game_timer                                  ;
+    and #$7f                                        ;
     bne leave2                                      ;
     inc time_fraction                               ;
     lda time_fraction                               ;
     cmp #3                                          ;
     bne leave2                                      ;
+
+    ; increment clock by one minute
     ldy #0                                          ;
     sty time_fraction                               ;
+
+    ; minutes
     inc minutes_low                                 ;
     lda minutes_low                                 ;
     cmp #10                                         ;
@@ -3987,35 +4034,69 @@ handle_time
     cmp #6                                          ;
     bcc write_time                                  ;
     sty minutes_high                                ;
-    inc hours_low                                   ;
-    lda hours_low                                   ;
-    cmp #10                                         ;
-    bcc +                                           ;
-    sty hours_low                                   ;
-    lda #1                                          ;
-    sta hours_high                                  ;
-+
-    lda hours_low                                   ;
-    cmp #2                                          ;
+
+    ; hours
+    inc hours                                       ;
+    lda hours                                       ;
+    cmp #12                                         ;
+    bcc check_for_out_of_time                       ;
+    cmp #13                                         ;
+    bcc toggle_am_pm                                ;
+    lda #1                                          ; 13 o'clock becomes 1 o'clock
+    sta hours                                       ;
+
+check_for_out_of_time
+    lda hours                                       ;
+    cmp #1                                          ;
+    bne write_time                                  ; if (not 1 o'clock) then branch
+    lda hours_am                                    ;
+    cmp #chara                                      ; if (not am) then branch
     bne write_time                                  ;
-    lda hours_high                                  ;
-    bmi write_time                                  ;
+
+    ; out of time
     inc out_of_time                                 ;
     inc player_killed                               ;
 write_time
     ldx #$19                                        ;
-    ldy hours_high                                  ;
-    jsr write_digit_y_at_status_line_column_x       ;
-    lda hours_low                                   ;
+    ldy #20                                         ;
+    jsr set_text_position                           ;
+
+    ldy #0                                          ;
+    lda hours                                       ;
+    cmp #10                                         ;
+    bcc +                                           ;
+    iny                                             ;
+    sec                                             ;
+    sbc #10                                         ;
++
+    sta hours_low                                   ;
+    tya                                             ;
+    bne +                                           ;
+    lda #charSpace                                  ;
+    jsr write_char                                  ;
+    jmp skip_hours_high                             ;
++
     jsr write_digit_a                               ;
-    lda #charColon                                  ;
+skip_hours_high
+hours_low = * + 1
+    lda #$ff                                        ;
+    jsr write_digit_a                               ;
+    lda #charTab                                    ;
     jsr write_char                                  ;
     lda minutes_high                                ;
     jsr write_digit_a                               ;
     lda minutes_low                                 ;
     jsr write_digit_a                               ;
+    lda hours_am                                    ;
+    jsr write_char                                  ;
 leave2
     rts                                             ;
+
+toggle_am_pm
+    lda hours_am                                    ;
+    eor #(charp XOR chara)                          ;
+    sta hours_am                                    ;
+    jmp write_time                                  ;
 
 ; ***************************************************************************************
 reset_game
@@ -4033,10 +4114,10 @@ reset_game
     sta swimming_pool_item_collected                ;
     lda #2                                          ;
     sta player_speed                                ; face right
-    lda #0                                          ;
-    sta hours_high                                  ;
-    lda #7                                          ; Game starts at 7:00pm
-    sta hours_low                                   ;
+    lda #7                                          ;
+    sta hours                                       ; Game starts at 7:00am
+    lda #chara                                      ;
+    sta hours_am                                    ;
     lda #7                                          ; Player starts with 7 lives
     sta player_lives                                ;
     lda #player_start_y                             ;
@@ -4417,44 +4498,6 @@ is_1c_1d_1e_or_1f
     bcs is_1e_or_1f                                 ;
 
     ; $1c ends room title
-    ; move title text down one pixel
-    lda #<(screen_address_title + 7)                ;
-    sta title_text_source_low                       ;
-    lda #>(screen_address_title + 7)                ;
-    sta title_text_source_high                      ;
-
-    lda #<(screen_address_title + $0200)            ;
-    sta title_text_destination_low                  ;
-    lda #>(screen_address_title + $0200)            ;
-    sta title_text_destination_high                 ;
-
-    lda #8
-    sta move_title_down_loop_counter                ;
--
-    jsr copy_row                                    ;
-
-    ; destination is the old source
-    lda title_text_source_low                       ;
-    sta title_text_destination_low                  ;
-    lda title_text_source_high                      ;
-    sta title_text_destination_high                 ;
-
-    ; update source
-    dec title_text_source_low                       ;
-    dec move_title_down_loop_counter                ;
-    bne -
-
-    ldy #0                                          ;
--
-    lda #0                                          ;
-    sta screen_address_title,Y                      ;
-    sta screen_address_title + $0100,Y              ;
-    tya                                             ;
-    clc                                             ;
-    adc #8                                          ;
-    tay                                             ;
-    bne -                                           ;
-
     rts                                             ;
 
 ; ***************************************************************************************
@@ -4593,7 +4636,7 @@ new_life_loop
 game_loop
     jsr update_lives                                ;
     jsr update_game                                 ;
-    jsr check_for_suicide                           ;
+    jsr check_for_game_exit                         ;
     lda player_killed                               ;
     beq game_loop                                   ;
     lda player_lives                                ;
@@ -4645,12 +4688,12 @@ colour_index = * + 1
     bne game_over_loop                              ;
     jmp real_entry_point                            ;
 
-check_for_suicide
+check_for_game_exit
     lda keyStateShift                               ;
     beq leave7                                      ;
     lda keyStateEscape                              ;
     beq leave7                                      ;
-    pla                                             ; Remove check_for_suicide from stack
+    pla                                             ; Remove check_for_game_exit from stack
     pla                                             ;
     jmp real_entry_point                            ;
 leave7
@@ -4835,14 +4878,14 @@ target_address_high = * + 2
 ; ***************************************************************************************
 plot_title_screen_logo
     ldx #2                                          ;
-    ldy #14                                         ;
+    ldy #15                                         ;
     jsr set_text_position                           ; TAB
     ldy #0                                          ;
 -
     lda title_message,Y                             ;
     iny                                             ;
     jsr write_char                                  ;
-    cpy #title_message_end - title_message + 1      ;
+    cpy #title_message_end - title_message          ;
     bne -                                           ;
 
     ldx #0                                          ;
@@ -4955,11 +4998,14 @@ skip_title_colour_change
 
 ; ***************************************************************************************
 title_screen
-    lda #$81                                        ;
+    lda #$88                                        ;
     sta life_y                                      ;
 
     lda #1
     sta melody_active                               ; Enable melody
+    sta note_length                                 ;
+    lda #0                                          ;
+    sta note_number                                 ;
     lda #16                                         ; Title screen has full line of lives
     sta player_lives                                ;
     jsr clear_screen                                ;
@@ -5094,6 +5140,10 @@ title_screen_logo
 
 title_screen_logo_end
 
+moonlight_table
+    +note d5,  1        ; measure 1
+moonlight_table_end
+
 ; ***************************************************************************************
 update_music
     lda melody_active                               ;
@@ -5103,6 +5153,7 @@ update_music
     jmp play_silence                                ;
 
 play_melody
+    ldy current_channel                             ;
     lda music_enabled                               ;
     beq +                                           ;
     dec note_length                                 ;
@@ -5110,7 +5161,8 @@ play_melody
     ldx note_number                                 ;
     lda melody_table,X                              ;
     lsr                                             ;
-    and #%01111000                                  ;
+    lsr                                             ;
+    and #%00111000                                  ;
     sta note_length                                 ;
     lda melody_table,X                              ;
     and #$0f                                        ;
@@ -5125,12 +5177,13 @@ play_melody
     jsr send_to_sound_chip                          ; second byte
 
     lda #11 * 4                                     ;
-    sta melody_note_volume                          ;
+    sta note_volume                                 ;
 
 next_note
     inc note_number                                 ;
-    lda note_number                                 ;
-    cmp #melody_table_end - melody_table            ;
+    ldx note_number                                 ;
+    lda melody_table,X                              ;
+    cmp #0                                          ;
     bne set_melody_vol                              ;
     lda #0                                          ;
     sta note_number                                 ;
@@ -5139,24 +5192,24 @@ set_melody_vol
     ; To set volume V (0-15) on channel C (0-2, or 3=noise):
     ; write volume byte:  128 + 32*C + 16 + volume (0-15, 0 = loudest)
 
-    lda melody_note_volume                          ;
+    lda note_volume                                 ;
     lsr                                             ;
     lsr                                             ;
     eor #$9f                                        ;
     jsr send_to_sound_chip                          ; volume byte
 
     ; update volume
-    dec melody_note_volume                          ;
+    dec note_volume                                 ;
     lda is_rapid_decay                              ;
     beq +                                           ;
-    dec melody_note_volume                          ;
-    dec melody_note_volume                          ;
-    dec melody_note_volume                          ;
+    dec note_volume                                 ;
+    dec note_volume                                 ;
+    dec note_volume                                 ;
 +
-    lda melody_note_volume                          ;
+    lda note_volume                                 ;
     bpl +                                           ;
     lda #0                                          ;
-    sta melody_note_volume                          ;
+    sta note_volume                                 ;
 +
     rts                                             ;
 
@@ -5164,11 +5217,6 @@ start_rapid_decay
     ldx #1                                          ;
     stx is_rapid_decay                              ;
     bne next_note                                   ;
-
-is_rapid_decay
-    !byte 0
-note_length
-    !byte $01
 
 ; ***************************************************************************************
 check_for_q_and_s_keys
@@ -5950,29 +5998,9 @@ initial_zero_page_values
 initial_zero_page_values_end
 
 ; ***************************************************************************************
-!macro note .pitch, .dur {
-    !byte .pitch + 16 * .dur
-}
-
-fs4 = 0
-g4  = 1
-gs4 = 2
-a4  = 3
-as4 = 4
-b4  = 5
-c5  = 6
-cs5 = 7
-d5  = 8
-ds5 = 9
-e5  = 10
-es5 = 11
-f5  = 11
-fs5 = 12
-g5  = 13
-non = 14
-
 copy_melody
 !pseudopc $0100 {
+; "If I were a Rich Man"
 melody_table
     +note d5,  1        ; measure 1
     +note c5,  1
@@ -6154,7 +6182,10 @@ melody_table
     +note g4,  2
     +note as4, 2
 
-    +note d5,  8        ; measure 32
+    +note d5,  7        ; measure 32
+    +note non, 1
+
+    +end_melody
 melody_table_end
 
 ; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
