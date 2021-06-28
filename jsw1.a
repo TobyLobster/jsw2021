@@ -41,25 +41,62 @@ charFuzzy      = 67
 charTab        = 68
 
 ; notes
-fs4 = 0
-g4  = 1
-gs4 = 2
-a4  = 3
-as4 = 4
-b4  = 5
-c5  = 6
-cs5 = 7
-d5  = 8
-ds5 = 9
-e5  = 10
-es5 = 11
-f5  = 11
-fs5 = 12
-g5  = 13
-non = 14
+b2  = 0
+cs3 = 1
+d3  = 2
+e3  = 3
+fs3 = 4
+a3  = 5
+b3  = 6
+cs4 = 7
+d4  = 8
+e4  = 9
+fs4 = 10
+g4  = 11
+gs4 = 12
+a4  = 13
+as4 = 14
+b4  = 15
+c5  = 16
+cs5 = 17
+d5  = 18
+ds5 = 19
+e5  = 20
+es5 = f5
+f5  = 21
+fs5 = 22
+g5  = 23
+gs5 = 24
+a5  = 25
+b5  = 26
+non = 27
 
 !macro note .pitch, .dur {
-    !byte .pitch + 32 * .dur
+    !if (.dur = 1) {
+        .durIndex = 0
+    }
+    !if (.dur = 2) {
+        .durIndex = 1
+    }
+    !if (.dur = 3) {
+        .durIndex = 2
+    }
+    !if (.dur = 4) {
+        .durIndex = 3
+    }
+    !if (.dur = 6) {
+        .durIndex = 4
+    }
+    !if (.dur = 7) {
+        .durIndex = 5
+    }
+    !if (.dur = 12) {
+        .durIndex = 6
+    }
+    !ifndef .durIndex {
+        .durIndex = 1
+    }
+    !byte .pitch + 32 * .durIndex
 }
 
 !macro end_melody {
@@ -412,21 +449,21 @@ tmp2                                                = $cb
 packed_byte1                                        = $cc
 packed_byte2                                        = $cd
 
-; per channel melody variables
-current_channel                                     = $ce
-note_number                                         = $cf
-note_number1                                        = $d0
-note_number2                                        = $d1
-note_length                                         = $d2
-note_length1                                        = $d3
-note_length2                                        = $d4
-note_volume                                         = $d5
-note_volume1                                        = $d6
-note_volume2                                        = $d7
-is_rapid_decay                                      = $d8
-is_rapid_decay1                                     = $d9
-is_rapid_decay2                                     = $da
-
+; melody variables
+note_number                                         = $cf       ; }
+note_number1                                        = $d0       ; }
+note_number2                                        = $d1       ; }
+note_length                                         = $d2       ; }
+note_length1                                        = $d3       ; }
+note_length2                                        = $d4       ; } per channel
+note_volume                                         = $d5       ; }
+note_volume1                                        = $d6       ; }
+note_volume2                                        = $d7       ; }
+note_decay_amount                                   = $d8       ; }
+note_decay_amount1                                  = $d9       ; }
+note_decay_amount2                                  = $da       ; }
+tune_number                                         = $db
+tune_speed                                          = $dc
 
 screen_memory_start                                 = $5600
 screen_address_title                                = screen_memory_start + 16 * $0200  ; row 16
@@ -3192,6 +3229,7 @@ rotate_and_store_conveyor_byte
 animate_game_over_boot
     lda #0                                          ;
     sta melody_active                               ; Disable melody
+    jsr silence_tune                                ;
     ldx #0                                          ; Room 0 is the Game Over screen
     jsr calculate_room_data_address                 ;
     jsr initialise_enemies                          ;
@@ -4100,6 +4138,8 @@ toggle_am_pm
 
 ; ***************************************************************************************
 reset_game
+    ldy #0                                          ;
+    jsr start_tune_y                                ; Start 'If I Were a Rich Man'
     lda #0                                          ;
     sta time_fraction                               ;
     sta player_entered_room_falling_too_far         ;
@@ -4995,17 +5035,39 @@ title_change_palette
 skip_title_colour_change
     rts                                             ;
 
+; ***************************************************************************************
+start_tune_y
+    ldx #0                                          ;
+    sty tune_number                                 ;
+    cpy #0                                          ;
+    beq +                                           ;
+    ldx #255                                        ;
++
+    stx tune_speed                                  ;
+    lda #0                                          ;
+    sta melody_active                               ; Temporarily make melody inactive
+    jsr silence_tune                                ; while we change everything
+
+    ldx #2                                          ;
+-
+    lda #1                                          ;
+    sta note_length,X                               ;
+    lda #0                                          ;
+    sta note_number,X                               ;
+    dex                                             ;
+    bpl -                                           ;
+
+    lda #1                                          ; Make melody active again
+    sta melody_active                               ;
+    rts                                             ;
 
 ; ***************************************************************************************
 title_screen
     lda #$88                                        ;
     sta life_y                                      ;
 
-    lda #1
-    sta melody_active                               ; Enable melody
-    sta note_length                                 ;
-    lda #0                                          ;
-    sta note_number                                 ;
+    ldy #1                                          ;
+    jsr start_tune_y                                ; Start Moonlight Sonata
     lda #16                                         ; Title screen has full line of lives
     sta player_lives                                ;
     jsr clear_screen                                ;
@@ -5140,82 +5202,225 @@ title_screen_logo
 
 title_screen_logo_end
 
-moonlight_table
-    +note d5,  1        ; measure 1
+moonlight1_table
+    +note cs5, 1        ; measure 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1        ; measure 2
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note d5, 1        ; measure 3
+    +note fs5, 1
+    +note a5, 1
+    +note d5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note d5, 1
+    +note g5, 1
+    +note b5, 1
+    +note d5, 1
+    +note g5, 1
+    +note b5, 1
+    +note cs5, 1        ; measure 4
+    +note es5, 1
+    +note b5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note gs5, 1
+    +note b4, 1
+    +note es5, 1
+    +note gs5, 1
+    +end_melody
+
+moonlight2_table
+    +note fs4, 12        ; measure 1
+    +note e4,  12        ; measure 2
+    +note d4,  6         ; measure 3
+    +note b3,  6
+    +note cs4, 6         ; measure 4
+    +note cs4, 6
+    +end_melody
+
+moonlight3_table
+    +note fs3, 12        ; measure 1
+    +note e3,  12        ; measure 2
+    +note d3,  6         ; measure 3
+    +note b2,  6
+    +note cs3, 6         ; measure 4
+    +note cs3, 6
+    +end_melody
 moonlight_table_end
+
+; ***************************************************************************************
+channels_in_each_tune
+    !byte 0
+    !byte 2
+
+channel_pitch_adjust
+    !byte 0
+    !byte 32
+    !byte 64
+
+duration_table
+    !byte 1*16,2*16,3*16,4*16,6*16,7*16,12*16
+
+tune_addresses_low
+    !byte <rich_man_table                           ;
+    !byte <moonlight1_table                         ;
+    !byte <moonlight2_table                         ;
+    !byte <moonlight3_table                         ;
+tune_addresses_high
+    !byte >rich_man_table                           ;
+    !byte >moonlight1_table                         ;
+    !byte >moonlight2_table                         ;
+    !byte >moonlight3_table                         ;
+
+; ***************************************************************************************
+silence_tune
+    ldy #2                                          ;
+-
+    jsr play_silence_on_channel_y                   ;
+    dey                                             ;
+    bpl -                                           ;
+    rts                                             ;
 
 ; ***************************************************************************************
 update_music
     lda melody_active                               ;
-    bne play_melody                                 ;
-    lda #0                                          ;
-    sta note_number                                 ;
-    jmp play_silence                                ;
+    beq leave29                                     ;
+    ldy tune_number                                 ;
+    lda channels_in_each_tune,Y                     ;
+    tay                                             ;
+-
+    jsr update_music_channel_y                      ;
+    dey                                             ;
+    bpl -                                           ;
+leave29
+    rts                                             ;
 
-play_melody
-    ldy current_channel                             ;
+update_music_channel_y
     lda music_enabled                               ;
-    beq +                                           ;
-    dec note_length                                 ;
+    beq leave29                                     ;
+    ldx note_length,Y                               ;
+    dex
+    stx note_length,Y                               ;
     bne set_melody_vol                              ;
-    ldx note_number                                 ;
-    lda melody_table,X                              ;
+
+    tya                                             ;
+    clc                                             ;
+    adc tune_number                                 ;
+    tax                                             ;
+    lda tune_addresses_low,X                        ;
+    sta tune_address1_low                           ;
+    sta tune_address2_low                           ;
+    sta tune_address3_low                           ;
+    lda tune_addresses_high,X                       ;
+    sta tune_address1_high                          ;
+    sta tune_address2_high                          ;
+    sta tune_address3_high                          ;
+
+    ldx note_number,Y                               ;
+tune_address1_low  = * + 1
+tune_address1_high = * + 2
+    lda rich_man_table,X                            ;
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    tax
+    lda duration_table,X
+    ldx note_number,Y                               ;
+    bit tune_speed                                  ;
+    bmi +                                           ;
     lsr                                             ;
-    lsr                                             ;
-    and #%00111000                                  ;
-    sta note_length                                 ;
-    lda melody_table,X                              ;
-    and #$0f                                        ;
-    cmp #14                                         ;
++
+    sta note_length,Y                               ;
+tune_address2_low  = * + 1
+tune_address2_high = * + 2
+    lda rich_man_table,X                            ;
+    and #$1f                                        ;
+    cmp #non                                        ;
     beq start_rapid_decay                           ;
-    ldx #0                                          ;
-    stx is_rapid_decay                              ;
+    ldx #1                                          ;
+    stx note_decay_amount,Y                         ;
     tax                                             ;
     lda pitch_table_first,X                         ;
+    clc                                             ;
+    adc channel_pitch_adjust,Y                      ;
     jsr send_to_sound_chip                          ; first byte
     lda pitch_table_second,X                        ;
     jsr send_to_sound_chip                          ; second byte
 
     lda #11 * 4                                     ;
-    sta note_volume                                 ;
+    sta note_volume,Y                               ;
 
 next_note
-    inc note_number                                 ;
-    ldx note_number                                 ;
-    lda melody_table,X                              ;
+    ldx note_number,Y                               ;
+    inx                                             ;
+    stx note_number,Y                               ;
+tune_address3_low  = * + 1
+tune_address3_high = * + 2
+    lda rich_man_table,X                            ;
     cmp #0                                          ;
     bne set_melody_vol                              ;
     lda #0                                          ;
-    sta note_number                                 ;
+    sta note_number,Y                               ;
 set_melody_vol
     ; set volume of playing note
     ; To set volume V (0-15) on channel C (0-2, or 3=noise):
     ; write volume byte:  128 + 32*C + 16 + volume (0-15, 0 = loudest)
 
-    lda note_volume                                 ;
+    lda note_volume,Y                               ;
     lsr                                             ;
     lsr                                             ;
-    eor #$9f                                        ;
+    eor volume_for_channel,Y                        ;
     jsr send_to_sound_chip                          ; volume byte
 
     ; update volume
-    dec note_volume                                 ;
-    lda is_rapid_decay                              ;
-    beq +                                           ;
-    dec note_volume                                 ;
-    dec note_volume                                 ;
-    dec note_volume                                 ;
+    cpy #0                                          ;
+    beq +                                           ; if (channel 0) then branch (decay at normal rate)
+    lda game_timer                                  ; }
+    and #3                                          ; } decay slowly
+    bne leave31                                     ; }
 +
-    lda note_volume                                 ;
-    bpl +                                           ;
+    lda note_volume,Y                               ;
+    sec
+    sbc note_decay_amount,Y                         ;
+    sta note_volume,Y                               ;
+
+    lda note_volume,Y                               ;
+    bpl leave31                                     ;
+
     lda #0                                          ;
-    sta note_volume                                 ;
-+
+    sta note_volume,Y                               ;
+leave31
     rts                                             ;
 
 start_rapid_decay
-    ldx #1                                          ;
-    stx is_rapid_decay                              ;
+    lda #4                                          ;
+    sta note_decay_amount,Y                         ;
     bne next_note                                   ;
 
 ; ***************************************************************************************
@@ -5229,11 +5434,16 @@ s_not_pressed
     beq q_not_pressed                               ;
     lda #0                                          ;
     sta music_enabled                               ;
-play_silence
-    lda #$9f                                        ;
+play_silence_on_channel_y
+    lda volume_for_channel,Y                        ;
     jsr send_to_sound_chip                          ; volume byte
 q_not_pressed
     rts                                             ;
+
+volume_for_channel
+    !byte $9f                                       ;
+    !byte $bf                                       ;
+    !byte $df                                       ;
 
 ; ***************************************************************************************
 ; Change the appearance of logical colour Y to physical colour A
@@ -5839,6 +6049,8 @@ copy_zero_page_values_loop                          ;
 
     lda #1                                          ;
     sta music_enabled                               ;
+    lda #1                                          ;
+    sta tune_number                                 ;
     lda #0                                          ;
     ldx #sound_variables_end - sound_variables_start + 1 ;
 -
@@ -5883,10 +6095,6 @@ copy_zero_page_values_loop                          ;
 
     lda #0                                          ;
     sta irq_counter                                 ;
-
-    lda #1                                          ;
-    sta note_length                                 ;
-    sta melody_active                               ;
 
     jmp real_entry_point                            ;
 
@@ -6001,7 +6209,7 @@ initial_zero_page_values_end
 copy_melody
 !pseudopc $0100 {
 ; "If I were a Rich Man"
-melody_table
+rich_man_table
     +note d5,  1        ; measure 1
     +note c5,  1
     +note d5,  1
@@ -6186,7 +6394,7 @@ melody_table
     +note non, 1
 
     +end_melody
-melody_table_end
+rich_man_table_end
 
 ; write first byte:   128 + 32*C + bottom four bits of pitch P (0-15)
 ; write second byte:  top 6 bits of pitch P
@@ -6200,6 +6408,16 @@ melody_table_end
 
 ; ***************************************************************************************
 pitch_table_first
+    +pitch_first_byte 1012         ; 123.52 Hz           B2  =  123.47 Hz            0.05 Hz
+    +pitch_first_byte 902          ; 138.58 Hz           C#3 =  138.59 Hz            0.01 Hz
+    +pitch_first_byte 851          ; 146.89 Hz           D3  =  146.83 Hz            0.05 Hz
+    +pitch_first_byte 758          ; 164.91 Hz           E3  =  164.81 Hz            0.09 Hz
+    +pitch_first_byte 676          ; 184.91 Hz           F#3 =  185.00 Hz            0.09 Hz
+    +pitch_first_byte 568          ; 220.07 Hz           A3  =  220.00 Hz            0.07 Hz
+    +pitch_first_byte 506          ; 247.04 Hz           B3  =  246.94 Hz            0.09 Hz
+    +pitch_first_byte 451          ; 277.16 Hz           C#4 =  277.18 Hz            0.02 Hz
+    +pitch_first_byte 426          ; 293.43 Hz           D4  =  293.66 Hz            0.24 Hz
+    +pitch_first_byte 379          ; 329.82 Hz           E4  =  329.63 Hz            0.19 Hz
     +pitch_first_byte 338          ; 369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
     +pitch_first_byte 319          ; 391.85 Hz           G4  =  392.00 Hz            0.15 Hz
     +pitch_first_byte 301          ; 415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
@@ -6214,22 +6432,38 @@ pitch_table_first
     +pitch_first_byte 179          ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
     +pitch_first_byte 169          ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
     +pitch_first_byte 159          ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
+    +pitch_first_byte 150          ; 833.33 Hz           G#5 =  830.61 Hz            2.72 Hz
+    +pitch_first_byte 142          ; 880.28 Hz           A5  =  880.00 Hz            0.28 Hz
+    +pitch_first_byte 127          ; 984.25 Hz           B5  =  987.77 Hz            3.51 Hz
 
 pitch_table_second
-    +pitch_second_byte 338         ;  369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
-    +pitch_second_byte 319         ;  391.85 Hz           G4  =  392.00 Hz            0.15 Hz
-    +pitch_second_byte 301         ;  415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
-    +pitch_second_byte 284         ;  440.14 Hz           A4  =  440.00 Hz            0.14 Hz
-    +pitch_second_byte 268         ;  466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
-    +pitch_second_byte 253         ;  494.07 Hz           B4  =  493.88 Hz            0.19 Hz
-    +pitch_second_byte 239         ;  523.01 Hz           C5  =  523.25 Hz            0.24 Hz
-    +pitch_second_byte 225         ;  555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
-    +pitch_second_byte 213         ;  586.85 Hz           D5  =  587.33 Hz            0.48 Hz
-    +pitch_second_byte 201         ;  621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
-    +pitch_second_byte 190         ;  657.89 Hz           E5  =  659.26 Hz            1.36 Hz
-    +pitch_second_byte 179         ;  698.32 Hz           F5  =  698.46 Hz            0.13 Hz
-    +pitch_second_byte 169         ;  739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
-    +pitch_second_byte 159         ;  786.16 Hz           G5  =  783.99 Hz            2.17 Hz
+    +pitch_second_byte 1012        ; 123.52 Hz           B2  =  123.47 Hz            0.05 Hz
+    +pitch_second_byte 902         ; 138.58 Hz           C#3 =  138.59 Hz            0.01 Hz
+    +pitch_second_byte 851         ; 146.89 Hz           D3  =  146.83 Hz            0.05 Hz
+    +pitch_second_byte 758         ; 164.91 Hz           E3  =  164.81 Hz            0.09 Hz
+    +pitch_second_byte 676         ; 184.91 Hz           F#3 =  185.00 Hz            0.09 Hz
+    +pitch_second_byte 568         ; 220.07 Hz           A3  =  220.00 Hz            0.07 Hz
+    +pitch_second_byte 506         ; 247.04 Hz           B3  =  246.94 Hz            0.09 Hz
+    +pitch_second_byte 451         ; 277.16 Hz           C#4 =  277.18 Hz            0.02 Hz
+    +pitch_second_byte 426         ; 293.43 Hz           D4  =  293.66 Hz            0.24 Hz
+    +pitch_second_byte 379         ; 329.82 Hz           E4  =  329.63 Hz            0.19 Hz
+    +pitch_second_byte 338         ; 369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
+    +pitch_second_byte 319         ; 391.85 Hz           G4  =  392.00 Hz            0.15 Hz
+    +pitch_second_byte 301         ; 415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
+    +pitch_second_byte 284         ; 440.14 Hz           A4  =  440.00 Hz            0.14 Hz
+    +pitch_second_byte 268         ; 466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
+    +pitch_second_byte 253         ; 494.07 Hz           B4  =  493.88 Hz            0.19 Hz
+    +pitch_second_byte 239         ; 523.01 Hz           C5  =  523.25 Hz            0.24 Hz
+    +pitch_second_byte 225         ; 555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
+    +pitch_second_byte 213         ; 586.85 Hz           D5  =  587.33 Hz            0.48 Hz
+    +pitch_second_byte 201         ; 621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
+    +pitch_second_byte 190         ; 657.89 Hz           E5  =  659.26 Hz            1.36 Hz
+    +pitch_second_byte 179         ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
+    +pitch_second_byte 169         ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
+    +pitch_second_byte 159         ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
+    +pitch_second_byte 150         ; 833.33 Hz           G#5 =  830.61 Hz            2.72 Hz
+    +pitch_second_byte 142         ; 880.28 Hz           A5  =  880.00 Hz            0.28 Hz
+    +pitch_second_byte 127         ; 984.25 Hz           B5  =  987.77 Hz            3.51 Hz
 
 }
 copy_melody_end
