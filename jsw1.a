@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-;player_start_room                                   = 21        ; 21 = The Bathroom
-;player_start_x                                      = 20 * 8    ;
-;player_start_y                                      = 13 * 8    ;
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_x                                      = 20 * 8    ;
+player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 1       ;
-player_start_x                                      = 16 * 8   ; must be even!
-player_start_y                                      = 13 * 8    ;
+;player_start_room                                   = 1       ;
+;player_start_x                                      = 16 * 8   ; must be even!
+;player_start_y                                      = 13 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60           ;
@@ -45,31 +45,36 @@ b2  = 0
 cs3 = 1
 d3  = 2
 e3  = 3
-fs3 = 4
-a3  = 5
-b3  = 6
-cs4 = 7
-d4  = 8
-e4  = 9
-fs4 = 10
-g4  = 11
-gs4 = 12
-a4  = 13
-as4 = 14
-b4  = 15
-c5  = 16
-cs5 = 17
-d5  = 18
-ds5 = 19
-e5  = 20
+es3 = f3
+f3  = 4
+fs3 = 5
+a3  = 6
+b3  = 7
+cs4 = 8
+d4  = 9
+e4  = 10
+fs4 = 11
+g4  = 12
+gs4 = 13
+a4  = 14
+as4 = 15
+b4  = 16
+c5  = 17
+cs5 = 18
+d5  = 19
+ds5 = 20
+e5  = 21
 es5 = f5
-f5  = 21
-fs5 = 22
-g5  = 23
-gs5 = 24
-a5  = 25
-b5  = 26
-non = 27
+f5  = 22
+fs5 = 23
+g5  = 24
+gs5 = 25
+a5  = 26
+b5  = 27
+cs6 = 28
+d6  = 29
+e6  = 30
+non = 31
 
 !macro note .pitch, .dur {
     !if (.dur = 1) {
@@ -90,11 +95,14 @@ non = 27
     !if (.dur = 7) {
         .durIndex = 5
     }
-    !if (.dur = 12) {
+    !if (.dur = 9) {
         .durIndex = 6
     }
+    !if (.dur = 12) {
+        .durIndex = 7
+    }
     !ifndef .durIndex {
-        .durIndex = 1
+        !error "Unknown duration"
     }
     !byte .pitch + 32 * .durIndex
 }
@@ -205,7 +213,7 @@ ShortTimerValue  = 8*64 - 2
 ; game variables (memory locations)
 irq_counter                                         = $00
 vsync_counter                                       = $01
-is_master                                           = $02
+; $02 [unused]
 text_screen_low                                     = $03
 text_screen_high                                    = $04
 text_colour_mask                                    = $05
@@ -220,7 +228,7 @@ temp5                                               = $0d
 minutes_low                                         = $0e
 minutes_high                                        = $0f
 hours                                               = $10
-; $11 unused
+music_note_byte                                     = $11
 time_fraction                                       = $12
 items_collected_low                                 = $13
 items_collected_high                                = $14
@@ -263,8 +271,9 @@ entry_y                                             = $32
 entry_is_jumping                                    = $33
 
 temp_high                                           = $34
+shortcut_table_entry                                = $35
 
-; $35 - $4c [unused]
+; $36 - $4c [unused]
 
 ; initialised values
 life_y                                              = $4d
@@ -464,9 +473,10 @@ note_decay_amount1                                  = $d9       ; }
 note_decay_amount2                                  = $da       ; }
 tune_number                                         = $db
 tune_speed                                          = $dc
+music_timer                                         = $dd
+
 
 screen_memory_start                                 = $5600
-screen_address_title                                = screen_memory_start + 16 * $0200  ; row 16
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
 
 * = $0208
@@ -1285,8 +1295,6 @@ previous_decompressed_low
     !byte 255
 previous_decompressed_high
     !byte 255
-shortcut_table_entry
-    !byte 0
 
 ; ***************************************************************************************
 decompress_sprite_xa
@@ -1308,8 +1316,7 @@ decompress_sprite_xa
     cpx #0                                          ;
     bne +                                           ;
     cmp #shortcut_interval                          ;
-    bcs +                                           ;
-    jmp got_offset                                  ;
+    bcc got_offset                                  ;
 +
     ldy #shortcut_interval-1
 -
@@ -4524,28 +4531,6 @@ is_1c_1d_1e_or_1f
     rts                                             ;
 
 ; ***************************************************************************************
-copy_row
-    ldx #1                                          ;
-    ldy #0                                          ;
--
-    lda (title_text_source_low),Y                   ;
-    sta (title_text_destination_low),Y              ;
-    tya                                             ;
-    clc                                             ;
-    adc #8                                          ;
-    tay                                             ;
-    bne -                                           ;
-    inc title_text_source_high                      ;
-    inc title_text_destination_high                 ;
-    dex                                             ;
-    bpl -                                           ;
-    dec title_text_source_high                      ;
-    dec title_text_source_high                      ;
-    dec title_text_destination_high                 ;
-    dec title_text_destination_high                 ;
-    rts                                             ;
-
-; ***************************************************************************************
 is_1e_or_1f
     cmp #$1e                                        ;
     bne is_1f                                       ;
@@ -4570,7 +4555,7 @@ write_letter
     ldy start_of_word                               ;
     beq lower_case                                  ;
     sec                                             ;
-    sbc #26                                         ; convert to upper case
+    sbc #chara - charA                              ; convert to upper case
     ldx #0                                          ;
     stx start_of_word                               ;
 lower_case
@@ -4862,24 +4847,18 @@ keyStateShift
 ; ***************************************************************************************
 scroll_scrolltext
     ldx #>(text_message_address - $10)              ;
-    stx target_address_high                         ;
-    ldx #>(text_message_address + 8 - $10)          ; Uncomment to avoid !if above
+    stx target_address_high                         ; Target: $57f0 = $5800 - $10
+    ldx #>(text_message_address + 8 - $10)          ; Source: $57f8 = $5808 - $10
     stx source_address_high                         ;
-    ldy #<(text_message_address - $10)              ; Target: $57f0 = $5800 - $10
-    sty target_address_low                          ;
-    lda #<(text_message_address + 8 - $10)          ; Source: $57f8 = $5808 - $10
-    sta source_address_low                          ;
     ldy #$10                                        ;
     lda #2                                          ;
     sta blocks_to_copy                              ;
     ldx #$f8                                        ;
 scroll_scrolltext_loop
-source_address_low = * + 1
 source_address_high = * + 2
-    lda $ffff,Y                                     ;
-target_address_low = * + 1
+    lda text_message_address + 8 - $10,Y            ;
 target_address_high = * + 2
-    sta $ffff,Y                                     ;
+    sta text_message_address - $10,Y                ;
     iny                                             ;
     bne +                                           ;
     inc target_address_high                         ;
@@ -4906,8 +4885,8 @@ plot_title_screen_logo
     ldy #0                                          ;
 -
     lda title_message,Y                             ;
-    iny                                             ;
     jsr write_char                                  ;
+    iny                                             ;
     cpy #title_message_end - title_message          ;
     bne -                                           ;
 
@@ -4927,8 +4906,8 @@ unpack_byte_loop
 
     ; draw block
     lda #charFuzzy                                  ;
-    jsr write_char                                  ;
 next_byte
+    jsr write_char                                  ;
     dey                                             ;
     bpl unpack_byte_loop                            ;
     inx                                             ;
@@ -4939,7 +4918,6 @@ next_byte
 
 skip_block
     lda #charTab                                    ;
-    jsr write_char                                  ;
     jmp next_byte                                   ;
 
 title_message
@@ -5234,6 +5212,56 @@ moonlight1_table
     +note b4, 1
     +note es5, 1
     +note gs5, 1
+    +note a4, 1         ; measure 5
+    +note cs5, 1
+    +note fs5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1         ; measure 6
+    +note gs5, 1
+    +note b5, 1
+    +note cs5, 1
+    +note gs5, 1
+    +note b5, 1
+    +note cs5, 1
+    +note gs5, 1
+    +note b5, 1
+    +note cs5, 1
+    +note gs5, 1
+    +note b5, 1
+    +note cs5, 1        ; measure 7
+    +note fs5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note fs5, 1
+    +note a5, 1
+    +note d5, 1
+    +note fs5, 1
+    +note b5, 1
+    +note d5, 1
+    +note fs5, 1
+    +note b5, 1
+    +note cs5, 1        ; measure 8
+    +note e5, 1
+    +note a5, 1
+    +note cs5, 1
+    +note e5, 1
+    +note a5, 1
+    +note d5, 1
+    +note e5, 1
+    +note gs5, 1
+    +note d5, 1
+    +note e5, 1
+    +note gs5, 1
+    +note cs5, 12        ; measure 9
+    +note non, 12        ; measure 10
     +end_melody
 
 moonlight2_table
@@ -5243,6 +5271,14 @@ moonlight2_table
     +note b3,  6
     +note cs4, 6         ; measure 4
     +note cs4, 6
+    +note fs3, 12        ; measure 5
+    +note es3, 12        ; measure 6
+    +note fs3, 6         ; measure 7
+    +note b2, 6
+    +note e3, 6          ; measure 8
+    +note e3, 6
+    +note a3, 12         ; measure 9
+    +note non, 12        ; measure 10
     +end_melody
 
 moonlight3_table
@@ -5252,6 +5288,19 @@ moonlight3_table
     +note b2,  6
     +note cs3, 6         ; measure 4
     +note cs3, 6
+    +note non, 9         ; measure 5
+    +note cs6, 2
+    +note cs6, 1
+    +note cs6, 9         ; measure 6
+    +note cs6, 2
+    +note cs6, 1
+    +note cs6, 6         ; measure 7
+    +note d6, 6
+    +note cs6, 6         ; measure 8
+    +note b5, 3
+    +note e6, 3
+    +note a5, 12         ; measure 9
+    +note non, 12        ; measure 10
     +end_melody
 moonlight_table_end
 
@@ -5266,7 +5315,7 @@ channel_pitch_adjust
     !byte 64
 
 duration_table
-    !byte 1*16,2*16,3*16,4*16,6*16,7*16,12*16
+    !byte 1*16,2*16,3*16,4*16,6*16,7*16,9*16,12*16
 
 tune_addresses_low
     !byte <rich_man_table                           ;
@@ -5290,6 +5339,7 @@ silence_tune
 
 ; ***************************************************************************************
 update_music
+    dec music_timer                                 ;
     lda melody_active                               ;
     beq leave29                                     ;
     ldy tune_number                                 ;
@@ -5317,32 +5367,29 @@ update_music_channel_y
     lda tune_addresses_low,X                        ;
     sta tune_address1_low                           ;
     sta tune_address2_low                           ;
-    sta tune_address3_low                           ;
     lda tune_addresses_high,X                       ;
     sta tune_address1_high                          ;
     sta tune_address2_high                          ;
-    sta tune_address3_high                          ;
 
     ldx note_number,Y                               ;
 tune_address1_low  = * + 1
 tune_address1_high = * + 2
     lda rich_man_table,X                            ;
-    lsr
-    lsr
-    lsr
-    lsr
-    lsr
-    tax
-    lda duration_table,X
+    sta music_note_byte                             ; push music byte
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    tax                                             ;
+    lda duration_table,X                            ;
     ldx note_number,Y                               ;
     bit tune_speed                                  ;
     bmi +                                           ;
     lsr                                             ;
 +
     sta note_length,Y                               ;
-tune_address2_low  = * + 1
-tune_address2_high = * + 2
-    lda rich_man_table,X                            ;
+    lda music_note_byte                             ; music byte
     and #$1f                                        ;
     cmp #non                                        ;
     beq start_rapid_decay                           ;
@@ -5363,13 +5410,17 @@ next_note
     ldx note_number,Y                               ;
     inx                                             ;
     stx note_number,Y                               ;
-tune_address3_low  = * + 1
-tune_address3_high = * + 2
+tune_address2_low  = * + 1
+tune_address2_high = * + 2
     lda rich_man_table,X                            ;
     cmp #0                                          ;
     bne set_melody_vol                              ;
+
+    ; restart tune
     lda #0                                          ;
     sta note_number,Y                               ;
+    lda #1                                          ;
+    sta note_length,Y                               ;
 set_melody_vol
     ; set volume of playing note
     ; To set volume V (0-15) on channel C (0-2, or 3=noise):
@@ -5384,7 +5435,7 @@ set_melody_vol
     ; update volume
     cpy #0                                          ;
     beq +                                           ; if (channel 0) then branch (decay at normal rate)
-    lda game_timer                                  ; }
+    lda music_timer                                 ; }
     and #3                                          ; } decay slowly
     bne leave31                                     ; }
 +
@@ -5417,12 +5468,14 @@ s_not_pressed
     beq q_not_pressed                               ;
     lda #0                                          ;
     sta music_enabled                               ;
+    jmp silence_tune                                ;
 play_silence_on_channel_y
     lda volume_for_channel,Y                        ;
     jsr send_to_sound_chip                          ; volume byte
 q_not_pressed
     rts                                             ;
 
+; ***************************************************************************************
 volume_for_channel
     !byte $9f                                       ;
     !byte $bf                                       ;
@@ -5936,6 +5989,15 @@ free_before_screen = screen_memory_start - end_of_real_code
 
 ; ***************************************************************************************
 entry_point
+    lda #140                                        ;
+    ldx #12                                         ; *TAPE
+    jsr OSBYTE                                      ;
+
+    lda #$c8                                        ; Write BREAK/ESCAPE effect
+    ldx #3                                          ; Normal ESCAPE effect, Memory cleared on next reset
+    jsr OSBYTE                                      ;
+
+    sei                                             ;
     ldx #$ff                                        ; } reset the stack pointer
     txs                                             ; }
 
@@ -5953,25 +6015,6 @@ entry_point
     sta $0100,X                                     ; }
     cpx #0                                          ; }
     bne -                                           ; }
-
-    lda #140                                        ;
-    ldx #12                                         ; *TAPE
-    jsr OSBYTE                                      ;
-
-    lda #$c8                                        ; Write BREAK/ESCAPE effect
-    ldx #3                                          ; Normal ESCAPE effect, Memory cleared on next reset
-    jsr OSBYTE                                      ;
-
-    lda #0                                          ;
-    ldx #$ff                                        ; Check for Master
-    jsr OSBYTE                                      ;
-
-    lda #0                                          ; }
-    cpx #3                                          ; } Set 'is_master' to:
-    bcc +                                           ; }     $00 if executing on a BBC B/B+
-    lda #$ff                                        ; }  or $ff on a Master
-+                                                   ; }
-    sta is_master                                   ; }
 
     ; relocate code
     sei                                             ;
@@ -6391,63 +6434,70 @@ rich_man_table_end
 
 ; ***************************************************************************************
 pitch_table_first
-    +pitch_first_byte 1012         ; 123.52 Hz           B2  =  123.47 Hz            0.05 Hz
-    +pitch_first_byte 902          ; 138.58 Hz           C#3 =  138.59 Hz            0.01 Hz
-    +pitch_first_byte 851          ; 146.89 Hz           D3  =  146.83 Hz            0.05 Hz
-    +pitch_first_byte 758          ; 164.91 Hz           E3  =  164.81 Hz            0.09 Hz
-    +pitch_first_byte 676          ; 184.91 Hz           F#3 =  185.00 Hz            0.09 Hz
-    +pitch_first_byte 568          ; 220.07 Hz           A3  =  220.00 Hz            0.07 Hz
-    +pitch_first_byte 506          ; 247.04 Hz           B3  =  246.94 Hz            0.09 Hz
-    +pitch_first_byte 451          ; 277.16 Hz           C#4 =  277.18 Hz            0.02 Hz
-    +pitch_first_byte 426          ; 293.43 Hz           D4  =  293.66 Hz            0.24 Hz
-    +pitch_first_byte 379          ; 329.82 Hz           E4  =  329.63 Hz            0.19 Hz
-    +pitch_first_byte 338          ; 369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
-    +pitch_first_byte 319          ; 391.85 Hz           G4  =  392.00 Hz            0.15 Hz
-    +pitch_first_byte 301          ; 415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
-    +pitch_first_byte 284          ; 440.14 Hz           A4  =  440.00 Hz            0.14 Hz
-    +pitch_first_byte 268          ; 466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
-    +pitch_first_byte 253          ; 494.07 Hz           B4  =  493.88 Hz            0.19 Hz
-    +pitch_first_byte 239          ; 523.01 Hz           C5  =  523.25 Hz            0.24 Hz
-    +pitch_first_byte 225          ; 555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
-    +pitch_first_byte 213          ; 586.85 Hz           D5  =  587.33 Hz            0.48 Hz
-    +pitch_first_byte 201          ; 621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
-    +pitch_first_byte 190          ; 657.89 Hz           E5  =  659.26 Hz            1.36 Hz
-    +pitch_first_byte 179          ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
-    +pitch_first_byte 169          ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
-    +pitch_first_byte 159          ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
-    +pitch_first_byte 150          ; 833.33 Hz           G#5 =  830.61 Hz            2.72 Hz
-    +pitch_first_byte 142          ; 880.28 Hz           A5  =  880.00 Hz            0.28 Hz
-    +pitch_first_byte 127          ; 984.25 Hz           B5  =  987.77 Hz            3.51 Hz
+    +pitch_first_byte 1012         ;  123.52 Hz           B2  =  123.47 Hz            0.05 Hz
+    +pitch_first_byte 902          ;  138.58 Hz           C#3 =  138.59 Hz            0.01 Hz
+    +pitch_first_byte 851          ;  146.89 Hz           D3  =  146.83 Hz            0.05 Hz
+    +pitch_first_byte 758          ;  164.91 Hz           E3  =  164.81 Hz            0.09 Hz
+    +pitch_first_byte 716          ;  174.58 Hz           F3  =  174.61 Hz            0.03 Hz
+    +pitch_first_byte 676          ;  184.91 Hz           F#3 =  185.00 Hz            0.09 Hz
+    +pitch_first_byte 568          ;  220.07 Hz           A3  =  220.00 Hz            0.07 Hz
+    +pitch_first_byte 506          ;  247.04 Hz           B3  =  246.94 Hz            0.09 Hz
+    +pitch_first_byte 451          ;  277.16 Hz           C#4 =  277.18 Hz            0.02 Hz
+    +pitch_first_byte 426          ;  293.43 Hz           D4  =  293.66 Hz            0.24 Hz
+    +pitch_first_byte 379          ;  329.82 Hz           E4  =  329.63 Hz            0.19 Hz
+    +pitch_first_byte 338          ;  369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
+    +pitch_first_byte 319          ;  391.85 Hz           G4  =  392.00 Hz            0.15 Hz
+    +pitch_first_byte 301          ;  415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
+    +pitch_first_byte 284          ;  440.14 Hz           A4  =  440.00 Hz            0.14 Hz
+    +pitch_first_byte 268          ;  466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
+    +pitch_first_byte 253          ;  494.07 Hz           B4  =  493.88 Hz            0.19 Hz
+    +pitch_first_byte 239          ;  523.01 Hz           C5  =  523.25 Hz            0.24 Hz
+    +pitch_first_byte 225          ;  555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
+    +pitch_first_byte 213          ;  586.85 Hz           D5  =  587.33 Hz            0.48 Hz
+    +pitch_first_byte 201          ;  621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
+    +pitch_first_byte 190          ;  657.89 Hz           E5  =  659.26 Hz            1.36 Hz
+    +pitch_first_byte 179          ;  698.32 Hz           F5  =  698.46 Hz            0.13 Hz
+    +pitch_first_byte 169          ;  739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
+    +pitch_first_byte 159          ;  786.16 Hz           G5  =  783.99 Hz            2.17 Hz
+    +pitch_first_byte 150          ;  833.33 Hz           G#5 =  830.61 Hz            2.72 Hz
+    +pitch_first_byte 142          ;  880.28 Hz           A5  =  880.00 Hz            0.28 Hz
+    +pitch_first_byte 127          ;  984.25 Hz           B5  =  987.77 Hz            3.51 Hz
+    +pitch_first_byte 113          ; 1106.19 Hz           C#6 = 1108.73 Hz            2.54 Hz
+    +pitch_first_byte 106          ; 1179.25 Hz           D6  = 1174.66 Hz            4.59 Hz
+    +pitch_first_byte 95           ; 1315.79 Hz           E6  = 1318.51 Hz            2.72 Hz
 
 pitch_table_second
-    +pitch_second_byte 1012        ; 123.52 Hz           B2  =  123.47 Hz            0.05 Hz
-    +pitch_second_byte 902         ; 138.58 Hz           C#3 =  138.59 Hz            0.01 Hz
-    +pitch_second_byte 851         ; 146.89 Hz           D3  =  146.83 Hz            0.05 Hz
-    +pitch_second_byte 758         ; 164.91 Hz           E3  =  164.81 Hz            0.09 Hz
-    +pitch_second_byte 676         ; 184.91 Hz           F#3 =  185.00 Hz            0.09 Hz
-    +pitch_second_byte 568         ; 220.07 Hz           A3  =  220.00 Hz            0.07 Hz
-    +pitch_second_byte 506         ; 247.04 Hz           B3  =  246.94 Hz            0.09 Hz
-    +pitch_second_byte 451         ; 277.16 Hz           C#4 =  277.18 Hz            0.02 Hz
-    +pitch_second_byte 426         ; 293.43 Hz           D4  =  293.66 Hz            0.24 Hz
-    +pitch_second_byte 379         ; 329.82 Hz           E4  =  329.63 Hz            0.19 Hz
-    +pitch_second_byte 338         ; 369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
-    +pitch_second_byte 319         ; 391.85 Hz           G4  =  392.00 Hz            0.15 Hz
-    +pitch_second_byte 301         ; 415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
-    +pitch_second_byte 284         ; 440.14 Hz           A4  =  440.00 Hz            0.14 Hz
-    +pitch_second_byte 268         ; 466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
-    +pitch_second_byte 253         ; 494.07 Hz           B4  =  493.88 Hz            0.19 Hz
-    +pitch_second_byte 239         ; 523.01 Hz           C5  =  523.25 Hz            0.24 Hz
-    +pitch_second_byte 225         ; 555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
-    +pitch_second_byte 213         ; 586.85 Hz           D5  =  587.33 Hz            0.48 Hz
-    +pitch_second_byte 201         ; 621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
-    +pitch_second_byte 190         ; 657.89 Hz           E5  =  659.26 Hz            1.36 Hz
-    +pitch_second_byte 179         ; 698.32 Hz           F5  =  698.46 Hz            0.13 Hz
-    +pitch_second_byte 169         ; 739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
-    +pitch_second_byte 159         ; 786.16 Hz           G5  =  783.99 Hz            2.17 Hz
-    +pitch_second_byte 150         ; 833.33 Hz           G#5 =  830.61 Hz            2.72 Hz
-    +pitch_second_byte 142         ; 880.28 Hz           A5  =  880.00 Hz            0.28 Hz
-    +pitch_second_byte 127         ; 984.25 Hz           B5  =  987.77 Hz            3.51 Hz
-
+    +pitch_second_byte 1012        ;  123.52 Hz           B2  =  123.47 Hz            0.05 Hz
+    +pitch_second_byte 902         ;  138.58 Hz           C#3 =  138.59 Hz            0.01 Hz
+    +pitch_second_byte 851         ;  146.89 Hz           D3  =  146.83 Hz            0.05 Hz
+    +pitch_second_byte 758         ;  164.91 Hz           E3  =  164.81 Hz            0.09 Hz
+    +pitch_second_byte 716         ;  174.58 Hz           F3  =  174.61 Hz            0.03 Hz
+    +pitch_second_byte 676         ;  184.91 Hz           F#3 =  185.00 Hz            0.09 Hz
+    +pitch_second_byte 568         ;  220.07 Hz           A3  =  220.00 Hz            0.07 Hz
+    +pitch_second_byte 506         ;  247.04 Hz           B3  =  246.94 Hz            0.09 Hz
+    +pitch_second_byte 451         ;  277.16 Hz           C#4 =  277.18 Hz            0.02 Hz
+    +pitch_second_byte 426         ;  293.43 Hz           D4  =  293.66 Hz            0.24 Hz
+    +pitch_second_byte 379         ;  329.82 Hz           E4  =  329.63 Hz            0.19 Hz
+    +pitch_second_byte 338         ;  369.82 Hz           F#4 =  369.99 Hz            0.17 Hz
+    +pitch_second_byte 319         ;  391.85 Hz           G4  =  392.00 Hz            0.15 Hz
+    +pitch_second_byte 301         ;  415.28 Hz           G#4 =  415.30 Hz            0.02 Hz
+    +pitch_second_byte 284         ;  440.14 Hz           A4  =  440.00 Hz            0.14 Hz
+    +pitch_second_byte 268         ;  466.42 Hz           A#4 =  466.16 Hz            0.25 Hz
+    +pitch_second_byte 253         ;  494.07 Hz           B4  =  493.88 Hz            0.19 Hz
+    +pitch_second_byte 239         ;  523.01 Hz           C5  =  523.25 Hz            0.24 Hz
+    +pitch_second_byte 225         ;  555.56 Hz           C#5 =  554.37 Hz            1.19 Hz
+    +pitch_second_byte 213         ;  586.85 Hz           D5  =  587.33 Hz            0.48 Hz
+    +pitch_second_byte 201         ;  621.89 Hz           D#5 =  622.25 Hz            0.36 Hz
+    +pitch_second_byte 190         ;  657.89 Hz           E5  =  659.26 Hz            1.36 Hz
+    +pitch_second_byte 179         ;  698.32 Hz           F5  =  698.46 Hz            0.13 Hz
+    +pitch_second_byte 169         ;  739.64 Hz           F#5 =  739.99 Hz            0.34 Hz
+    +pitch_second_byte 159         ;  786.16 Hz           G5  =  783.99 Hz            2.17 Hz
+    +pitch_second_byte 150         ;  833.33 Hz           G#5 =  830.61 Hz            2.72 Hz
+    +pitch_second_byte 142         ;  880.28 Hz           A5  =  880.00 Hz            0.28 Hz
+    +pitch_second_byte 127         ;  984.25 Hz           B5  =  987.77 Hz            3.51 Hz
+    +pitch_second_byte 113         ; 1106.19 Hz           C#6 = 1108.73 Hz            2.54 Hz
+    +pitch_second_byte 106         ; 1179.25 Hz           D6  = 1174.66 Hz            4.59 Hz
+    +pitch_second_byte 95          ; 1315.79 Hz           E6  = 1318.51 Hz            2.72 Hz
 }
 copy_melody_end
 }
