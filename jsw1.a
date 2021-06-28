@@ -1425,9 +1425,6 @@ decode_sprite_loop
     jsr get_next_nybble                             ;
     cmp #4                                          ;
     bcc handle_repeat                               ;
-    beq handle_rol                                  ;
-    cmp #5                                          ;
-    beq handle_ror                                  ;
     cmp #10                                         ;
     bcc handle_commonmost                           ;
     cmp #15                                         ;
@@ -1466,23 +1463,9 @@ store_and_continue
     jsr add_to_decoded_bytes                        ;
     jmp after_handler                               ;
 
-handle_rol
-    lda previous_bytes + 3                          ;
-    cmp #$80                                        ;
-    rol                                             ;
-    jmp store_and_continue                          ;
-
-handle_ror
-    lda previous_bytes + 3                          ;
-    lsr                                             ;
-    bcc +                                           ;
-    ora #$80                                        ;
-+
-    jmp store_and_continue                          ;
-
 handle_commonmost
     sec                                             ;
-    sbc #6                                          ;
+    sbc #4                                          ;
 look_up_store_and_continue
     tax                                             ;
     lda sprite_decode_table,X                       ;
@@ -1499,7 +1482,7 @@ handle_common
     jsr get_next_nybble                             ;
     ora val                                         ;
     clc                                             ;
-    adc #4                                          ;
+    adc #6                                          ;
     jmp look_up_store_and_continue                  ;
 
 handle_raw

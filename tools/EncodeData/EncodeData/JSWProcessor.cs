@@ -503,6 +503,8 @@ namespace EncodeData
         // For output
         public static List<int> bytes = new List<int>();
         public static int bits_within_byte = 8;
+        const int numberOfPreviousBytes = 4;
+
 
         // ********************************************************************
         public void StartBits()
@@ -1460,10 +1462,11 @@ namespace EncodeData
             var conc = new Dictionary<int, int>();
             var previousBytes = new List<int>();
 
-            previousBytes.Add(0);
-            previousBytes.Add(0);
-            previousBytes.Add(0);
-            previousBytes.Add(0);
+            previousBytes.Clear();
+            for(int i = 0; i < numberOfPreviousBytes; i++)
+            {
+                previousBytes.Add(-1);
+            }
 
             // Create concordance (dictionary) of bytes and their usage counts
             foreach(var sprite in sprites)
@@ -1471,18 +1474,10 @@ namespace EncodeData
                 foreach(var val in sprite.bytes)
                 {
                     var skip = false;
-                    var prev = previousBytes[3];
+                    var prev = previousBytes[numberOfPreviousBytes-1];
 
                     // if this value is not one of the previous bytes, then add to the concordance
                     if (previousBytes.Contains(val))
-                    {
-                        skip = true;
-                    }
-
-                    // Check if the previous value is a rolled version of the current value
-                    var rollRight = (val >> 1) + 128 * (val & 1);
-                    var rollLeft = ((val << 1) & 255) + ((val & 128) >> 7);
-                    if ((rollRight == prev) || (rollLeft == prev))
                     {
                         skip = true;
                     }
@@ -1564,8 +1559,7 @@ namespace EncodeData
             //int offset = 0;
             //int leadingZeroNybbles = 0;
 
-            int numberOfPreviousBytes = 4;
-            var numVeryCommonItems = 8 - numberOfPreviousBytes;
+            var numVeryCommonItems = 10 - numberOfPreviousBytes;
 
             //
             // ALL SPRITES
@@ -1582,7 +1576,7 @@ namespace EncodeData
 
             {
                 var commonestBytesAndOccurrences = FindCommonestBytes(allSprites, out var sortedList).Take(80 + numVeryCommonItems);
-                var commonest5 = commonestBytesAndOccurrences.Take(numVeryCommonItems).Select((x) => x.Key).ToList();
+                var commonestFew = commonestBytesAndOccurrences.Take(numVeryCommonItems).Select((x) => x.Key).ToList();
                 var commonestBytes = commonestBytesAndOccurrences.Skip(numVeryCommonItems).Take(80).Select((x) => x.Key).ToList();
 
                 WriteLine(outputFile, 0, "sprite_decode_table");
@@ -1630,33 +1624,18 @@ namespace EncodeData
                     foreach(var val in sprite.bytes)
                     {
                         var prev = previousBytes[numberOfPreviousBytes-1];
-
-                        var rollRight = (val >> 1) + 128 * (val & 1);
-                        var rollLeft = ((val << 1) & 255) + ((val & 128) >> 7);
-
                         var index = previousBytes.IndexOf(val);
-                        if (index >= 0)
+
+                        if (commonestFew.Contains(val))
+                        {
+                            index = commonestFew.IndexOf(val);
+                            newNybbles.Add(numberOfPreviousBytes + index);
+                            hist[numberOfPreviousBytes + index]++;
+                        }
+                        else if (index >= 0)
                         {
                             newNybbles.Add(index);
                             hist[index]++;
-                        }
-                        else if (prev == rollRight)
-                        {
-                            // Roll left
-                            newNybbles.Add(numberOfPreviousBytes);
-                            hist[numberOfPreviousBytes]++;
-                        }
-                        else if (prev == rollLeft)
-                        {
-                            // Roll right
-                            newNybbles.Add(numberOfPreviousBytes + 1);
-                            hist[numberOfPreviousBytes + 1]++;
-                        }
-                        else if (commonest5.Contains(val))
-                        {
-                            index = commonest5.IndexOf(val);
-                            newNybbles.Add(numberOfPreviousBytes + 2 + index);
-                            hist[numberOfPreviousBytes + 2 + index]++;
                         }
                         else if (commonestBytes.Contains(val))
                         {
@@ -1677,7 +1656,7 @@ namespace EncodeData
                             hist[15]++;
                         }
 
-                        if (val != previousBytes[3])
+                        if (val != previousBytes[numberOfPreviousBytes - 1])
                         {
                             previousBytes.Add(val);
                             previousBytes.RemoveAt(0);

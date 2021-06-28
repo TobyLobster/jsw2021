@@ -178,6 +178,7 @@ namespace EncodeData
                         AddToDecodedBytes(ref decodedBytes, ref previousBytes, previousBytes[command]);
                     }
                 }
+                /*
                 else if (command == 4)
                 {
                     var val = previousBytes[3];
@@ -190,14 +191,15 @@ namespace EncodeData
                     var rollRight = (val >> 1) + 128 * (val & 1);
                     AddToDecodedBytes(ref decodedBytes, ref previousBytes, rollRight);
                 }
+                */
                 else if (command < 10)
                 {
-                    var commonIndex = command - 6;
+                    var commonIndex = command - 4;
                     AddToDecodedBytes(ref decodedBytes, ref previousBytes, decodeTable[commonIndex]);
                 }
                 else if (command < 15)
                 {
-                    var commonIndex = 4 + ((command - 10) * 16 + GetNextNybble(spriteData));
+                    var commonIndex = 6 + ((command - 10) * 16 + GetNextNybble(spriteData));
 
                     AddToDecodedBytes(ref decodedBytes, ref previousBytes, decodeTable[commonIndex]);
                 }
