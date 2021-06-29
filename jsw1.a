@@ -1064,7 +1064,7 @@ reflect_rows_loop
 ; On entry: A = bit pattern: abcdefgh
 ; On exit:  A = bit pattern: dcbahgfe
 ;
-; 19 instructions, 28 bytes, 46 cycles (assuming .temp is in zero page, and including RTS).
+; 19 instructions, 28 bytes, 46 cycles (assuming temp_reverse is in zero page, and including RTS).
 ;
 ; ***************************************************************************************
 reverse_each_nybble
@@ -1159,7 +1159,7 @@ calculate_screen_address
     and #$fc                                        ; lose the lower two bits
     asl                                             ; shift up
     sta screen_address_low                          ; store
-    rol screen_address_high                         ; carry into lower bit of high byte
+    rol screen_address_high                         ; carry into high byte
 
     txa                                             ;
     and #7                                          ;
@@ -1170,13 +1170,10 @@ calculate_screen_address
     txa                                             ;
     lsr                                             ;
     lsr                                             ;
-    lsr                                             ;
-    tax                                             ; offset within table for start of row
+    and #%11111110                                  ;
+    ror screen_address_high                         ;
+    adc #>screen_memory_start                       ;
 
-    lda screen_address_high                         ;
-    and #1                                          ;
-    clc                                             ;
-    adc screen_address_lookup_table,X               ;
     sta screen_address_high                         ;
     rts                                             ;
 
@@ -3272,41 +3269,6 @@ handle_player_jumping
     sta player_y_in_enemies                         ;
 leave27
     rts                                             ;
-
-; ***************************************************************************************
-screen_address_lookup_table
-    !byte (>screen_memory_start) + $00
-    !byte (>screen_memory_start) + $02
-    !byte (>screen_memory_start) + $04
-    !byte (>screen_memory_start) + $06
-    !byte (>screen_memory_start) + $08
-    !byte (>screen_memory_start) + $0a
-    !byte (>screen_memory_start) + $0c
-    !byte (>screen_memory_start) + $0e
-    !byte (>screen_memory_start) + $10
-    !byte (>screen_memory_start) + $12
-    !byte (>screen_memory_start) + $14
-    !byte (>screen_memory_start) + $16
-    !byte (>screen_memory_start) + $18
-    !byte (>screen_memory_start) + $1a
-    !byte (>screen_memory_start) + $1c
-    !byte (>screen_memory_start) + $1e
-    !byte (>screen_memory_start) + $20
-    !byte (>screen_memory_start) + $22
-    !byte (>screen_memory_start) + $24
-    !byte (>screen_memory_start) + $26
-    !byte (>screen_memory_start) + $28
-    !byte (>screen_memory_start) + $2a
-    !byte (>screen_memory_start) + $2c
-    !byte (>screen_memory_start) + $2e
-    !byte (>screen_memory_start) + $30
-    !byte (>screen_memory_start) + $32
-    !byte (>screen_memory_start) + $34
-    !byte (>screen_memory_start) + $36
-    !byte (>screen_memory_start) + $38
-    !byte (>screen_memory_start) + $3a
-    !byte (>screen_memory_start) + $3c
-    !byte (>screen_memory_start) + $3e
 
 ; ***************************************************************************************
 set_text_position
@@ -5482,10 +5444,9 @@ volume_for_channel
     !byte $df                                       ;
 
 initial_volume
-    !byte 11 * 4
-    !byte 9 * 4
-    !byte 9 * 4
-    !byte 9 * 4
+    !byte 11 * 4                                    ; melody at full volume
+    !byte 9 * 4                                     ; bass notes slightly quieter
+    !byte 9 * 4                                     ;
 
 ; ***************************************************************************************
 ; Change the appearance of logical colour Y to physical colour A
