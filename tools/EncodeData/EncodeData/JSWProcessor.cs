@@ -349,6 +349,18 @@ namespace EncodeData
                 processor.AddBits(4, title.tab);
 
                 // Encode title
+
+                // The title is encoded in 5 bit chunks.
+                // The first chunk is one less than the title length (in chunks)
+                // Each chunk is then:
+                // 0-25     $00-$19     a letter of the alphabet
+                // 26       $1a         the next letter is capitalised
+                // 27       $1b         apostrophe
+                // 28       $1c         full stop
+                // 29       $1d         space
+                // 30       $1e         space + the next letter is capitalised
+                // 31       $1f         "the" (can be capitalised)
+
                 var titleBits = new List<int>();
                 var isUpperNext = true;
                 for(int i = 0; i < title.name.Length; i++)
