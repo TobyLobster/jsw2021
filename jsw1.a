@@ -5315,7 +5315,7 @@ channel_pitch_adjust
     !byte 64
 
 duration_table
-    !byte 1*16,2*16,3*16,4*16,6*16,7*16,9*16,12*16
+    !byte 1*18,2*18,3*18,4*18,6*18,7*18,9*18,12*18
 
 tune_addresses_low
     !byte <rich_man_table                           ;
@@ -5403,7 +5403,7 @@ tune_address1_high = * + 2
     lda pitch_table_second,X                        ;
     jsr send_to_sound_chip                          ; second byte
 
-    lda #11 * 4                                     ;
+    lda initial_volume,Y                            ; initial volume (for each channel)
     sta note_volume,Y                               ;
 
 next_note
@@ -5480,6 +5480,12 @@ volume_for_channel
     !byte $9f                                       ;
     !byte $bf                                       ;
     !byte $df                                       ;
+
+initial_volume
+    !byte 11 * 4
+    !byte 9 * 4
+    !byte 9 * 4
+    !byte 9 * 4
 
 ; ***************************************************************************************
 ; Change the appearance of logical colour Y to physical colour A

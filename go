@@ -53,7 +53,15 @@ then
         DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
         open -a 'b2 Debug'
-        sleep 1
+
+        # wait for the application to start up and respond to our requests
+        set +e
+        until curl -G 'http://localhost:48075/peek/WIN/0/0' >/dev/null 2>&1
+        do
+            sleep 0.1
+        done
+        set -e
+
         # curl -G 'http://localhost:48075/reset/b2' --data-urlencode "config=Master 128 (MOS 3.50)"
         curl -H 'Content-Type:application/binary' --upload-file "$DIR/JSW.ssd" 'http://localhost:48075/run/b2?name=JSW.ssd'
 
