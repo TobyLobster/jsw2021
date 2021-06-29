@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-;player_start_room                                   = 21        ; 21 = The Bathroom
-;player_start_x                                      = 20 * 8    ;
-;player_start_y                                      = 13 * 8    ;
+player_start_room                                   = 21        ; 21 = The Bathroom
+player_start_x                                      = 20 * 8    ;
+player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 6        ;
-player_start_x                                      = 1 * 8    ; must be even!
-player_start_y                                      = 5 * 8    ;
+;player_start_room                                   = 57       ;
+;player_start_x                                      = 1 * 8    ; must be even!
+;player_start_y                                      = 10 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60           ;
@@ -284,7 +284,20 @@ keyStateQ                                           = $3c
 keyStateEscape                                      = $3d
 keyStateShift                                       = $3e
 
-; $3f - $4c [unused]
+items_colour                                        = $3f
+items_colour1                                       = $40
+items_colour2                                       = $41
+items_colour3                                       = $42
+items_colour4                                       = $43
+items_colour5                                       = $44
+items_colour6                                       = $45
+items_colour7                                       = $46
+items_colour8                                       = $47
+items_colour9                                       = $48
+items_colour10                                      = $49
+items_colour11                                      = $4a
+
+; $4b - $4c [unused]
 
 ; initialised values
 life_y                                              = $4d
@@ -1622,6 +1635,14 @@ calculate_enemy_sprite_address
     eor #1                                          ; Make candelabra flicker without moving
     sta enemies_unpacked_sprite_offset,X            ;
 not_candelabra
+    cpy #21                                         ;
+    bne not_monk_in_chapel                          ; if (not monk) then branch
+    lda player_room                                 ;
+    cmp #29                                         ;
+    bne not_monk_in_chapel                          ; if (not in the Chapel) then branch
+    lda #4
+    bne +
+not_monk_in_chapel
     lda enemy_sprites_frames,Y                      ;
     bpl +                                           ;
     asl                                             ; if (top bit set, i.e. sprite is reverse also) then twice as many frames
@@ -3462,7 +3483,7 @@ clear_screen_y
     lda #>screen_memory_start                       ;
     sta clear_screen_loop + 2                       ;
     ldx #0                                          ;
-    lda #0                                          ;
+    txa                                             ;
 clear_screen_loop
     sta screen_memory_start,x                       ;
     inx                                             ;
@@ -4618,6 +4639,7 @@ fill_space_sprite_loop
     sta space_sprite,X                              ;
     dex                                             ;
     bpl fill_space_sprite_loop                      ;
+
     ldx #0                                          ;
     lda player_room                                 ;
     cmp #$1b                                        ; Is this The Nightmare Room?
@@ -5932,9 +5954,6 @@ arrow_timer
 
 arrow_y
     !byte $40, $40
-
-items_colour
-    !byte $02, $01, $01, $01, $01, $01, $01, $01, $01, $01, $01, $01
 
 items_screen_address_low
     !byte $70, $20, $40, $60, $70, $90, $b0, $c9, $a0, $d0, $06, $8d

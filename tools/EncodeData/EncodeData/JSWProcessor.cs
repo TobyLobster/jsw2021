@@ -1644,7 +1644,7 @@ namespace EncodeData
                 }
 
                 var shortcutTable = new List<int>();
-                int shortcutInterval = 8;
+                int shortcutInterval = 7;
 
                 //Console.WriteLine("Hardest sprites:");
                 int spriteIndex = 0;
