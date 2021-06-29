@@ -1633,10 +1633,16 @@ enemy_moving_vertically                             ; For vertically moving enem
     ldy enemies_speed,X                             ;
     bmi skip_inversion4                             ;
     eor #$ff                                        ;
+    clc                                             ;
+    adc #1                                          ;
 skip_inversion4
 ;    clc                                             ;
 ;    adc enemies_y,X                                 ; use the vertical position to calculate frame
-    lsr
+    ldy enemies_sprite,X                            ;
+    cpy #10                                         ; razor blades spin fast
+    beq +                                           ;
+    lsr                                             ; slow non-razor blades down
++
     and #7                                          ;
 calculate_frame
     dec sprite_frames                               ;
