@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-player_start_room                                   = 21        ; 21 = The Bathroom
-player_start_x                                      = 20 * 8    ;
-player_start_y                                      = 13 * 8    ;
+;player_start_room                                   = 21        ; 21 = The Bathroom
+;player_start_x                                      = 20 * 8    ;
+;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-;player_start_room                                   = 1       ;
-;player_start_x                                      = 16 * 8   ; must be even!
-;player_start_y                                      = 13 * 8    ;
+player_start_room                                   = 6        ;
+player_start_x                                      = 1 * 8    ; must be even!
+player_start_y                                      = 5 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60           ;
@@ -272,8 +272,19 @@ entry_is_jumping                                    = $33
 
 temp_high                                           = $34
 shortcut_table_entry                                = $35
+title_length                                        = $36
 
-; $36 - $4c [unused]
+keyStates                                           = $37
+keyStateZ                                           = keyStates
+keyStateX                                           = $38
+keyStateReturn                                      = $39
+keyStateSpace                                       = $3a
+keyStateS                                           = $3b
+keyStateQ                                           = $3c
+keyStateEscape                                      = $3d
+keyStateShift                                       = $3e
+
+; $3f - $4c [unused]
 
 ; initialised values
 life_y                                              = $4d
@@ -3715,6 +3726,48 @@ arrow_timers_table
     !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
 
 ; ***************************************************************************************
+palette_changes
+    !byte $ff                                       ; row 0
+    !byte $ff                                       ; row 1
+    !byte $ff                                       ; row 2
+    !byte $ff                                       ; row 3
+    !byte $ff                                       ; row 4
+    !byte $ff                                       ; row 5
+    !byte $ff                                       ; row 6
+    !byte $ff                                       ; row 7
+    !byte $ff                                       ; row 8
+    !byte $ff                                       ; row 9
+    !byte $ff                                       ; row 10
+    !byte $ff                                       ; row 11
+    !byte $ff                                       ; row 12
+    !byte $ff                                       ; row 13
+    !byte $ff                                       ; row 14
+    !byte $ff                                       ; row 15
+
+; ***************************************************************************************
+start_of_palettes
+room_palette
+    !byte black                                     ; logical colour 0
+    !byte black                                     ; logical colour 1
+    !byte black                                     ; logical colour 2
+    !byte black                                     ; logical colour 3
+footer_palette
+    !byte black                                     ; logical colour 0
+    !byte magenta                                   ; logical colour 1
+    !byte cyan                                      ; logical colour 2
+    !byte yellow                                    ; logical colour 3
+title_palette
+    !byte black                                     ; logical colour 0
+    !byte red                                       ; logical colour 1
+    !byte green                                     ; logical colour 2
+    !byte white                                     ; logical colour 3
+game_over_palette
+    !byte black
+    !byte yellow
+    !byte white
+    !byte blue
+
+; ***************************************************************************************
 paletteLookupTable
     !byte $00, $20, $80, $a0
 
@@ -4380,48 +4433,6 @@ leave6
     rts                                             ;
 
 ; ***************************************************************************************
-palette_changes
-    !byte $ff                                       ; row 0
-    !byte $ff                                       ; row 1
-    !byte $ff                                       ; row 2
-    !byte $ff                                       ; row 3
-    !byte $ff                                       ; row 4
-    !byte $ff                                       ; row 5
-    !byte $ff                                       ; row 6
-    !byte $ff                                       ; row 7
-    !byte $ff                                       ; row 8
-    !byte $ff                                       ; row 9
-    !byte $ff                                       ; row 10
-    !byte $ff                                       ; row 11
-    !byte $ff                                       ; row 12
-    !byte $ff                                       ; row 13
-    !byte $ff                                       ; row 14
-    !byte $ff                                       ; row 15
-
-; ***************************************************************************************
-start_of_palettes
-room_palette
-    !byte black                                     ; logical colour 0
-    !byte black                                     ; logical colour 1
-    !byte black                                     ; logical colour 2
-    !byte black                                     ; logical colour 3
-footer_palette
-    !byte black                                     ; logical colour 0
-    !byte magenta                                   ; logical colour 1
-    !byte cyan                                      ; logical colour 2
-    !byte yellow                                    ; logical colour 3
-title_palette
-    !byte black                                     ; logical colour 0
-    !byte red                                       ; logical colour 1
-    !byte green                                     ; logical colour 2
-    !byte white                                     ; logical colour 3
-game_over_palette
-    !byte black
-    !byte yellow
-    !byte white
-    !byte blue
-
-; ***************************************************************************************
 initialise_room_background_tiles_and_title
     ldy #5                                          ; For each of six tile types
 set_tile_colours_loop
@@ -4476,47 +4487,62 @@ set_screen_colours_loop
     ldy #$10                                        ;
     jsr set_text_position                           ; TAB to start of room title
 
+    ; get title length
+    ldx #5                                          ; Get five bits of room data for title length - 1
+    jsr get_x_bits_of_room_data                     ;
+    clc                                             ;
+    adc #1                                          ;
+    sta title_length                                ;
 write_room_title_loop
+    dec title_length                                ;
+    bmi leave6                                      ;
     ldx #5                                          ; Get five bits of room data for each character of title
     jsr get_x_bits_of_room_data                     ;
-    cmp #$1b                                        ;
-    bcs is_1b_1c_1d_1e_or_1f                        ;
+    cmp #$1a                                        ;
+    bcs is_non_letter                               ;
     jsr write_letter                                ; $00 to $1a writes "a" to "z"
     jmp write_room_title_loop                       ;
 
 ; ***************************************************************************************
-is_1b_1c_1d_1e_or_1f
-    bne is_1c_1d_1e_or_1f                           ;
-    lda #charApostrophe                             ; $1b writes "'"
-    jsr write_char                                  ;
-    jmp write_room_title_loop                       ;
-
-; ***************************************************************************************
-is_1c_1d_1e_or_1f
-    cmp #$1d                                        ;
-    beq is_1d                                       ;
-    bcs is_1e_or_1f                                 ;
-
-    ; $1c ends room title
-    rts                                             ;
-
-; ***************************************************************************************
-is_1e_or_1f
+is_non_letter
+    beq is_caps                                     ;
+    cmp #$1c                                        ;
+    bcc is_apostrophe_char                          ;
+    beq is_full_stop_char                           ;
     cmp #$1e                                        ;
-    bne is_1f                                       ;
-    inc buffer_offset                               ; start_of_word ; $1e writes " ", resetting case
-is_1d
-    lda #charSpace                                  ; $1d writes " ", keeping lower case
-    jsr write_char                                  ;
-    jmp write_room_title_loop                       ;
-is_1f
+    bcc is_space_char                               ;
+    beq is_space_char_with_caps                     ;
+is_the
     lda #$13                                        ; "t" ; $1f writes "The"
     jsr write_letter                                ;
     lda #charh                                      ;
     jsr write_char                                  ;
     lda #chare                                      ;
+    bne write_char_and_continue                     ; ALWAYS branch
+
+; ***************************************************************************************
+is_caps
+    inc start_of_word                               ;
+    bne write_room_title_loop                       ; ALWAYS branch
+
+; ***************************************************************************************
+is_full_stop_char
+    lda #charFullStop                               ;
+    bne write_char_and_continue                     ; ALWAYS branch
+
+; ***************************************************************************************
+is_apostrophe_char
+    lda #charApostrophe                             ; $1b writes apostrophe
+write_char_and_continue
     jsr write_char                                  ;
     jmp write_room_title_loop                       ;
+
+; ***************************************************************************************
+is_space_char_with_caps
+    inc start_of_word                               ; $1e writes " ", resetting case
+is_space_char
+    lda #charSpace                                  ; $1d writes " ", keeping lower case
+    bne write_char_and_continue                     ; ALWAYS branch
 
 ; ***************************************************************************************
 write_letter
@@ -4794,25 +4820,6 @@ temp_channel_x = * + 1
     dex                                         ;
     bpl -                                       ;
     rts                                         ;
-
-; ***************************************************************************************
-keyStates
-keyStateZ
-   !byte 0
-keyStateX
-   !byte 0
-keyStateReturn
-   !byte 0
-keyStateSpace
-   !byte 0
-keyStateS
-   !byte 0
-keyStateQ
-   !byte 0
-keyStateEscape
-   !byte 0
-keyStateShift
-   !byte 0
 
 ; ***************************************************************************************
 scroll_scrolltext

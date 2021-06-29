@@ -348,32 +348,47 @@ namespace EncodeData
 
                 processor.AddBits(4, title.tab);
 
-                // Title
+                // Encode title
+                var titleBits = new List<int>();
+                var isUpperNext = true;
                 for(int i = 0; i < title.name.Length; i++)
                 {
                     if (i < title.name.Length - 3)
                     {
                         if (title.name.Substring(i, 3).ToLowerInvariant() == "the")
                         {
-                            processor.AddBits(5, 0x1f);
+                            titleBits.Add(0x1f);
                             i = i + 2;
+                            isUpperNext = false;
                             continue;
                         }
                     }
                     int c = (int) title.name[i];
                     if ((c >= 'a') && (c <= 'z'))
                     {
-                        processor.AddBits(5, c - 'a');
+                        Debug.Assert(isUpperNext == false);
+                        titleBits.Add(c - 'a');
+                        isUpperNext = false;
                         continue;
                     }
                     if ((c >= 'A') && (c <= 'Z'))
                     {
-                        processor.AddBits(5, c - 'A');
+                        if (!isUpperNext)
+                        {
+                            titleBits.Add(0x1a);
+                        }
+                        titleBits.Add(c - 'A');
+                        isUpperNext = false;
                         continue;
                     }
                     if (c == '\'')
                     {
-                        processor.AddBits(5, 0x1b);
+                        titleBits.Add(0x1b);
+                        continue;
+                    }
+                    if (c == '.')
+                    {
+                        titleBits.Add(0x1c);
                         continue;
                     }
                     if (c == ' ')
@@ -386,16 +401,24 @@ namespace EncodeData
                                 char nextC = left[0];
                                 if (char.IsUpper(nextC))
                                 {
-                                    processor.AddBits(5, 0x1e);
+                                    titleBits.Add(0x1e);
+                                    isUpperNext = true;
                                     continue;
                                 }
                             }
                         }
-                        processor.AddBits(5, 0x1d);
+                        titleBits.Add(0x1d);
                     }
                 }
-                processor.AddBits(5, 0x1c);     // Terminator
 
+                // Length (5 bits) followed by the encoded title bits
+                processor.AddBits(5, titleBits.Count - 1);
+                foreach(var titleBit in titleBits)
+                {
+                    processor.AddBits(5, titleBit);
+                }
+
+                // Commands
                 foreach(var command in commands)
                 {
                     if (command is UseTileCommand use)
@@ -454,6 +477,7 @@ namespace EncodeData
                 processor.AddBits(2, 3);
                 processor.AddBits(2, 0);
             }
+
             // Enemies
             processor.AddBits(3, enemies.Count);
             foreach(var enemy in enemies)
@@ -552,6 +576,10 @@ namespace EncodeData
         // ********************************************************************
         public void AddBits(int numBits, int value)
         {
+            if (value >= (1 << numBits))
+            {
+                Console.WriteLine("Error encoding bits, number too large.");
+            }
             for(int i = 0; i < numBits; i++)
             {
                 AddBit((value & (1 << (numBits-1-i))) != 0);
