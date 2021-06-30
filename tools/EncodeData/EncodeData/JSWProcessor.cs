@@ -1205,8 +1205,10 @@ namespace EncodeData
         }
 
         // ********************************************************************
-        public void WriteOutput(string outputFilepath)
+        public int WriteOutput(string outputFilepath)
         {
+            int numSprites = 0;
+
             // Create or truncate output file
             using (StreamWriter outputFile = new StreamWriter(outputFilepath))
             {
@@ -1433,11 +1435,12 @@ namespace EncodeData
                 WriteLine(outputFile, 0, "");
 
                 // Output all sprites
-                OutputCompressedSprites(outputFile);
+                numSprites = OutputCompressedSprites(outputFile);
 
             }
 
             Console.WriteLine("Encoding finished");
+            return numSprites;
         }
 
         // ********************************************************************
@@ -1593,7 +1596,7 @@ namespace EncodeData
         }
 
         // ********************************************************************
-        public void OutputCompressedSprites(StreamWriter outputFile)
+        public int OutputCompressedSprites(StreamWriter outputFile)
         {
             WriteLine(outputFile, 0, "; ***************************************************************************************");
             //int offset = 0;
@@ -1839,6 +1842,7 @@ namespace EncodeData
                 Console.WriteLine("Font sprites: " + byteCount + " bytes");
             }
             */
+            return allSprites.Count;
         }
 
         // ********************************************************************
@@ -1850,10 +1854,10 @@ namespace EncodeData
                 return;
             }
             ReadInput(inputFilepath);
-            WriteOutput(outputFilepath);
+            var numSprites = WriteOutput(outputFilepath);
 
             var checker = new JSWChecker();
-            checker.CheckOutputFile(outputFilepath);
+            checker.CheckOutputFile(outputFilepath, numSprites);
         }
     }
 }

@@ -144,11 +144,6 @@ namespace EncodeData
                 }
             }
 
-//            if (n == 128)
-//            {
-//                Console.WriteLine();
-//            }
-
             var decodedBytes = new List<int>();
 
             // Decode sprite
@@ -178,20 +173,6 @@ namespace EncodeData
                         AddToDecodedBytes(ref decodedBytes, ref previousBytes, previousBytes[command]);
                     }
                 }
-                /*
-                else if (command == 4)
-                {
-                    var val = previousBytes[3];
-                    var rollLeft = ((val << 1) & 255) + ((val & 128) >> 7);
-                    AddToDecodedBytes(ref decodedBytes, ref previousBytes, rollLeft);
-                }
-                else if (command == 5)
-                {
-                    var val = previousBytes[3];
-                    var rollRight = (val >> 1) + 128 * (val & 1);
-                    AddToDecodedBytes(ref decodedBytes, ref previousBytes, rollRight);
-                }
-                */
                 else if (command < 10)
                 {
                     var commonIndex = command - 4;
@@ -245,7 +226,7 @@ namespace EncodeData
         }
 
         // ********************************************************************
-        public void CheckOutputFile(string filepath)
+        public void CheckOutputFile(string filepath, int numSprites)
         {
             // enemy_sprites_frames
             // contains the number of sprite frames for each enemy
@@ -328,7 +309,7 @@ namespace EncodeData
             var checkerFilepath = filepath + "_checker.txt";
             using (StreamWriter outputFile = new StreamWriter(checkerFilepath))
             {
-                for(int i = 0; i < 384; i++)
+                for(int i = 0; i < numSprites; i++)
                 {
                     DecodeSprite(outputFile, i);
                 }
