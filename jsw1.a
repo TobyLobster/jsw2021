@@ -11,9 +11,9 @@ player_start_x                                      = 20 * 8    ;
 player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-;player_start_room                                   = 57       ;
+;player_start_room                                   = 51       ;
 ;player_start_x                                      = 1 * 8    ; must be even!
-;player_start_y                                      = 10 * 8    ;
+;qplayer_start_y                                      = 10 * 8    ;
 
 ; Tree Root
 ;player_start_room                                   = 60           ;
@@ -405,8 +405,8 @@ screen_address_low                                  = $90
 rope_pixels_screen_address_high                     = $91
 tile_address_high2                                  = $91
 screen_address_high                                 = $91
-sprite_address_low2                                 = $92
-sprite_address_high2                                = $93
+;sprite_address_low2                                 = $92
+;sprite_address_high2                                = $93
 sprite_size_in_bytes                                = $94
 sprite_width                                        = $95
 rows_to_check                                       = $96
@@ -430,7 +430,9 @@ seven                                               = $98
 melody_active                                       = $99
 player_entered_room_falling_too_far                 = $9a
 player_lives                                        = $9b
-player_not_plotted                                  = $9c
+player_not_plotted                                  = $9c       ; 2 = don't plot
+                                                                ; 1 = don't unplot
+                                                                ; 0 = normal
 out_of_time                                         = $9d
 house_clear                                         = $9e
 player_rope_pixel                                   = $9f
@@ -499,6 +501,7 @@ tune_number                                         = $db
 tune_speed                                          = $dc
 music_timer                                         = $dd
 pre_tune_delay                                      = $de
+room_item_sprite                                    = $df       ; 16 bytes: $df - $ee
 
 screen_memory_start                                 = $5600
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
@@ -534,11 +537,10 @@ initialise_room_data
     jsr clear_screen_y                              ;
     jsr initialise_room_items_and_exits             ;
     jsr initialise_room_background_tiles_and_title  ;
-    lda #$ff                                        ;
-    sta item_number                                 ;
     lda #$ee                                        ;
     sta rope_position                               ;
     lda #$ff                                        ;
+    sta item_number                                 ;
     sta rope_velocity_relative_to_centre            ;
     sta rope_position_relative_to_centre            ;
     lda #1                                          ;
@@ -552,13 +554,19 @@ initialise_room_data
     lda player_x_in_enemies                         ;
     sta entry_x                                     ;
     lda player_y_in_enemies                         ;
+!if (* != $0256) {
+    !if (* != $0257) {
+        !error "Error setting break effect byte $0258, wrong position!"
+    }
+}
+    bit $0303                                       ; set $0258 to 3. This value is normally set by *FX 200,3 to clear memory on break
+                                                    ; This ensures a clean CTRL-Break
     sta entry_y                                     ;
     sta where_player_fell_from                      ;
     lda player_is_jumping                           ;
     sta entry_is_jumping                            ;
+    jsr reset_tile_xy                               ;
     lda #0                                          ;
-    sta tile_x                                      ;
-    sta tile_y                                      ;
     sta tile_type                                   ;
     jsr wipe_tile_table                             ;
 initialise_background_scenery_loop
@@ -651,7 +659,7 @@ set_tile_x_and_y
     ldx #5                                          ; Get five bits of room data for x position
     jsr get_x_bits_of_room_data                     ;
     sta tile_x                                      ;
-    ldx #4                                          ; Get five bits of room data for y position
+    ldx #4                                          ; Get four bits of room data for y position
     jsr get_x_bits_of_room_data                     ;
     sta tile_y                                      ;
     rts                                             ;
@@ -661,8 +669,7 @@ add_straight_line_of_tiles
     lda #1                                          ; Add first and last tiles
     ldx #0                                          ; Get one bit of room data for direction
     ldy #5                                          ; Get five bits of room data for length of run
-    jsr add_line_of_tiles                           ;
-    rts                                             ;
+    jmp add_line_of_tiles                           ;
 
 ; ***************************************************************************************
 add_diagonal_line_of_tiles
@@ -697,6 +704,7 @@ add_series_of_tiles_loop                            ; For each tile,
     jsr add_background_tile                         ;
     dec length1                                     ;
     bpl add_series_of_tiles_loop                    ;
+reset_tile_xy
     lda #0                                          ;
     sta tile_x                                      ;
     sta tile_y                                      ;
@@ -932,8 +940,7 @@ add_background_tile
     tay                                             ;
     pla                                             ;
     jsr plot_background_sprite                      ;
-    jsr set_tile_table_for_background               ;
-    rts                                             ;
+    jmp set_tile_table_for_background               ;
 
 directions_x
     !byte $01, $00, $ff, $00                        ;
@@ -1210,15 +1217,11 @@ calculate_screen_address
 ; On Entry:
 ;  A holds the X coordinate in pixels
 ;  X holds the Y coordinate in pixels
-;  sprite_address_low2/high2
+;  plot_sprite_address_low/high
 ;
 ; ***************************************************************************************
 plot_sprite
     jsr calculate_screen_address                    ;
-    lda sprite_address_high2                        ;
-    sta plot_sprite_address_high                    ;
-    lda sprite_address_low2                         ;
-    sta plot_sprite_address_low                     ;
     ldx sprite_size_in_bytes                        ;
 plot_sprite_group_loop
     ldy sprite_width                                ;
@@ -1668,8 +1671,6 @@ enemy_moving_vertically                             ; For vertically moving enem
     clc                                             ;
     adc #1                                          ;
 skip_inversion4
-;    clc                                             ;
-;    adc enemies_y,X                                 ; use the vertical position to calculate frame
     ldy enemies_sprite,X                            ;
     cpy #10                                         ; razor blades spin fast
     beq +                                           ;
@@ -1685,15 +1686,15 @@ calculate_frame
     ror sprite_frames                               ;
     lsr                                             ;
     ror sprite_frames                               ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                    ;
     lda sprite_frames                               ;
     and #$c0                                        ;
     clc                                             ;
     adc #<unpacked_sprites                          ;
-    sta sprite_address_low2                         ;
-    lda sprite_address_high2                        ;
+    sta plot_sprite_address_low                     ;
+    lda plot_sprite_address_high                    ;
     adc #>unpacked_sprites                          ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                    ;
 
     ldy enemies_colour,X                            ;
     lda colour_mask_values,Y                        ;
@@ -1759,11 +1760,11 @@ make_speed_positive
 
 ; ***************************************************************************************
 plot_or_unplot_player_sprite
-    ldy sprite_address_low2                         ;
+    ldy plot_sprite_address_low                     ;
     sty sprite_address_for_restore_lda_low          ;
     sty sprite_address_for_copy_and_low             ;
     sty sprite_address_for_copy_ora_low             ;
-    ldy sprite_address_high2                        ;
+    ldy plot_sprite_address_high                    ;
     sty sprite_address_for_restore_lda_high         ;
     sty sprite_address_for_copy_and_high            ;
     sty sprite_address_for_copy_ora_high            ;
@@ -1901,6 +1902,7 @@ player_not_conveyed
 check_for_jump
     lda keyStateReturn                              ; 'Return'
     sta player_started_jump                         ;
+leave28
     rts                                             ;
 
 ; ***************************************************************************************
@@ -1936,9 +1938,7 @@ update_animated_scenery
 +
     tya                                             ;
     bmi leave28                                     ;
-    jsr animate_scenery                             ;
-leave28
-    rts                                             ;
+    jmp animate_scenery                             ;
 
 ; ***************************************************************************************
 animate_scenery
@@ -2125,19 +2125,22 @@ not_jumping_along_slope
     sta player_y_in_enemies                         ;
 player_falling_after_jump
 not_slope1
+    jsr check_for_q_and_s_keys                      ;
     jsr update_conveyor                             ;
     jsr update_enemies                              ;
     ldx #0                                          ; player
     jsr calculate_tile_address_for_enemy_X          ;
     jsr mark_enemies_that_overlap_player            ;
-    jsr plot_enemies                                ;
-    lda #$b0                                        ; 'BCS' opcode ; Set to restore background
-    sta plot_player_sprite_mode                     ;
-    dec player_not_plotted                          ;
-    beq skip_unplot                                 ;
-
-    jsr check_for_q_and_s_keys                      ;
     jsr update_animated_scenery                     ;
+
+-
+    lda vsync_counter                               ;
+    cmp #2                                          ;
+    bcc -
+
+    jsr plot_enemies                                ; draw enemies that don't overlap player
+
+    ; wait one more frame
 -
     lda vsync_counter                               ;
     cmp #3                                          ;
@@ -2146,23 +2149,31 @@ not_slope1
     lda #0                                          ;
     sta vsync_counter                               ;
 
+    lda #$b0                                        ; 'BCS' opcode ; Set to restore background
+    sta plot_player_sprite_mode                     ;
+    dec player_not_plotted                          ;
+    beq skip_unplot                                 ;
+
+    ; unplot player
+    lda player_x                                    ;
+    ldx player_y                                    ;
+    jsr plot_or_unplot_previous_player_sprite       ; Unplot player
+
+skip_unplot
+    jsr plot_enemies                                ; draw enemies that overlap player
+    jsr update_arrows                               ;
     jsr plot_room_items                             ;
     jsr plot_room_items                             ;
     jsr plot_room_items                             ;
     jsr plot_room_items                             ;
     jsr plot_room_items                             ;
 
-    lda player_x                                    ;
-    ldx player_y                                    ;
-    jsr plot_or_unplot_previous_player_sprite       ; Unplot player
-skip_unplot
-    jsr plot_enemies                                ;
-    jsr update_arrows                               ;
+    ; plot player
     lda #$90                                        ; 'BCC' opcode ; Set to copy background
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
     bpl skip_plot                                   ;
-    ldx #0                                          ; player
+    ldx #0                                          ; get sprite address of player
     jsr calculate_enemy_sprite_address              ;
     lda player_x_in_enemies                         ;
     and #$f8                                        ;
@@ -2173,7 +2184,8 @@ skip_unplot
     jsr plot_or_unplot_player_sprite                ; Plot player
 
 skip_plot
-    ldx #0                                          ; player
+
+    ldx #0                                          ; plot and unplot player as normal
     stx player_not_plotted                          ;
     jsr calculate_tile_address_for_enemy_X          ;
     jsr check_for_player_touching_tiles             ;
@@ -2264,6 +2276,62 @@ get_x_bits_of_room_data_multiplied_by_eight
     rts                                             ;
 
 ; ***************************************************************************************
+wipe_tile_table
+    ldy #0                                          ;
+    lda #$80                                        ;
+wipe_tile_table_loop
+    sta tile_table,Y                                ;
+    sta tile_table + $100,Y                         ;
+    iny                                             ;
+    bne wipe_tile_table_loop                        ;
+    rts                                             ;
+
+; ***************************************************************************************
+calculate_tile_address_for_enemy_X
+    lda #0                                          ;
+    sta tile_address_high1                          ;
+    lda enemies_y,X                                 ;
+    sec                                             ;
+    sbc #8                                          ;
+    bcs +                                           ;
+    dec tile_address_high1                          ;
++
+    asl                                             ;
+    asl                                             ;
+    rol tile_address_high1                          ;
+    and #$e0                                        ;
+    sta tmp                                         ;
+    lda enemies_x,X                                 ;
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    clc                                             ;
+    adc tmp                                         ;
+    clc                                             ;
+    adc #<tile_table                                ;
+    sta tile_address_low1                           ;
+
+    lda tile_address_high1                          ;
+    adc #>tile_table                                ;
+    sta tile_address_high1                          ;
+
+    ; return with the low byte in the accumulator
+    lda tile_address_low1                           ;
+    rts                                             ;
+
+cycle_item_colours
+    !byte 1,2,3,1,2,3,1,2,3,1,2,3
+
+; ***************************************************************************************
+free_before_nmi = $0d00 - *
+
+!if (* > $0d00) {
+    !error "RTI not in correct position at $0d00", *
+}
+    * = $0d00
+    rti
+
+; ***************************************************************************************
 set_tile_table_for_background
     ldy #0                                          ;
     sty tile_address_high1                          ;
@@ -2312,50 +2380,6 @@ set_tile_table
     ldy #0                                          ;
     sta (tile_address_low1),Y                       ;
 scenery
-    rts                                             ;
-
-; ***************************************************************************************
-wipe_tile_table
-    ldy #0                                          ;
-    lda #$80                                        ;
-wipe_tile_table_loop
-    sta tile_table,Y                                ;
-    sta tile_table + $100,Y                         ;
-    iny                                             ;
-    bne wipe_tile_table_loop                        ;
-    rts                                             ;
-
-; ***************************************************************************************
-calculate_tile_address_for_enemy_X
-    lda #0                                          ;
-    sta tile_address_high1                          ;
-    lda enemies_y,X                                 ;
-    sec                                             ;
-    sbc #8                                          ;
-    bcs +                                           ;
-    dec tile_address_high1                          ;
-+
-    asl                                             ;
-    asl                                             ;
-    rol tile_address_high1                          ;
-    and #$e0                                        ;
-    sta tmp                                         ;
-    lda enemies_x,X                                 ;
-    lsr                                             ;
-    lsr                                             ;
-    lsr                                             ;
-    clc                                             ;
-    adc tmp                                         ;
-    clc                                             ;
-    adc #<tile_table                                ;
-    sta tile_address_low1                           ;
-
-    lda tile_address_high1                          ;
-    adc #>tile_table                                ;
-    sta tile_address_high1                          ;
-
-    ; return with the low byte in the accumulator
-    lda tile_address_low1                           ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -2502,9 +2526,9 @@ enemy_moving_right
     adc enemies_x,X                                 ;
     sta enemy_x                                     ;
     lda #<space_sprite                              ;
-    sta sprite_address_low2                         ;
+    sta plot_sprite_address_low                     ;
     lda #>space_sprite                              ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                    ;
     lda enemies_y,X                                 ;
     tax                                             ;
     lda enemy_x                                     ;
@@ -2541,14 +2565,14 @@ enemy_moving_down                                   ; If this enemy is moving do
     asl                                             ;
     sbc #0                                          ;
     sta sprite_size_in_bytes                        ; Set sprite to be section previously occupied
-    lda sprite_address_low2                         ;
+    lda plot_sprite_address_low                     ;
     sta previous_sprite_address_low                 ;
     lda #<space_sprite                              ;
-    sta sprite_address_low2                         ;
-    lda sprite_address_high2                        ;
+    sta plot_sprite_address_low                     ;
+    lda plot_sprite_address_high                    ;
     sta previous_sprite_address_high                ;
     lda #>space_sprite                              ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                    ;
     lda enemies_y,Y                                 ;
     sec                                             ;
     sbc previous_speed                              ;
@@ -2556,20 +2580,20 @@ enemy_moving_down                                   ; If this enemy is moving do
     lda enemies_x,Y                                 ;
     jsr plot_sprite                                 ; Wipe previous position of sprite
     lda previous_sprite_address_high                ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                        ;
     lda #$3f                                        ; Set sprite to be 16x16 pixels
     sta sprite_size_in_bytes                        ;
     lda previous_sprite_address_low                 ;
     sta plot_sprite_address_low                     ; Plot sprite
-    jsr into_plot_sprite_with_skip                  ;
-    rts                                             ;
+    jmp into_plot_sprite_with_skip                  ;
+
 enemy_is_skull_mouth
     ldx enemies_y,Y                                 ;
 enemy_moving_horizontally2
     lda enemies_x,Y                                 ;
     and #$f8                                        ;
-    jsr plot_sprite                                 ;
-    rts                                             ;
+    jmp plot_sprite                                 ;
+
 enemy_moving_up                                     ; If the enemy is moving up,
     lda enemies_x,Y                                 ;
     jsr plot_sprite                                 ; Plot sprite
@@ -2577,7 +2601,7 @@ enemy_moving_up                                     ; If the enemy is moving up,
     sta plot_sprite_address_low                     ;
     ldy enemy_to_consider2                          ;
     lda #>space_sprite                              ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                    ;
     lda enemies_previous_speed,Y                    ;
     eor #$ff                                        ;
     clc                                             ;
@@ -2594,8 +2618,6 @@ enemy_moving_up                                     ; If the enemy is moving up,
 ; ***************************************************************************************
 into_plot_sprite_with_skip
     ldx sprite_size_in_bytes                        ;
-    lda sprite_address_high2                        ;
-    sta plot_sprite_address_high                    ;
     jmp plot_sprite_skipping_first_column           ;
 
 check_player_move_for_walls
@@ -2684,8 +2706,7 @@ check_for_player_touching_tiles
     jsr check_for_player_touching_tile              ;
     ldy #$21                                        ; Consider tile at top right of player
     lda #$3f                                        ;
-    jsr check_for_player_touching_tile              ;
-    rts                                             ;
+    jmp check_for_player_touching_tile              ;
 
 ; ***************************************************************************************
 check_for_player_touching_tile
@@ -2781,8 +2802,9 @@ tile_is_space
     lda room_contains_rope                          ;
     bne leave_with_initial_x_and_y                  ;
     inc player_killed                               ; Player has been hit by an arrow or moving enemy
-    bne leave_with_initial_x_and_y                  ;
+    bne leave_with_initial_x_and_y                  ; ALWAYS branch
 
+; ***************************************************************************************
 plot_room_items
     ldx items_in_room_minus_one                     ;
     bmi leave21                                     ;
@@ -2960,9 +2982,6 @@ leave23
 player_at_left_edge_of_room
     lda #$f0                                        ; new position on right edge of next screen
     bne store_new_x                                 ; ALWAYs branch
-
-cycle_item_colours
-    !byte 1,2,3,1,2,3,1,2,3,1,2,3
 
 ; ***************************************************************************************
 initialise_room_items_and_exits
@@ -3265,9 +3284,9 @@ animate_game_over_boot
     sta enemies_need_replot + 3                     ;
     jsr plot_enemies                                ;
     lda #>(unpacked_enemy_sprites + $40)            ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                    ;
     lda #<(unpacked_enemy_sprites + $40)            ;
-    sta sprite_address_low2                         ;
+    sta plot_sprite_address_low                     ;
     ldx #3                                          ; Play game over sound
     jsr start_sound_x                               ;
 animate_game_over_boot_loop
@@ -3468,8 +3487,6 @@ unpacked_conveyor_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 unpacked_background_sprite
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-room_item_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ***************************************************************************************
@@ -4294,7 +4311,7 @@ check_tiles_for_enemy
     jsr check_tile_for_enemy                        ;
     iny                                             ;
 check_tile_for_enemy
-    lda (tile_address_low1),Y                           ;
+    lda (tile_address_low1),Y                       ;
     bpl leave5                                      ; Is there an enemy in this tile?
     cmp #$8a                                        ;
     bcs leave5                                      ;
@@ -4422,10 +4439,10 @@ life_sprite_address_low = * + 1
     sta life_sprite_address_low                     ;
     clc                                             ;
     adc #<player_sprite_right_frame_0               ;
-    sta sprite_address_low2                         ;
+    sta plot_sprite_address_low                     ;
     lda #>player_sprite_right_frame_0               ;
     adc #0                                          ;
-    sta sprite_address_high2                        ;
+    sta plot_sprite_address_high                    ;
     lda #3                                          ;
     sta life_colour                                 ;
     lda #$f0                                        ;
@@ -6505,4 +6522,4 @@ pitch_table_second
 copy_melody_end
 }
 
-free_total = free_before_screen
+free_total = free_before_nmi + free_before_screen

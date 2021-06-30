@@ -1920,14 +1920,6 @@ Room 29
         Draw 1 single tile at (29,9)
     Enemies: 6
         Enemy: 0
-            Sprite: 7
-            Initial Pos: (6,8)
-            Min Extent: 7
-            Max Extent: 11
-            Initial Dir: up
-            Speed: 1
-            Logical colour: 2
-        Enemy: 1
             Sprite: 21
             Initial Pos: (12,12)
             Min Extent: 0
@@ -1935,6 +1927,14 @@ Room 29
             Initial Dir: left
             Speed: 2
             Logical colour: 1
+        Enemy: 1
+            Sprite: 7
+            Initial Pos: (6,8)
+            Min Extent: 7
+            Max Extent: 11
+            Initial Dir: up
+            Speed: 1
+            Logical colour: 2
         Enemy: 2
             Sprite: 6
             Initial Pos: (17,9)
