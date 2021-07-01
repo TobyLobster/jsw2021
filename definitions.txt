@@ -3644,7 +3644,7 @@ Room 52
     Enemies: 4
         Enemy: 0
             Sprite: 41
-            Initial Pos: (11,8)
+            Initial Pos: (11,10)
             Min Extent: 6
             Max Extent: 13
             Initial Dir: down
