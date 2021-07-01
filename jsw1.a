@@ -2143,13 +2143,12 @@ not_slope1
     lda #0                                          ;
     sta vsync_counter                               ;
 
-    ; restore cached background to screen from cache, thereby unplotting the player
-    lda #$b0                                        ; 'BCS' opcode ; Set to restore background
-    sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
     beq skip_unplot                                 ;
 
-    ; unplot player
+    ; copy (restore) cached background to screen, thereby unplotting the player
+    lda #$b0                                        ; 'BCS' opcode ; Set to restore background
+    sta plot_player_sprite_mode                     ;
     lda player_x                                    ;
     ldx player_y                                    ;
     jsr plot_or_unplot_previous_player_sprite       ; Unplot player
