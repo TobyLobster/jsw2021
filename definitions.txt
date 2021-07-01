@@ -1321,7 +1321,7 @@ Room 20
     Enemies: 3
         Enemy: 0
             Sprite: 10
-            Initial Pos: (6,12)
+            Initial Pos: (6,4)
             Min Extent: 2
             Max Extent: 13
             Initial Dir: down
