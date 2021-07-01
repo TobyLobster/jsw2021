@@ -496,8 +496,8 @@ music_timer                                         = $d8
 pre_tune_delay                                      = $d9
 palette_changes                                     = $da       ; 16 bytes: $da - $e9
 unpacked_background_sprite                          = $ea       ; 16 bytes: $ea - $fa
-skip_plot_item                                      = $fb
 
+; $fb unused
 ; $fc used for interrupts
 
 item_loop_counter                                   = $fd
@@ -2849,20 +2849,17 @@ skip_reset_colour
     sta sprite_colour                               ;
 
     ldy #0                                          ;
-    sty skip_plot_item                              ;
     lda (tile_address_low2),Y                       ;
-    and #%11110000                                  ;
-    cmp #$80                                        ; don't draw the item if it is currently an enemy tile
-    bne +                                           ;
-    inc skip_plot_item                              ;
+    cmp #$81                                        ; don't draw the item if it is currently an enemy tile
+    bcc +                                           ;
+    cmp #$8a                                        ;
+    bcs +                                           ;
+    jmp skip_item                                   ;
 +
     ; store in tile map
     txa                                             ;
-    ora #$d0                                        ; set top three bits to indicate an item
+    ora #$d0                                        ; set to indicate an item
     sta (tile_address_low2),Y                       ;
-
-    lda skip_plot_item                              ;
-    bne skip_item                                   ;
 
     ; plot item
 do_plot_item

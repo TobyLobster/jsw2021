@@ -2600,7 +2600,7 @@ Room 38
         Enemy: 1
             Sprite: 30
             Initial Pos: (7,8)
-            Min Extent: 7
+            Min Extent: 6
             Max Extent: 12
             Initial Dir: down
             Speed: 2
