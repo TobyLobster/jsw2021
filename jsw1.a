@@ -213,7 +213,7 @@ ShortTimerValue  = 8*64 - 2
 ; game variables (memory locations)
 irq_counter                                         = $00
 vsync_counter                                       = $01
-; $02 [unused]
+blocks_to_copy                                      = $02
 text_screen_low                                     = $03
 text_screen_high                                    = $04
 text_colour_mask                                    = $05
@@ -283,7 +283,6 @@ keyStateS                                           = $3b
 keyStateQ                                           = $3c
 keyStateEscape                                      = $3d
 keyStateShift                                       = $3e
-
 items_colour                                        = $3f
 items_colour1                                       = $40
 items_colour2                                       = $41
@@ -296,10 +295,8 @@ items_colour8                                       = $47
 items_colour9                                       = $48
 items_colour10                                      = $49
 items_colour11                                      = $4a
-
 replay_timer                                        = $4b
-
-; $4c [unused]
+tmp2                                                = $4c
 
 ; initialised values
 life_y                                              = $4d
@@ -402,13 +399,10 @@ player_y                                            = $8e
 player_horizontal_speed                             = $8f
 tile_address_low2                                   = $90
 rope_pixels_screen_address_low                      = $90
-tile_address2                                       = $90
-screen_address_low                                  = $90
 rope_pixels_screen_address_high                     = $91
 tile_address_high2                                  = $91
-screen_address_high                                 = $91
-;sprite_address_low2                                 = $92
-;sprite_address_high2                                = $93
+packed_byte1                                        = $92
+packed_byte2                                        = $93
 sprite_size_in_bytes                                = $94
 sprite_width                                        = $95
 rows_to_check                                       = $96
@@ -477,33 +471,38 @@ temp_old_position                                   = $c2
 temp_rope                                           = $c3
 enemy_sprite_to_decompress                          = $c4
 palette_loop_counter                                = $c5
-blocks_to_copy                                      = $c6
-temp_addr_low                                       = $c7
-temp_addr_high                                      = $c8
-sprite_address_low1                                 = $c9
-sprite_address_high1                                = $ca
-tmp2                                                = $cb
-packed_byte1                                        = $cc
-packed_byte2                                        = $cd
+
+temp_addr_low                                       = $c6
+temp_addr_high                                      = $c7
+sprite_address_low1                                 = $c8
+sprite_address_high1                                = $c9
 
 ; melody variables
-note_number                                         = $cf       ; }
-note_number1                                        = $d0       ; }
-note_number2                                        = $d1       ; }
-note_length                                         = $d2       ; }
-note_length1                                        = $d3       ; }
-note_length2                                        = $d4       ; } per channel
-note_volume                                         = $d5       ; }
-note_volume1                                        = $d6       ; }
-note_volume2                                        = $d7       ; }
-note_decay_amount                                   = $d8       ; }
-note_decay_amount1                                  = $d9       ; }
-note_decay_amount2                                  = $da       ; }
-tune_number                                         = $db
-tune_speed                                          = $dc
-music_timer                                         = $dd
-pre_tune_delay                                      = $de
-room_item_sprite                                    = $df       ; 16 bytes: $df - $ee
+note_number                                         = $ca       ; }
+note_number1                                        = $cb       ; }
+note_number2                                        = $cc       ; }
+note_length                                         = $cd       ; }
+note_length1                                        = $ce       ; }
+note_length2                                        = $cf       ; } per channel
+note_volume                                         = $d0       ; }
+note_volume1                                        = $d1       ; }
+note_volume2                                        = $d2       ; }
+note_decay_amount                                   = $d3       ; }
+note_decay_amount1                                  = $d4       ; }
+note_decay_amount2                                  = $d5       ; }
+tune_number                                         = $d6
+tune_speed                                          = $d7
+music_timer                                         = $d8
+pre_tune_delay                                      = $d9
+palette_changes                                     = $da       ; 16 bytes: $da - $e9
+unpacked_background_sprite                          = $ea       ; 16 bytes: $ea - $fa
+skip_plot_item                                      = $fb
+
+; $fc used for interrupts
+
+item_loop_counter                                   = $fd
+screen_address_low                                  = $fe
+screen_address_high                                 = $ff
 
 screen_memory_start                                 = $5600
 text_message_address                                = screen_memory_start + 20 * $0200  ; row 20
@@ -516,8 +515,7 @@ initialise_room
     jsr initialise_enemies                          ;
     jsr initialise_arrows                           ;
     jsr calculate_screen_address_of_conveyor        ;
-    jsr plot_enemies                                ; [not really needed, but may be useful for screenshots]
-    rts                                             ;
+    jmp plot_enemies                                ; [not really needed, but may be useful for screenshots]
 
 ; ***************************************************************************************
 initialise_room_data
@@ -549,6 +547,7 @@ initialise_room_data
     lda player_x_in_enemies                         ;
     sta entry_x                                     ;
     lda player_y_in_enemies                         ;
+    sta entry_y                                     ;
 !if (* != $0256) {
     !if (* != $0257) {
         !error "Error setting break effect byte $0258, wrong position!"
@@ -556,7 +555,6 @@ initialise_room_data
 }
     bit $0303                                       ; set $0258 to 3. This value is normally set by *FX 200,3 to clear memory on break
                                                     ; This ensures a clean CTRL-Break
-    sta entry_y                                     ;
     sta where_player_fell_from                      ;
     lda player_is_jumping                           ;
     sta entry_is_jumping                            ;
@@ -604,7 +602,6 @@ finish_up_tiles
     bpl -                                           ;
 
 null_routine
-leave8
     rts                                             ;
 
 ; ***************************************************************************************
@@ -1022,6 +1019,8 @@ leave9
 
 decompressed_sprite
     !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+room_item_sprite
+    !byte 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0
 
 ; ***************************************************************************************
 update_temp_address
@@ -1933,10 +1932,8 @@ update_animated_scenery
 +
     tya                                             ;
     bmi leave28                                     ;
-    jmp animate_scenery                             ;
 
-; ***************************************************************************************
-animate_scenery
+    ; animate_scenery
     lda start_of_animation_offset + 1,Y             ;
     sta final_strip_offset                          ;
     lda start_of_animation_offset,Y                 ;
@@ -2147,7 +2144,7 @@ not_slope1
     beq skip_unplot                                 ;
 
     ; copy (restore) cached background to screen, thereby unplotting the player
-    lda #$b0                                        ; 'BCS' opcode ; Set to restore background
+    lda #$b0                                        ; 'BCS' opcode ; Set to restore screen from cache
     sta plot_player_sprite_mode                     ;
     lda player_x                                    ;
     ldx player_y                                    ;
@@ -2158,18 +2155,15 @@ skip_unplot
                                                     ; this is done separately from the other enemies
                                                     ; so we minimise the time between unplot
                                                     ; and plot of the player, while still capturing
-                                                    ; collision information with the enemies that
-                                                    ; we can collide with.
+                                                    ; collision information from the enemies that
+                                                    ; are close to the player.
     ; Update arrows and room items
-    jsr update_arrows
-    jsr plot_room_items
-    jsr plot_room_items
-    jsr plot_room_items
-    jsr plot_room_items
-    jsr plot_room_items
+    jsr update_arrows                               ;
 
-    ; copy background tiles at player position on screen to cache, and plot player
-    lda #$90                                        ; 'BCC' opcode ; Set to copy background
+    jsr plot_room_items                             ;
+
+    ; copy background tiles (at player position) from screen to cache, then plot player
+    lda #$90                                        ; 'BCC' opcode ; Set to copy screen to cache
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
     bpl skip_plot                                   ;
@@ -2179,7 +2173,7 @@ skip_unplot
     and #$f8                                        ;
     sta player_x                                    ;
     stx player_y                                    ;
-    ldx player_y                                    ;
+    ldx player_y                                    ; [get the -ve flag]
     bmi skip_plot                                   ;
     jsr plot_or_unplot_player_sprite                ; Copy screen background to cache, plot player
 
@@ -2327,6 +2321,12 @@ cycle_item_colours
     !byte 1,2,3,1,2,3,1,2,3,1,2,3
 
 ; ***************************************************************************************
+arrow_timers_table
+    ;      0    1    2    3    4
+    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
+
+
+; ***************************************************************************************
 free_before_nmi = $0d00 - *
 
 !if (* > $0d00) {
@@ -2366,6 +2366,8 @@ set_tile_table_for_background
     cmp #6                                          ; store (tile type + 1) in tile_table for PLATFORM, WALL, SLOPE, CONVEYOR
     bcc set_tile_table                              ;
     beq scenery                                     ; if (SCENERY) skip else it's ITEM
+
+    ; store item
     inc item_number                                 ; If this tile is an item, store its details
     ldx item_number                                 ;
     lda screen_address_low                          ;
@@ -2789,6 +2791,7 @@ not_bathroom_toilet
 leave_with_initial_x_and_y
     ldx x1                                          ;
     ldy y                                           ;
+leave21
     rts                                             ;
 
 tile_is_item                                        ; If the tile is an item,
@@ -2796,6 +2799,8 @@ tile_is_item                                        ; If the tile is an item,
     tax                                             ;
     lda items_colour,X                              ;
     beq leave_with_initial_x_and_y                  ; has it been collected?
+
+    ; collect item
     lda #0                                          ;
     sta items_colour,X                              ; If not, remove it from the screen
     stx item_number                                 ;
@@ -2809,6 +2814,11 @@ tile_is_space
 
 ; ***************************************************************************************
 plot_room_items
+    lda #7                                          ;
+    sta item_loop_counter                           ;
+do_next_item
+    dec item_loop_counter                           ;
+    beq leave21                                     ;
     ldx items_in_room_minus_one                     ;
     bmi leave21                                     ;
     cpx item_number                                 ;
@@ -2820,18 +2830,42 @@ plot_room_items
     lda items_screen_address_high,X                 ;
     sta screen_address_high                         ;
 
+    ; get tile map address
+    lda items_tile_address_low,X                    ;
+    sta tile_address_low2                           ;
+    lda items_tile_address_high,X                   ;
+    sta tile_address_high2                          ;
+
+    ; calculate item colour
     ldy items_colour,X                              ;
-    beq item_collected1                             ;
+    beq item_collected                              ;
     dec items_colour,X                              ;
     bne skip_reset_colour                           ;
     lda #3                                          ;
     sta items_colour,X                              ;
 skip_reset_colour
     ldy items_colour,X                              ;
-item_collected1
     lda colour_mask_values,Y                        ;
     sta sprite_colour                               ;
 
+    ldy #0                                          ;
+    sty skip_plot_item                              ;
+    lda (tile_address_low2),Y                       ;
+    and #%11110000                                  ;
+    cmp #$80                                        ; don't draw the item if it is currently an enemy tile
+    bne +                                           ;
+    inc skip_plot_item                              ;
++
+    ; store in tile map
+    txa                                             ;
+    ora #$d0                                        ; set top three bits to indicate an item
+    sta (tile_address_low2),Y                       ;
+
+    lda skip_plot_item                              ;
+    bne skip_item                                   ;
+
+    ; plot item
+do_plot_item
     ldy #$0f                                        ; loop counter
 plot_item_loop
     lda room_item_sprite,Y                          ;
@@ -2840,21 +2874,26 @@ plot_item_loop
     dey                                             ;
     bpl plot_item_loop                              ;
 
-    lda items_tile_address_low,X                    ;
-    sta tile_address_low2                           ;
-    lda items_tile_address_high,X                   ;
-    sta tile_address_high2                          ;
-    txa                                             ;
-    ora #$e0                                        ;
-    ldy #0                                          ;
-    sta (tile_address2),Y                           ;
 skip_item
     dec item_number                                 ;
-    bpl leave21                                     ;
+    bpl do_next_item                                ;
     lda #$0b                                        ; maximum number of items in a room
     sta item_number                                 ;
-leave21
-    rts                                             ;
+    jmp do_next_item                                ;
+
+; ***************************************************************************************
+item_collected
+    lda (tile_address_low2),Y                       ;
+    and #%11110000                                  ; get the broad type
+    cmp #$d0                                        ;
+    bne skip_item                                   ; already gone, skip item
+
+    ; time to plot a blank space for the item
+    ldy #0                                          ;
+    sty sprite_colour                               ; colour 0 since we've taken it
+    lda #$80                                        ; replace item with empty space
+    sta (tile_address_low2),Y                       ;
+    jmp do_plot_item                                ; if (was an item) then plot
 
 ; ***************************************************************************************
 consider_slope_effect
@@ -3418,6 +3457,22 @@ send_to_sound_chip
     rts                                                 ;
 
 ; ***************************************************************************************
+; tile_table is a 32x16 byte array, one byte for each tile in the playfield:
+;
+;     $80       Empty space
+;     $81 + N   Enemy N     (0 <= N < 8)
+;     $88       Arrow
+;     $01       Platform
+;     $02       Wall
+;     $03       Slope
+;     $04       Conveyor
+;     $C5       Deadly
+;     $D0 + N   Item N      (0 <= N < 12)
+;
+; This can be interpreted as the top four bits are the broad tile type,
+; and the bottom 4 bits are the index within that type
+;
+; ***************************************************************************************
 tile_table
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -3487,9 +3542,6 @@ sprite_arrow_right
 ; ***************************************************************************************
 unpacked_conveyor_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-    !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-
-unpacked_background_sprite
     !byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 ; ***************************************************************************************
@@ -3760,30 +3812,6 @@ next_index
     !byte 1, 2, 0
 colour_array
     !byte $f0, $ff, $0f
-
-; ***************************************************************************************
-arrow_timers_table
-    ;      0    1    2    3    4
-    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
-
-; ***************************************************************************************
-palette_changes
-    !byte $ff                                       ; row 0
-    !byte $ff                                       ; row 1
-    !byte $ff                                       ; row 2
-    !byte $ff                                       ; row 3
-    !byte $ff                                       ; row 4
-    !byte $ff                                       ; row 5
-    !byte $ff                                       ; row 6
-    !byte $ff                                       ; row 7
-    !byte $ff                                       ; row 8
-    !byte $ff                                       ; row 9
-    !byte $ff                                       ; row 10
-    !byte $ff                                       ; row 11
-    !byte $ff                                       ; row 12
-    !byte $ff                                       ; row 13
-    !byte $ff                                       ; row 14
-    !byte $ff                                       ; row 15
 
 ; ***************************************************************************************
 start_of_palettes
