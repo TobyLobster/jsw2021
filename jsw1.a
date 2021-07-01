@@ -297,7 +297,9 @@ items_colour9                                       = $48
 items_colour10                                      = $49
 items_colour11                                      = $4a
 
-; $4b - $4c [unused]
+replay_timer                                        = $4b
+
+; $4c [unused]
 
 ; initialised values
 life_y                                              = $4d
@@ -514,14 +516,7 @@ initialise_room
     jsr initialise_enemies                          ;
     jsr initialise_arrows                           ;
     jsr calculate_screen_address_of_conveyor        ;
-
-    jsr plot_enemies                                ;
-
-    ; wait for vsync
-;    lda vsync_counter                               ;
-;-
-;    cmp vsync_counter                               ;
-;    beq -
+    jsr plot_enemies                                ; [not really needed, but may be useful for screenshots]
     rts                                             ;
 
 ; ***************************************************************************************
@@ -1776,8 +1771,8 @@ plot_player_sprite_outer_loop
     sec                                             ;
 plot_player_sprite_loop
 plot_player_sprite_mode
-    bcc restore_background                          ;
-;     also     BCS restore_background
+    bcc restore_background                          ; also BCS restore_background [self modifying code]
+
 copy_background                                     ; If BCC, copy screen memory to buffer
     lda (screen_address_low),Y                      ;
 sprite_address_for_copy_and_low = * + 1
@@ -2134,7 +2129,7 @@ not_slope1
     jsr update_animated_scenery                     ;
 
 -
-    lda vsync_counter                               ;
+    lda vsync_counter                               ; wait most of the frames
     cmp #2                                          ;
     bcc -
 
@@ -2144,11 +2139,11 @@ not_slope1
 -
     lda vsync_counter                               ;
     cmp #3                                          ;
-    bcc -
-
+    bcc -                                           ;
     lda #0                                          ;
     sta vsync_counter                               ;
 
+    ; restore cached background to screen from cache, thereby unplotting the player
     lda #$b0                                        ; 'BCS' opcode ; Set to restore background
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
@@ -2160,15 +2155,21 @@ not_slope1
     jsr plot_or_unplot_previous_player_sprite       ; Unplot player
 
 skip_unplot
-    jsr plot_enemies                                ; draw enemies that overlap player
-    jsr update_arrows                               ;
-    jsr plot_room_items                             ;
-    jsr plot_room_items                             ;
-    jsr plot_room_items                             ;
-    jsr plot_room_items                             ;
-    jsr plot_room_items                             ;
+    jsr plot_enemies                                ; draw enemies that overlap with the player tiles
+                                                    ; this is done separately from the other enemies
+                                                    ; so we minimise the time between unplot
+                                                    ; and plot of the player, while still capturing
+                                                    ; collision information with the enemies that
+                                                    ; we can collide with.
+    ; Update arrows and room items
+    jsr update_arrows
+    jsr plot_room_items
+    jsr plot_room_items
+    jsr plot_room_items
+    jsr plot_room_items
+    jsr plot_room_items
 
-    ; plot player
+    ; copy background tiles at player position on screen to cache, and plot player
     lda #$90                                        ; 'BCC' opcode ; Set to copy background
     sta plot_player_sprite_mode                     ;
     dec player_not_plotted                          ;
@@ -2181,18 +2182,22 @@ skip_unplot
     stx player_y                                    ;
     ldx player_y                                    ;
     bmi skip_plot                                   ;
-    jsr plot_or_unplot_player_sprite                ; Plot player
+    jsr plot_or_unplot_player_sprite                ; Copy screen background to cache, plot player
 
 skip_plot
 
     ldx #0                                          ; plot and unplot player as normal
     stx player_not_plotted                          ;
+
+    ; check for collisions with enemies, arrows, items
     jsr calculate_tile_address_for_enemy_X          ;
     jsr check_for_player_touching_tiles             ;
+
     jsr check_for_player_leaving_room               ;
     lda player_killed                               ;
     beq leave13                                     ;
 
+    ; death
     ldx #4                                          ; player dying sounds
     jsr start_sound_x                               ;
     ldx #5                                          ;
@@ -2697,9 +2702,8 @@ leave19
 ; ***************************************************************************************
 check_for_player_touching_tiles
     lda player_y_in_enemies                         ;
-    ora #7                                          ;
-    sec                                             ;
-    sbc player_y_in_enemies                         ;
+    and #7                                          ;
+    eor #7                                          ;
     sta rows_to_check                               ;
     ldy #$20                                        ; Consider tile at top left of player
     lda #$3d                                        ;
@@ -4190,6 +4194,7 @@ reset_game
     ldy #0                                          ;
     jsr start_tune_y                                ; Start 'If I Were a Rich Man'
     lda #0                                          ;
+    sta replay_timer                                ;
     sta time_fraction                               ;
     sta player_entered_room_falling_too_far         ;
     sta items_collected_low                         ;
@@ -4299,9 +4304,9 @@ leave4
 
 ; ***************************************************************************************
 mark_enemies_that_overlap_player                    ; Called with tile_address_low1 of the player
-    ldy #$20                                        ;
+    ldy #0                                          ;
     jsr check_tiles_for_enemy                       ;
-    ldy #$40                                        ;
+    ldy #$20                                        ;
     jsr check_tiles_for_enemy                       ;
     lda player_y_in_enemies                         ;
     and #7                                          ;
@@ -4318,7 +4323,7 @@ check_tile_for_enemy
     and #$0f                                        ;
     tax                                             ;
     lda #2                                          ;
-    sta enemies_need_replot,X                       ; Set enemy to not need unplotting, killing player
+    sta enemies_need_replot,X                       ; Set enemy to not need plotting once (enemy overlaps player, will be plotted slightly later that the other enemies)
 leave5
     rts                                             ;
 
@@ -4677,6 +4682,7 @@ real_entry_point
 new_life_loop
     jsr initialise_room                             ;
 game_loop
+    inc replay_timer                                ;
     jsr update_lives                                ;
     jsr update_game                                 ;
     jsr check_for_game_exit                         ;
@@ -5085,6 +5091,7 @@ scroll_the_message
     ldy #0                                          ;
     sty scrolltext_offset                           ;
 title_screen_loop
+    inc replay_timer                                ;
     lda title_delay_before_restart                  ; are we delaying?
     beq +                                           ;
     dec title_delay_before_restart                  ;
@@ -5960,6 +5967,8 @@ enemies_previous_tile_address_low
 enemies_previous_speed
     !byte $d0, $fe, $00, $00, $fe, $02, $fe, $a5, $ec
 
+; 1 = plot (normal)
+; 2 = skip plot (once)
 enemies_need_replot
     !byte $02, $ff, $ff, $00, $ff, $ff, $ff, $7c, $0a
 
@@ -6016,6 +6025,9 @@ entry_point
     lda #$c8                                        ; Write BREAK/ESCAPE effect
     ldx #3                                          ; Normal ESCAPE effect, Memory cleared on next reset
     jsr OSBYTE                                      ;
+
+    lda #0                                          ;
+    sta replay_timer                                ;
 
     sei                                             ;
     ldx #$ff                                        ; } reset the stack pointer
