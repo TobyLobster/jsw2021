@@ -2670,7 +2670,7 @@ Room 39
             Sprite: 36
             Initial Pos: (19,10)
             Min Extent: 9
-            Max Extent: 20
+            Max Extent: 18
             Initial Dir: left
             Speed: 2
             Logical colour: 2
