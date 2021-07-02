@@ -430,7 +430,7 @@ player_not_plotted                                  = $9c       ; 2 = don't plot
                                                                 ; 1 = don't unplot
                                                                 ; 0 = normal
 out_of_time                                         = $9d
-house_clear                                         = $9e
+house_clear                                         = $9e       ; 0 = not done; 1 = house cleared; $ff = dashing for toilet
 player_rope_pixel                                   = $9f
 
 title_text_source_low                               = $a0
@@ -605,6 +605,21 @@ null_routine
     rts                                             ;
 
 ; ***************************************************************************************
+get_one_bit_of_room_data
+    ldx #1                                          ;
+    bne get_x_bits_of_room_data                     ; ALWAYS branch
+
+; ***************************************************************************************
+get_five_bits_of_room_data
+    ldx #5                                          ;
+    bne get_x_bits_of_room_data                     ; ALWAYS branch
+
+; ***************************************************************************************
+get_four_bits_of_room_data
+    ldx #4                                          ;
+    ; fall through...
+
+; ***************************************************************************************
 get_x_bits_of_room_data
     sty tmp                                         ;
     lda #0                                          ;
@@ -648,11 +663,9 @@ set_tile_type
 
 ; ***************************************************************************************
 set_tile_x_and_y
-    ldx #5                                          ; Get five bits of room data for x position
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for x position
     sta tile_x                                      ;
-    ldx #4                                          ; Get four bits of room data for y position
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for y position
     sta tile_y                                      ;
     rts                                             ;
 
@@ -683,15 +696,12 @@ add_diagonal_line_of_tiles
 
 ; ***************************************************************************************
 add_series_of_tiles
-    ldx #4                                          ;
-    jsr get_x_bits_of_room_data                     ; Get four bits of room data for number of tiles
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for number of tiles
     sta length1                                     ;
 add_series_of_tiles_loop                            ; For each tile,
-    ldx #5                                          ;
-    jsr get_x_bits_of_room_data                     ; Get five bits of room data for x co-ordinate
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for x co-ordinate
     sta tile_x                                      ;
-    ldx #4                                          ;
-    jsr get_x_bits_of_room_data                     ; Get four bits of room data for y co-ordinate
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for y co-ordinate
     sta tile_y                                      ;
     jsr add_background_tile                         ;
     dec length1                                     ;
@@ -704,15 +714,13 @@ reset_tile_xy
 
 ; ***************************************************************************************
 add_block_of_tiles
-    ldx #5                                          ;
-    jsr get_x_bits_of_room_data                     ; Get five bits of room data for width of block
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for width of block
     sta width                                       ;
     lda tile_x                                      ;
     sta start_x                                     ;
     lda tile_y                                      ;
     sta height1                                     ;
-    ldx #4                                          ;
-    jsr get_x_bits_of_room_data                     ; Get four bits of room data for y end
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for y end
     sta tile_y                                      ;
     lda height1                                     ;
     sec                                             ;
@@ -757,8 +765,7 @@ add_triangle_of_tiles
     sta previous_x                                  ;
     lda tile_y                                      ;
     sta previous_y1                                 ;
-    ldx #1                                          ;
-    jsr get_x_bits_of_room_data                     ; Get one bit of room data for triangle direction
+    jsr get_one_bit_of_room_data                    ; Get one bit of room data for triangle direction
     ldx #1                                          ;
     stx do_triangle_ends                            ;
     sta triangle_direction                          ;
@@ -767,8 +774,7 @@ add_triangle_of_tiles
     ldx #$ff                                        ;
 skip_x_inversion
     stx x_skip                                      ;
-    ldx #4                                          ;
-    jsr get_x_bits_of_room_data                     ; Get four bits of room data for triangle height
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for triangle height
     sta row_length                                  ;
     sta triangle_length                             ;
     sec                                             ;
@@ -865,8 +871,7 @@ add_line_of_tiles
     stx direction_base                              ;
     txa                                             ;
     bmi use_previous_direction                      ;
-    ldx #1                                          ;
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_one_bit_of_room_data                    ;
     sta direction                                   ;
     tya                                             ;
     tax                                             ;
@@ -2234,15 +2239,13 @@ initialise_enemies_loop                             ; For each enemy,
     ldx #5                                          ; Get five bits of room data for maximum position
     jsr get_x_bits_of_room_data_multiplied_by_eight ;
     sta enemies_maximum,Y                           ;
-    ldx #1                                          ; Get one bit of room data for direction
-    jsr get_x_bits_of_room_data                     ; (0 = horizontal, 1 = vertical)
+    jsr get_one_bit_of_room_data                    ; direction (0 = horizontal, 1 = vertical)
     asl                                             ;
     beq not_zero                                    ;
     lda #$ff                                        ;
 not_zero
     sta enemies_direction,Y                         ;
-    ldx #1                                          ; Get one bit of room data for direction
-    jsr get_x_bits_of_room_data                     ; (0 = left/up, 1=right/down)
+    jsr get_one_bit_of_room_data                    ; direction (0 = left/up, 1=right/down)
     sta invert                                      ;
     ldx #3                                          ; Get three bits of room data for speed
     jsr get_x_bits_of_room_data                     ;
@@ -3024,15 +3027,13 @@ player_at_left_edge_of_room
 
 ; ***************************************************************************************
 initialise_room_items_and_exits
-    ldx #4                                          ; Get four bits of room data for number of items in room
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for number of items in room
     tay                                             ;
     dey                                             ;
     sty items_in_room_minus_one                     ;
     bmi no_items                                    ;
 set_items_loop                                      ; For each item,
-    ldx #1                                          ; get one bit of room data for its state
-    jsr get_x_bits_of_room_data                     ; (0 = collected, 1 = uncollected)
+    jsr get_one_bit_of_room_data                    ; (0 = collected, 1 = uncollected)
     beq +
     lda cycle_item_colours,Y                        ;
 +
@@ -3048,18 +3049,15 @@ set_exits_loop                                      ; For each of four direction
     iny                                             ;
     cpy #4                                          ;
     bne set_exits_loop                              ;
-    ldx #1                                          ; Get one bit of room data for conveyor direction
-    jsr get_x_bits_of_room_data                     ; (0 = left, 1 = right)
+    jsr get_one_bit_of_room_data                    ; conveyor direction (0 = left, 1 = right)
     asl                                             ;
     asl                                             ;
     sec                                             ;
     sbc #2                                          ;
     sta conveyor_direction                          ;
-    ldx #1                                          ; Get one bit of room data for slope direction
-    jsr get_x_bits_of_room_data                     ; (0 = /, 1 = \)
+    jsr get_one_bit_of_room_data                    ; slope direction (0 = /, 1 = \)
     sta slope_direction                             ;
-    ldx #1                                          ; Get one bit of room data for rope
-    jsr get_x_bits_of_room_data                     ; (1 = room contains rope)
+    jsr get_one_bit_of_room_data                    ; (1 = room contains rope)
     sta room_contains_rope                          ;
     rts                                             ;
 
@@ -3115,8 +3113,7 @@ mark_all_items_as_uncollected_loop
 reset_items_room_loop
     ldx room                                        ;
     jsr calculate_room_data_address                 ;
-    ldx #4                                          ;
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_four_bits_of_room_data                  ;
     sta items_in_room_minus_one                     ;
     dec items_in_room_minus_one                     ;
     jsr remove_collected_items_from_room_data       ;
@@ -4289,8 +4286,8 @@ check_for_pillow
     lda #0                                          ;
     sta enemies_colour + 1                          ; Hide Maria if all items have been collected
     lda player_x_in_enemies                         ;
-    cmp #$18                                        ;
-    bne leave4                                      ; Is the player about to touch the pillow?
+    cmp #$38                                        ;
+    bcs leave4                                      ; Is the player about to touch the pillow?
     lda #$ff                                        ; If so, make them dash for the toilet
     sta house_clear                                 ;
     rts                                             ;
@@ -4530,16 +4527,13 @@ set_screen_colours_loop
 
     jsr clear_room_palette_changes                  ;
 
-    ldx #4
-    jsr get_x_bits_of_room_data                     ; Get four bits of room data for number of palette changes
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for number of palette changes
     beq +                                           ;
     sta palette_loop_counter                        ;
 -
-    ldx #4                                          ;
-    jsr get_x_bits_of_room_data                     ; Get four bits of room data for row of palette change
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for row of palette change
     tay
-    ldx #5                                          ;
-    jsr get_x_bits_of_room_data                     ; Get five bits of room data for palette change value
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for palette change value
     sta palette_changes,Y                           ;
     dec palette_loop_counter                        ;
     bne -                                           ;
@@ -4548,23 +4542,20 @@ set_screen_colours_loop
     lda #1                                          ; First word is uppercase
     sta start_of_word                               ;
 
-    ldx #4                                          ; Get four bits of room data for position of room title
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for position of room title
     tax
     ldy #$10                                        ;
     jsr set_text_position                           ; TAB to start of room title
 
     ; get title length
-    ldx #5                                          ; Get five bits of room data for title length - 1
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for title length - 1
     clc                                             ;
     adc #1                                          ;
     sta title_length                                ;
 write_room_title_loop
     dec title_length                                ;
     bmi leave6                                      ;
-    ldx #5                                          ; Get five bits of room data for each character of title
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for each character of title
     cmp #$1a                                        ;
     bcs is_non_letter                               ;
     jsr write_letter                                ; $00 to $1a writes "a" to "z"
@@ -4631,12 +4622,10 @@ initialise_arrows_loop
     lda #0                                          ;
     sta arrow_active,Y                              ;
     sta arrow_timer,Y                               ;
-    ldx #1                                          ; Get one bit of room data for presence of arrow
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_one_bit_of_room_data                    ; Get one bit of room data for presence of arrow
     tax                                             ;
     beq consider_next_arrow2                        ; If arrow present
-    ldx #4                                          ; Get four bits of room data for arrow_y
-    jsr get_x_bits_of_room_data                     ;
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for arrow_y
     tax                                             ;
     beq consider_next_arrow2                        ;
     asl                                             ;
