@@ -13,17 +13,7 @@ player_start_y                                      = 13 * 8    ;
 ; Temp start
 ;player_start_room                                   = 51       ;
 ;player_start_x                                      = 1 * 8    ; must be even!
-;qplayer_start_y                                      = 10 * 8    ;
-
-; Tree Root
-;player_start_room                                   = 60           ;
-;player_start_x                                      = 23 * 8 - 2   ; must be even!
-;player_start_y                                      = 11 * 8       ;
-
-; West of Kitchen
-;player_start_room                                   = 34           ;
-;player_start_x                                      = 11 * 8       ; must be even!
-;player_start_y                                      = 1 * 8        ;
+;player_start_y                                      = 10 * 8   ;
 
 charA          = 0
 charT          = 17
@@ -643,6 +633,14 @@ bits_still_remaining
     rts                                             ;
 
 ; ***************************************************************************************
+get_x_bits_of_room_data_multiplied_by_eight
+    jsr get_x_bits_of_room_data                     ;
+    asl                                             ;
+    asl                                             ;
+    asl                                             ;
+    rts                                             ;
+
+; ***************************************************************************************
 background_initialisation_routines_address_table
     !word set_tile_type                             ; 0 00
     !word set_tile_x_and_y                          ; 1 01
@@ -928,6 +926,201 @@ skip_last
     rts                                             ;
 
 ; ***************************************************************************************
+initialise_enemies
+    ldx #3                                          ;
+    jsr get_x_bits_of_room_data                     ; Get three bits of room data for number of enemies
+    sta enemies_on_screen                           ;
+    tay                                             ;
+    beq no_enemies                                  ;
+initialise_enemies_loop                             ; For each enemy,
+    ldx #6                                          ; Get six bits of room data for sprite
+    jsr get_x_bits_of_room_data                     ;
+    sta enemies_sprite,Y                            ;
+    ldx #5                                          ; Get five bits of room data for x position
+    jsr get_x_bits_of_room_data_multiplied_by_eight ;
+    sta enemies_x,Y                                 ;
+    ldx #4                                          ; Get four bits of room data for y position
+    jsr get_x_bits_of_room_data_multiplied_by_eight ;
+    sta enemies_y,Y                                 ;
+    ldx #5                                          ; Get five bits of room data for minimum position
+    jsr get_x_bits_of_room_data_multiplied_by_eight ;
+    sta enemies_minimum,Y                           ;
+    ldx #5                                          ; Get five bits of room data for maximum position
+    jsr get_x_bits_of_room_data_multiplied_by_eight ;
+    sta enemies_maximum,Y                           ;
+    jsr get_one_bit_of_room_data                    ; direction (0 = horizontal, 1 = vertical)
+    asl                                             ;
+    beq not_zero                                    ;
+    lda #$ff                                        ;
+not_zero
+    sta enemies_direction,Y                         ;
+    jsr get_one_bit_of_room_data                    ; direction (0 = left/up, 1=right/down)
+    sta invert                                      ;
+    ldx #3                                          ; Get three bits of room data for speed
+    jsr get_x_bits_of_room_data                     ;
+    sta enemies_speed,Y                             ;
+    ldx invert                                      ;
+    bne skip_inversion5                             ;
+    eor #$ff                                        ;
+    clc                                             ;
+    adc #1                                          ;
+    sta enemies_speed,Y                             ;
+skip_inversion5
+    ldx #2                                          ; Get two bits of room data for colour
+    jsr get_x_bits_of_room_data                     ;
+    sta enemies_colour,Y                            ;
+    lda #0                                          ;
+    sta enemies_previous_speed,Y                    ;
+    sta enemies_previous_tile_address_low,Y         ;
+    dey                                             ;
+    bne initialise_enemies_loop                     ;
+no_enemies
+    jmp unpack_enemy_sprites                        ;
+
+; ***************************************************************************************
+initialise_room_items_and_exits
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for number of items in room
+    tay                                             ;
+    dey                                             ;
+    sty items_in_room_minus_one                     ;
+    bmi no_items                                    ;
+set_items_loop                                      ; For each item,
+    jsr get_one_bit_of_room_data                    ; (0 = collected, 1 = uncollected)
+    beq +
+    lda cycle_item_colours,Y                        ;
++
+    sta items_colour,Y                              ;
+    dey                                             ;
+    bpl set_items_loop                              ;
+no_items
+    ldy #0                                          ;
+set_exits_loop                                      ; For each of four directions
+    ldx #6                                          ; get six bits of room data for the room exited to
+    jsr get_x_bits_of_room_data                     ;
+    sta exit_rooms,Y                                ;
+    iny                                             ;
+    cpy #4                                          ;
+    bne set_exits_loop                              ;
+    jsr get_one_bit_of_room_data                    ; conveyor direction (0 = left, 1 = right)
+    asl                                             ;
+    asl                                             ;
+    sec                                             ;
+    sbc #2                                          ;
+    sta conveyor_direction                          ;
+    jsr get_one_bit_of_room_data                    ; slope direction (0 = /, 1 = \)
+    sta slope_direction                             ;
+    jsr get_one_bit_of_room_data                    ; (1 = room contains rope)
+    sta room_contains_rope                          ;
+leave33
+    rts                                             ;
+
+; ***************************************************************************************
+initialise_room_background_tiles_and_title
+    ldy #5                                          ; For each of six tile types
+set_tile_colours_loop
+    ldx #2                                          ;
+    jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour
+    sta background_tiles_colours_fg,Y               ;
+    ldx #2                                          ;
+    jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour (background)
+    sta background_tiles_colours_bg,Y               ;
+    dey                                             ;
+    bpl set_tile_colours_loop                       ;
+
+    ldy #6                                          ; For each of seven tile types
+set_tile_sprites_loop
+    ldx #8                                          ; Get eight bits of room data for each tile sprite
+    jsr get_x_bits_of_room_data                     ;
+    sta background_tiles_sprites,Y                  ;
+    dey                                             ;
+    bpl set_tile_sprites_loop                       ;
+
+    ldy #3                                          ; For each of four screen colours
+set_screen_colours_loop
+    ldx #3                                          ;
+    jsr get_x_bits_of_room_data                     ; Get three bits of room data for each screen colour
+    sta room_palette,Y                              ;
+    dey                                             ;
+    bpl set_screen_colours_loop                     ;
+
+    jsr clear_room_palette_changes                  ;
+
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for number of palette changes
+    beq +                                           ;
+    sta palette_loop_counter                        ;
+-
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for row of palette change
+    tay
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for palette change value
+    sta palette_changes,Y                           ;
+    dec palette_loop_counter                        ;
+    bne -                                           ;
+
++
+    lda #1                                          ; First word is uppercase
+    sta start_of_word                               ;
+
+    jsr get_four_bits_of_room_data                  ; Get four bits of room data for position of room title
+    tax
+    ldy #$10                                        ;
+    jsr set_text_position                           ; TAB to start of room title
+
+    ; get title length
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for title length - 1
+    clc                                             ;
+    adc #1                                          ;
+    sta title_length                                ;
+write_room_title_loop
+    dec title_length                                ;
+    bmi leave33                                     ;
+    jsr get_five_bits_of_room_data                  ; Get five bits of room data for each character of title
+    cmp #$1a                                        ;
+    bcs is_non_letter                               ;
+    jsr write_letter                                ; $00 to $1a writes "a" to "z"
+    jmp write_room_title_loop                       ;
+
+; ***************************************************************************************
+is_non_letter
+    beq is_caps                                     ;
+    cmp #$1c                                        ;
+    bcc is_apostrophe_char                          ;
+    beq is_full_stop_char                           ;
+    cmp #$1e                                        ;
+    bcc is_space_char                               ;
+    beq is_space_char_with_caps                     ;
+is_the
+    lda #$13                                        ; "t" ; $1f writes "The"
+    jsr write_letter                                ;
+    lda #charh                                      ;
+    jsr write_char                                  ;
+    lda #chare                                      ;
+    bne write_char_and_continue                     ; ALWAYS branch
+
+; ***************************************************************************************
+is_caps
+    inc start_of_word                               ;
+    bne write_room_title_loop                       ; ALWAYS branch
+
+; ***************************************************************************************
+is_full_stop_char
+    lda #charFullStop                               ;
+    bne write_char_and_continue                     ; ALWAYS branch
+
+; ***************************************************************************************
+is_apostrophe_char
+    lda #charApostrophe                             ; $1b writes apostrophe
+write_char_and_continue
+    jsr write_char                                  ;
+    jmp write_room_title_loop                       ;
+
+; ***************************************************************************************
+is_space_char_with_caps
+    inc start_of_word                               ; $1e writes " ", resetting case
+is_space_char
+    lda #charSpace                                  ; $1d writes " ", keeping lower case
+    bne write_char_and_continue                     ; ALWAYS branch
+
+; ***************************************************************************************
 add_background_tile
     ldy tile_type                                   ;
     lda background_tiles_sprites,Y                  ;
@@ -1099,12 +1292,12 @@ reflect_rows_loop
 ; ***************************************************************************************
 reverse_each_nybble
     tax                                             ; X = abcdefgh
-    and #$AA                                        ; A = a0c0e0g0
+    and #$aa                                        ; A = a0c0e0g0
     lsr                                             ; A = 0a0c0e0g
     sta temp_reverse                                ; t = 0a0c0e0g
     txa                                             ; A = abcdefgh
     asl                                             ; A = bcdefgh0
-    and #$AA                                        ; A = b0d0f0h0
+    and #$aa                                        ; A = b0d0f0h0
     ora temp_reverse                                ; A = badcfehg
     tax                                             ; X = badcfehg
     and #$33                                        ; A = 00dc00hg
@@ -1138,7 +1331,7 @@ tempY = * + 1
     lda unpacked_byte_two                           ;
     sta (unpacked_sprite_address_low),Y             ; store second of two bytes
     iny                                             ;
-    dex
+    dex                                             ;
     bpl unpack_enemy_sprite_loop                    ;
 
     lda sprite_address_low1                         ;
@@ -1314,12 +1507,6 @@ get_low_nybble
     rts                                             ;
 
 ; ***************************************************************************************
-previous_decompressed_low
-    !byte 255
-previous_decompressed_high
-    !byte 255
-
-; ***************************************************************************************
 decompress_sprite_xa
     cmp previous_decompressed_low                   ;
     bne +                                           ;
@@ -1332,7 +1519,7 @@ decompress_sprite_xa
     stx previous_decompressed_high                  ;
 
     ldy #num_enemy_sprites                          ;
-    sty enemy_sprite_counter                        ; enemy_sprite_counter = 0
+    sty enemy_sprite_counter                        ; Set enemy_sprite_counter
     ldy #0                                          ;
     sty shortcut_table_entry                        ;
 --
@@ -1341,7 +1528,7 @@ decompress_sprite_xa
     cmp #shortcut_interval                          ;
     bcc got_offset                                  ;
 +
-    ldy #shortcut_interval-1
+    ldy #shortcut_interval-1                        ;
 -
     dec enemy_sprite_counter                        ;
     dey                                             ;
@@ -1374,7 +1561,7 @@ got_offset
     sta enemy_sprite_counter                        ;
     ldx #8                                          ;
 +
-    stx size_in_bytes                               ; size_in_bytes = 32
+    stx size_in_bytes                               ; set size_in_bytes (to 8 or 32)
     dex                                             ;
     stx size_in_bytes_minus_one                     ;
 
@@ -1431,8 +1618,8 @@ handle_skip_repeat
     lda is_start_of_sprite                          ;
     bne find_sprite_loop                            ; if (not start of sprite) then branch
     dec decoded                                     ;
-    lda compressed_data_low
-    clc
+    lda compressed_data_low                         ;
+    clc                                             ;
     adc size_in_bytes                               ;
     sta compressed_data_low                         ;
     bcc +                                           ;
@@ -1904,39 +2091,28 @@ check_for_jump
 leave28
     rts                                             ;
 
+animated_rooms
+    !byte 28,10,2,58                                ; first landing, under the roof, nomen luni, entrance to hades
+animated_sprite
+    !byte 122,185,211,92                            ;
+
 ; ***************************************************************************************
 update_animated_scenery
     lda game_timer                                  ;
     and #3                                          ;
     bne leave28                                     ;
-    ldy #255                                        ;
+    ldx #3                                          ;
+-
     lda player_room                                 ;
-    cmp #28                                         ;
-    bne +                                           ; if (not first landing) then branch
-    ldy #122                                        ;
-    sty animated_sprite_to_draw                     ;
-    ldy #0                                          ;
-+
-    cmp #10                                         ; if (not under the roof) then branch
-    bne +                                           ;
-    ldy #185                                        ;
-    sty animated_sprite_to_draw                     ;
-    ldy #1                                          ;
-+
-    cmp #2                                          ; if (not nomen luni) then branch
-    bne +                                           ;
-    ldy #211                                        ;
-    sty animated_sprite_to_draw                     ;
-    ldy #2                                          ;
-+
-    cmp #58                                         ;
-    bne +                                           ;
-    ldy #92                                         ;
-    sty animated_sprite_to_draw                     ;
-    ldy #3                                          ;
-+
-    tya                                             ;
+    cmp animated_rooms,X                            ;
+    beq +                                           ;
+    dex                                             ;
+    bpl -                                           ;
     bmi leave28                                     ;
+
++
+    ldy animated_sprite,X                           ;
+    sty animated_sprite_to_draw                     ;
 
     ; animate_scenery
     lda start_of_animation_offset + 1,Y             ;
@@ -1957,7 +2133,7 @@ scenery_strip_loop
     beq +
     ldx #2                                          ; colours to use
     ldy #1                                          ;
-    bne ++
+    bne ++                                          ;
 +
     ldx #1                                          ; opposite colours to use
     ldy #2                                          ;
@@ -2051,6 +2227,135 @@ entrance_to_hades
     !byte 14, 2, 1
     !byte 30, 2, 2
 end_of_scenery
+
+; ***************************************************************************************
+cycle_item_colours
+    !byte 1,2,3,1,2,3,1,2,3,1,2,3
+
+; ***************************************************************************************
+arrow_timers_table
+    ;      0    1    2    3    4
+    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
+
+; ***************************************************************************************
+direction_tile_offsets_one
+    !byte $1f, $22, $00, $60
+
+direction_tile_offsets_two
+    !byte $3f, $42, $01, $61
+
+
+; ***************************************************************************************
+wipe_tile_table
+    ldy #0                                          ;
+    lda #$80                                        ;
+wipe_tile_table_loop
+    sta tile_table,Y                                ;
+    sta tile_table + $100,Y                         ;
+    iny                                             ;
+    bne wipe_tile_table_loop                        ;
+    rts                                             ;
+
+; ***************************************************************************************
+calculate_tile_address_for_enemy_X
+    lda #0                                          ;
+    sta tile_address_high1                          ;
+    lda enemies_y,X                                 ;
+    sec                                             ;
+    sbc #8                                          ;
+    bcs +                                           ;
+    dec tile_address_high1                          ;
++
+    asl                                             ;
+    asl                                             ;
+    rol tile_address_high1                          ;
+    and #$e0                                        ;
+    sta tmp                                         ;
+    lda enemies_x,X                                 ;
+    lsr                                             ;
+    lsr                                             ;
+    lsr                                             ;
+    clc                                             ;
+    adc tmp                                         ;
+    clc                                             ;
+    adc #<tile_table                                ;
+    sta tile_address_low1                           ;
+
+    lda tile_address_high1                          ;
+    adc #>tile_table                                ;
+    sta tile_address_high1                          ;
+
+    ; return with the low byte in the accumulator
+    lda tile_address_low1                           ;
+    rts                                             ;
+
+; ***************************************************************************************
+set_tile_table_for_background
+    ldy #0                                          ;
+    sty tile_address_high1                          ;
+    lda #$0f                                        ;
+    sec                                             ;
+    sbc tile_y                                      ;
+    asl                                             ;
+    asl                                             ; tile_address = tile_table + (15-tile_y) * 32 + tile_x
+    asl                                             ;
+    asl                                             ;
+    asl                                             ;
+    rol tile_address_high1                          ;
+    adc tile_x                                      ;
+    bcc +                                           ;
+    inc tile_address_high1                          ;
+    clc                                             ;
++
+    adc #<tile_table                                ;
+    sta tile_address_low1                           ;
+    lda tile_address_high1                          ;
+    adc #>tile_table                                ;
+    sta tile_address_high1                          ;
+
+    lda tile_type                                   ;
+    adc #1                                          ;
+    cmp #5                                          ;
+    beq not_item                                    ; if (DEADLY) then store that
+    cmp #6                                          ; store (tile type + 1) in tile_table for PLATFORM, WALL, SLOPE, CONVEYOR
+    bcc set_tile_table                              ;
+    beq scenery                                     ; if (SCENERY) skip else it's ITEM
+
+    ; store item
+    inc item_number                                 ; If this tile is an item, store its details
+    ldx item_number                                 ;
+    lda screen_address_low                          ;
+    sta items_screen_address_low,X                  ;
+    lda screen_address_high                         ;
+    sta items_screen_address_high,X                 ;
+    lda tile_address_low1                           ;
+    sta items_tile_address_low,X                    ;
+    lda tile_address_high1                          ;
+    sta items_tile_address_high,X                   ;
+    txa                                             ;
+    ora #$10                                        ; Mark as item
+not_item
+    ora #$c0                                        ; Mark as not enemy, nor background
+set_tile_table
+    ldy #0                                          ;
+    sta (tile_address_low1),Y                       ;
+scenery
+    rts                                             ;
+
+; ***************************************************************************************
+free_before_nmi = $0d00 - *
+
+!if (* > $0d00) {
+    !error "RTI not in correct position at $0d00", *
+}
+    * = $0d00
+    rti
+
+; ***************************************************************************************
+previous_decompressed_low
+    !byte 255
+previous_decompressed_high
+    !byte 255
 
 ; ***************************************************************************************
 update_game
@@ -2217,181 +2522,6 @@ leave13
     rts                                             ;
 
 ; ***************************************************************************************
-initialise_enemies
-    ldx #3                                          ;
-    jsr get_x_bits_of_room_data                     ; Get three bits of room data for number of enemies
-    sta enemies_on_screen                           ;
-    tay                                             ;
-    beq no_enemies                                  ;
-initialise_enemies_loop                             ; For each enemy,
-    ldx #6                                          ; Get six bits of room data for sprite
-    jsr get_x_bits_of_room_data                     ;
-    sta enemies_sprite,Y                            ;
-    ldx #5                                          ; Get five bits of room data for x position
-    jsr get_x_bits_of_room_data_multiplied_by_eight ;
-    sta enemies_x,Y                                 ;
-    ldx #4                                          ; Get four bits of room data for y position
-    jsr get_x_bits_of_room_data_multiplied_by_eight ;
-    sta enemies_y,Y                                 ;
-    ldx #5                                          ; Get five bits of room data for minimum position
-    jsr get_x_bits_of_room_data_multiplied_by_eight ;
-    sta enemies_minimum,Y                           ;
-    ldx #5                                          ; Get five bits of room data for maximum position
-    jsr get_x_bits_of_room_data_multiplied_by_eight ;
-    sta enemies_maximum,Y                           ;
-    jsr get_one_bit_of_room_data                    ; direction (0 = horizontal, 1 = vertical)
-    asl                                             ;
-    beq not_zero                                    ;
-    lda #$ff                                        ;
-not_zero
-    sta enemies_direction,Y                         ;
-    jsr get_one_bit_of_room_data                    ; direction (0 = left/up, 1=right/down)
-    sta invert                                      ;
-    ldx #3                                          ; Get three bits of room data for speed
-    jsr get_x_bits_of_room_data                     ;
-    sta enemies_speed,Y                             ;
-    ldx invert                                      ;
-    bne skip_inversion5                             ;
-    eor #$ff                                        ;
-    clc                                             ;
-    adc #1                                          ;
-    sta enemies_speed,Y                             ;
-skip_inversion5
-    ldx #2                                          ; Get two bits of room data for colour
-    jsr get_x_bits_of_room_data                     ;
-    sta enemies_colour,Y                            ;
-    lda #0                                          ;
-    sta enemies_previous_speed,Y                    ;
-    sta enemies_previous_tile_address_low,Y         ;
-    dey                                             ;
-    bne initialise_enemies_loop                     ;
-no_enemies
-    jmp unpack_enemy_sprites                        ;
-
-; ***************************************************************************************
-get_x_bits_of_room_data_multiplied_by_eight
-    jsr get_x_bits_of_room_data                     ;
-    asl                                             ;
-    asl                                             ;
-    asl                                             ;
-    rts                                             ;
-
-; ***************************************************************************************
-wipe_tile_table
-    ldy #0                                          ;
-    lda #$80                                        ;
-wipe_tile_table_loop
-    sta tile_table,Y                                ;
-    sta tile_table + $100,Y                         ;
-    iny                                             ;
-    bne wipe_tile_table_loop                        ;
-    rts                                             ;
-
-; ***************************************************************************************
-calculate_tile_address_for_enemy_X
-    lda #0                                          ;
-    sta tile_address_high1                          ;
-    lda enemies_y,X                                 ;
-    sec                                             ;
-    sbc #8                                          ;
-    bcs +                                           ;
-    dec tile_address_high1                          ;
-+
-    asl                                             ;
-    asl                                             ;
-    rol tile_address_high1                          ;
-    and #$e0                                        ;
-    sta tmp                                         ;
-    lda enemies_x,X                                 ;
-    lsr                                             ;
-    lsr                                             ;
-    lsr                                             ;
-    clc                                             ;
-    adc tmp                                         ;
-    clc                                             ;
-    adc #<tile_table                                ;
-    sta tile_address_low1                           ;
-
-    lda tile_address_high1                          ;
-    adc #>tile_table                                ;
-    sta tile_address_high1                          ;
-
-    ; return with the low byte in the accumulator
-    lda tile_address_low1                           ;
-    rts                                             ;
-
-cycle_item_colours
-    !byte 1,2,3,1,2,3,1,2,3,1,2,3
-
-; ***************************************************************************************
-arrow_timers_table
-    ;      0    1    2    3    4
-    !byte $d0, $16, $1e, $26, $7f                   ; [Third value unused]
-
-
-; ***************************************************************************************
-free_before_nmi = $0d00 - *
-
-!if (* > $0d00) {
-    !error "RTI not in correct position at $0d00", *
-}
-    * = $0d00
-    rti
-
-; ***************************************************************************************
-set_tile_table_for_background
-    ldy #0                                          ;
-    sty tile_address_high1                          ;
-    lda #$0f                                        ;
-    sec                                             ;
-    sbc tile_y                                      ;
-    asl                                             ;
-    asl                                             ; tile_address = tile_table + (15-tile_y) * 32 + tile_x
-    asl                                             ;
-    asl                                             ;
-    asl                                             ;
-    rol tile_address_high1                          ;
-    adc tile_x                                      ;
-    bcc +                                           ;
-    inc tile_address_high1                          ;
-    clc                                             ;
-+
-    adc #<tile_table                                ;
-    sta tile_address_low1                           ;
-    lda tile_address_high1                          ;
-    adc #>tile_table                                ;
-    sta tile_address_high1                          ;
-
-    lda tile_type                                   ;
-    adc #1                                          ;
-    cmp #5                                          ;
-    beq not_item                                    ; if (DEADLY) then store that
-    cmp #6                                          ; store (tile type + 1) in tile_table for PLATFORM, WALL, SLOPE, CONVEYOR
-    bcc set_tile_table                              ;
-    beq scenery                                     ; if (SCENERY) skip else it's ITEM
-
-    ; store item
-    inc item_number                                 ; If this tile is an item, store its details
-    ldx item_number                                 ;
-    lda screen_address_low                          ;
-    sta items_screen_address_low,X                  ;
-    lda screen_address_high                         ;
-    sta items_screen_address_high,X                 ;
-    lda tile_address_low1                           ;
-    sta items_tile_address_low,X                    ;
-    lda tile_address_high1                          ;
-    sta items_tile_address_high,X                   ;
-    txa                                             ;
-    ora #$10                                        ; Mark as item
-not_item
-    ora #$c0                                        ; Mark as not enemy, nor background
-set_tile_table
-    ldy #0                                          ;
-    sta (tile_address_low1),Y                       ;
-scenery
-    rts                                             ;
-
-; ***************************************************************************************
 consider_tiles_under_player                         ; There are two tiles beneath the player's feet ; one
     ldx slope_direction                             ; which may have a slope, and one which does not
     ldy slope_tile_offsets,X                        ;
@@ -2551,13 +2681,6 @@ leave17
     rts                                             ;
 
 ; ***************************************************************************************
-direction_tile_offsets_one
-    !byte $1f, $22, $00, $60
-
-direction_tile_offsets_two
-    !byte $3f, $42, $01, $61
-
-; ***************************************************************************************
 plot_enemy
     lda enemies_direction,Y                         ;
     beq enemy_moving_horizontally2                  ;
@@ -2629,6 +2752,7 @@ into_plot_sprite_with_skip
     ldx sprite_size_in_bytes                        ;
     jmp plot_sprite_skipping_first_column           ;
 
+; ***************************************************************************************
 check_player_move_for_walls
     ldx #0                                          ; player
     stx walls                                       ;
@@ -3025,41 +3149,6 @@ player_at_left_edge_of_room
     lda #$f0                                        ; new position on right edge of next screen
     bne store_new_x                                 ; ALWAYs branch
 
-; ***************************************************************************************
-initialise_room_items_and_exits
-    jsr get_four_bits_of_room_data                  ; Get four bits of room data for number of items in room
-    tay                                             ;
-    dey                                             ;
-    sty items_in_room_minus_one                     ;
-    bmi no_items                                    ;
-set_items_loop                                      ; For each item,
-    jsr get_one_bit_of_room_data                    ; (0 = collected, 1 = uncollected)
-    beq +
-    lda cycle_item_colours,Y                        ;
-+
-    sta items_colour,Y                              ;
-    dey                                             ;
-    bpl set_items_loop                              ;
-no_items
-    ldy #0                                          ;
-set_exits_loop                                      ; For each of four directions
-    ldx #6                                          ; get six bits of room data for the room exited to
-    jsr get_x_bits_of_room_data                     ;
-    sta exit_rooms,Y                                ;
-    iny                                             ;
-    cpy #4                                          ;
-    bne set_exits_loop                              ;
-    jsr get_one_bit_of_room_data                    ; conveyor direction (0 = left, 1 = right)
-    asl                                             ;
-    asl                                             ;
-    sec                                             ;
-    sbc #2                                          ;
-    sta conveyor_direction                          ;
-    jsr get_one_bit_of_room_data                    ; slope direction (0 = /, 1 = \)
-    sta slope_direction                             ;
-    jsr get_one_bit_of_room_data                    ; (1 = room contains rope)
-    sta room_contains_rope                          ;
-    rts                                             ;
 
 ; ***************************************************************************************
 remove_collected_items_from_room_data
@@ -4400,6 +4489,7 @@ arrow_still_active
     sta arrow_active,Y                              ;
     jmp consider_next_arrow1                        ;
 
+; ***************************************************************************************
 plot_arrow
     sty arrow                                       ;
     lda arrow_x,Y                                   ;
@@ -4496,111 +4586,6 @@ skip_floor3
 leave6
     rts                                             ;
 
-; ***************************************************************************************
-initialise_room_background_tiles_and_title
-    ldy #5                                          ; For each of six tile types
-set_tile_colours_loop
-    ldx #2                                          ;
-    jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour
-    sta background_tiles_colours_fg,Y               ;
-    ldx #2                                          ;
-    jsr get_x_bits_of_room_data                     ; Get two bits of room data for each tile colour (background)
-    sta background_tiles_colours_bg,Y               ;
-    dey                                             ;
-    bpl set_tile_colours_loop                       ;
-
-    ldy #6                                          ; For each of seven tile types
-set_tile_sprites_loop
-    ldx #8                                          ; Get eight bits of room data for each tile sprite
-    jsr get_x_bits_of_room_data                     ;
-    sta background_tiles_sprites,Y                  ;
-    dey                                             ;
-    bpl set_tile_sprites_loop                       ;
-
-    ldy #3                                          ; For each of four screen colours
-set_screen_colours_loop
-    ldx #3                                          ;
-    jsr get_x_bits_of_room_data                     ; Get three bits of room data for each screen colour
-    sta room_palette,Y                              ;
-    dey                                             ;
-    bpl set_screen_colours_loop                     ;
-
-    jsr clear_room_palette_changes                  ;
-
-    jsr get_four_bits_of_room_data                  ; Get four bits of room data for number of palette changes
-    beq +                                           ;
-    sta palette_loop_counter                        ;
--
-    jsr get_four_bits_of_room_data                  ; Get four bits of room data for row of palette change
-    tay
-    jsr get_five_bits_of_room_data                  ; Get five bits of room data for palette change value
-    sta palette_changes,Y                           ;
-    dec palette_loop_counter                        ;
-    bne -                                           ;
-
-+
-    lda #1                                          ; First word is uppercase
-    sta start_of_word                               ;
-
-    jsr get_four_bits_of_room_data                  ; Get four bits of room data for position of room title
-    tax
-    ldy #$10                                        ;
-    jsr set_text_position                           ; TAB to start of room title
-
-    ; get title length
-    jsr get_five_bits_of_room_data                  ; Get five bits of room data for title length - 1
-    clc                                             ;
-    adc #1                                          ;
-    sta title_length                                ;
-write_room_title_loop
-    dec title_length                                ;
-    bmi leave6                                      ;
-    jsr get_five_bits_of_room_data                  ; Get five bits of room data for each character of title
-    cmp #$1a                                        ;
-    bcs is_non_letter                               ;
-    jsr write_letter                                ; $00 to $1a writes "a" to "z"
-    jmp write_room_title_loop                       ;
-
-; ***************************************************************************************
-is_non_letter
-    beq is_caps                                     ;
-    cmp #$1c                                        ;
-    bcc is_apostrophe_char                          ;
-    beq is_full_stop_char                           ;
-    cmp #$1e                                        ;
-    bcc is_space_char                               ;
-    beq is_space_char_with_caps                     ;
-is_the
-    lda #$13                                        ; "t" ; $1f writes "The"
-    jsr write_letter                                ;
-    lda #charh                                      ;
-    jsr write_char                                  ;
-    lda #chare                                      ;
-    bne write_char_and_continue                     ; ALWAYS branch
-
-; ***************************************************************************************
-is_caps
-    inc start_of_word                               ;
-    bne write_room_title_loop                       ; ALWAYS branch
-
-; ***************************************************************************************
-is_full_stop_char
-    lda #charFullStop                               ;
-    bne write_char_and_continue                     ; ALWAYS branch
-
-; ***************************************************************************************
-is_apostrophe_char
-    lda #charApostrophe                             ; $1b writes apostrophe
-write_char_and_continue
-    jsr write_char                                  ;
-    jmp write_room_title_loop                       ;
-
-; ***************************************************************************************
-is_space_char_with_caps
-    inc start_of_word                               ; $1e writes " ", resetting case
-is_space_char
-    lda #charSpace                                  ; $1d writes " ", keeping lower case
-    bne write_char_and_continue                     ; ALWAYS branch
 
 ; ***************************************************************************************
 write_letter
@@ -5668,7 +5653,7 @@ initial_pitch_high_for_sound_x
 duration_for_sound_x
     !byte 28                ; 0 : jump
     !byte 7                 ; 1 : arrow
-    !byte 20                ; 2 : item collection
+    !byte 15                ; 2 : item collection
     !byte 70                ; 3 : game over
     !byte 10                ; 4 : dying 1
     !byte 10                ; 5 : dying 2
@@ -6229,7 +6214,7 @@ initial_zero_page_values
     !byte $01                                       ; $70  scrolltext_address_low
     !byte $3e                                       ; $71  scrolltext_address_high
     !byte $05                                       ; $72  tile_type
-    !byte $00                                       ; $73  [unused]
+    !byte $00                                       ; $73  conveyor_colour_eor
     !byte $00                                       ; $74  length
     !byte $00                                       ; $75  start_x / previous_x
     !byte $ff                                       ; $76  previous_y / height
@@ -6252,12 +6237,12 @@ initial_zero_page_values
     !byte $02                                       ; $87  enemies_on_screen
     !byte $aa                                       ; $88  unpacked_byte_two
     !byte $85                                       ; $89  sprite_colour
-    !byte $00                                       ; $8a  enemy_to_consider
-    !byte $00                                       ; $8b  player_started_jump
-    !byte $78                                       ; $8c  player_x
-    !byte $42                                       ; $8d  player_y
-    !byte $00                                       ; $8e  player_horizontal_speed
-    !byte $ff                                       ; $8f  [unused]
+    !byte $00                                       ; $8a  sprite_colour_eor
+    !byte $00                                       ; $8b  enemy_to_consider
+    !byte $78                                       ; $8c  player_started_jump
+    !byte $42                                       ; $8d  player_x
+    !byte $00                                       ; $8e  player_y
+    !byte $ff                                       ; $8f  player_horizontal_speed
     !byte $f1                                       ; $90  screen_address_low
     !byte $44                                       ; $91  screen_address_high
     !byte $c0                                       ; $92  sprite_address_low
