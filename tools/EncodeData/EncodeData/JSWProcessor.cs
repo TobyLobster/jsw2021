@@ -512,7 +512,7 @@ namespace EncodeData
                 if (arrow.valid)
                 {
                     processor.AddBits(4, arrow.y);
-                    processor.AddBits(3, arrow.timing);
+                    processor.AddBits(1, arrow.timing);
                 }
             }
 
@@ -1021,7 +1021,7 @@ namespace EncodeData
             {
                 currentRoom.arrows.Add(new Arrow());
             }
-            if (IsMatch(line, @"Arrow *: *Y *(\d+) *, *timing +index *(\d+)", out results))
+            if (IsMatch(line, @"Arrow *: *Y *(\d+) *, *X +index *(\d+)", out results))
             {
                 currentRoom.arrows.Add(new Arrow(int.Parse(results[0]), int.Parse(results[1])));
             }
@@ -1647,7 +1647,7 @@ namespace EncodeData
                 }
 
                 var shortcutTable = new List<int>();
-                int shortcutInterval = 7;
+                int shortcutInterval = 8;
 
                 //Console.WriteLine("Hardest sprites:");
                 int spriteIndex = 0;

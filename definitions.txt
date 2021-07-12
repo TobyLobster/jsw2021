@@ -270,7 +270,7 @@ Room 4
             Speed: 6
             Logical colour: 1
     Arrows: 1
-        Arrow: Y 7, timing index 0
+        Arrow: Y 7, X index 0
         Arrow: no
 
 Room 5
@@ -318,7 +318,7 @@ Room 5
             Logical colour: 1
     Arrows: 0
         Arrow: no
-        Arrow: no
+        Arrow: Y 7, X index 1
 
 Room 6
     Number of items: 1 (collected)
@@ -337,7 +337,8 @@ Room 6
     Slope tile sprite   : 65
     Wall tile sprite    : 33
     Platform tile sprite: 90
-    Palette: blue, red, green, white
+    Palette: blue, yellow, green, white
+    Palette change: 5 1 red
     Title: tab 0, "I'm sure I've seen this before.."
     Tile commands:
         Use WALL
@@ -405,8 +406,8 @@ Room 6
             Speed: 2
             Logical colour: 2
     Arrows: 2
-        Arrow: Y 9, timing index 0
-        Arrow: Y 10, timing index 2
+        Arrow: Y 9, X index 0
+        Arrow: Y 10, X index 1
 
 Room 7
     Number of items: 2 (collected, collected)
@@ -521,7 +522,8 @@ Room 8
     Slope tile sprite   : 11
     Wall tile sprite    : 195
     Platform tile sprite: 194
-    Palette: blue, cyan, magenta, white
+    Palette: blue, cyan, red, white
+    Palette change: 5 2 magenta
     Title: tab 9, "On top of the house"
     Tile commands:
         Use WALL
@@ -672,7 +674,7 @@ Room 10
             Initial Pos: (4,9)
             Min Extent: 0
             Max Extent: 6
-            Initial Dir: left
+            Initial Dir: right
             Speed: 2
             Logical colour: 3
         Enemy: 1
@@ -680,12 +682,12 @@ Room 10
             Initial Pos: (16,8)
             Min Extent: 12
             Max Extent: 19
-            Initial Dir: right
+            Initial Dir: left
             Speed: 2
             Logical colour: 2
     Arrows: 1
         Arrow: no
-        Arrow: Y 3, timing index 1
+        Arrow: Y 3, X index 1
 
 Room 11
     Number of items: 0
@@ -775,8 +777,8 @@ Room 11
             Speed: 2
             Logical colour: 3
     Arrows: 2
-        Arrow: Y 4, timing index 4
-        Arrow: Y 6, timing index 2
+        Arrow: Y 4, X index 0
+        Arrow: Y 6, X index 1
 
 Room 12
     Number of items: 1 (collected)
@@ -1100,7 +1102,7 @@ Room 16
             Logical colour: 3
     Arrows: 1
         Arrow: no
-        Arrow: Y 10, timing index 1
+        Arrow: Y 10, X index 1
 
 Room 17
     Number of items: 3 (collected, collected, collected)
@@ -1120,6 +1122,10 @@ Room 17
     Wall tile sprite    : 160
     Platform tile sprite: 159
     Palette: black, red, green, cyan
+    Palette change: 1 1 magenta
+    Palette change: 2 1 cancel
+    Palette change: 6 1 yellow
+    Palette change: 7 1 cancel
     Title: tab 12, "Orangery"
     Tile commands:
         Use WALL
@@ -1160,7 +1166,7 @@ Room 17
             Logical colour: 3
     Arrows: 1
         Arrow: no
-        Arrow: Y 7, timing index 1
+        Arrow: Y 7, X index 1
 
 Room 18
     Number of items: 0
@@ -1214,7 +1220,7 @@ Room 18
             Speed: 2
             Logical colour: 1
     Arrows: 1
-        Arrow: Y 6, timing index 0
+        Arrow: Y 6, X index 0
         Arrow: no
 
 Room 19
@@ -1610,19 +1616,21 @@ Room 25
     Rope present: yes
     Deadly tile logical colours  : 0 2
     Conveyor tile logical colours: 0 1
-    Slope tile logical colours   : 2 3
+    Slope tile logical colours   : 0 3
     Wall tile logical colours    : 3 1
-    Platform tile logical colours: 2 2
+    Platform tile logical colours: 0 0
     Item tile sprite    : 75
     Deadly tile sprite  : 74
     Conveyor tile sprite: 73
     Slope tile sprite   : 126
     Wall tile sprite    : 135
     Platform tile sprite: 0
-    Palette: black, red, cyan, white
+    Palette: black, red, yellow, white
+    Palette change: 12 0 cyan
     Title: tab 10, "Swimming Pool"
     Tile commands:
         Draw block to (31,3)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
+        Move to (31,0)                                   ; Make sure we are within the tile area (otherwise we are at (32,0) and that's not a great idea)
         Use WALL
         Draw block to (28,3)                             ; 'Draw block' preserves cursor Y, and moves cursor X to one beyond final extent
         Move to (28,3)
@@ -1638,7 +1646,7 @@ Room 25
             Max Extent: 13
             Initial Dir: left
             Speed: 2
-            Logical colour: 3
+            Logical colour: 2
     Arrows: 0
         Arrow: no
         Arrow: no
@@ -2691,8 +2699,8 @@ Room 39
             Speed: 0
             Logical colour: 2
     Arrows: 2
-        Arrow: Y 11, timing index 0
-        Arrow: Y 14, timing index 1
+        Arrow: Y 11, X index 0
+        Arrow: Y 14, X index 1
 
 Room 40
     Number of items: 1 (collected)
@@ -2874,7 +2882,7 @@ Room 42
             Speed: 2
             Logical colour: 1
     Arrows: 1
-        Arrow: Y 7, timing index 0
+        Arrow: Y 7, X index 0
         Arrow: no
 
 Room 43
@@ -2960,7 +2968,7 @@ Room 43
             Logical colour: 1
     Arrows: 1
         Arrow: no
-        Arrow: Y 11, timing index 2
+        Arrow: Y 11, X index 1
 
 Room 44
     Number of items: 0
@@ -3124,7 +3132,7 @@ Room 45
             Logical colour: 1
     Arrows: 1
         Arrow: no
-        Arrow: Y 6, timing index 2
+        Arrow: Y 5, X index 1
 
 Room 46
     Number of items: 1 (collected)
@@ -3295,7 +3303,7 @@ Room 48
     Enemies: 0
     Arrows: 0
         Arrow: no
-        Arrow: no                                        ; Should be something like Arrow: Y 10, timing index 0
+        Arrow: Y 10, X index 1
 
 Room 49
     Number of items: 1 (collected)
@@ -8343,8 +8351,8 @@ BackgroundSprite 136
     .......#                                             ; Watch Tower SLOPE [x4]
     ......#.                                             ; Orangery SLOPE [x1]
     .....#..
-    ....#...
     ........
+    ...#....
     ..#.....
     .#......
     #.......
