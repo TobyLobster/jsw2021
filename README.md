@@ -30,15 +30,15 @@ I have updated the in game tune to be longer, more accurate, and kinder on the e
 
 At this point I start to remove all use of the OS. The game uses OSWRCH to write text (and more), OSWORD for sound, and OSBYTE for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of OSWRCH is replaced first, then sound routines and replaced, then keyboard. I can use more of zero page for variables, which saves memory for each instance a variable is accessed.
 
-### Palette changes
+### Interrupts and Palette changes
 The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at any character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
 
-### The Rooms
+### The Room Data
 The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for different data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first need to decode the existing encoded bytes into an editable text file. I wrote a C# console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too, so I can edit them as well.
 
 The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# console application. I take the time to make sure that the resulting bytes are identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
 
-### The Bathroom, before and after
+### The Bathroom (before and after)
 ![Bathroom](bathroom.png)
 
 The level and sprite data is now editable, so I add new data. The tile sprite types (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now have two colours instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
