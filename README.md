@@ -24,63 +24,66 @@ The data had many small pockets of unused memory, so I coalesced all these toget
 
 Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player visits 'The Watch Tower'. This bug is present on the [Complete BBC Micro Games archive version (maybe disk based?)](http://www.bbcmicro.co.uk/game.php?id=439)  but not the [Level 7 disassembly (maybe cassette based?)](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
 
-I moved the start position of the player to the correct position (in the bath, as per the Spectrum). Willy faces right initially. I've not replicated the Spectrum bug where Willy starts looking left if the previous game ended with willy left. The philosophy here is to not slavishly follow every little quirk of the Spectrum version, but I do use it to guide towards a good Jet Set Willy experience.
+I moved the start position of the player to the correct position (at the end the bath, as per the Spectrum). Willy faces right initially. I've not replicated the Spectrum bug where Willy starts looking left if the previous game ended with willy left. The philosophy here is to not slavishly follow every little quirk of the Spectrum version, but I do use it to guide towards a good Jet Set Willy experience.
 
-I have updated the in game tune to be longer, more accurate, and kinder on the ears.
+I have updated the in game tune to be longer, more accurate, and gentler on the ears.
 
 At this point I start to remove all use of the OS. The game uses OSWRCH to write text (and more), OSWORD for sound, and OSBYTE for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of OSWRCH is replaced first, then sound routines and replaced, then keyboard. I can use more of zero page for variables, which saves memory for each instance a variable is accessed.
 
-### Interrupts and Palette changes
+### Interrupts and Palette Changes
 The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at any character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
 
 ### The Room Data
-The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for different data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first need to decode the existing encoded bytes into an editable text file. I wrote a C# console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too, so I can edit them as well.
+The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for different data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first need to decode the existing encoded bytes into an editable text file. I wrote a C# console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too.
 
-The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# console application. I take the time to make sure that the resulting bytes are identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
+The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# console application. I took the time to make sure that the resulting bytes are identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
 
 ### The Bathroom (before and after)
 ![Bathroom](bathroom.png)
 
-The level and sprite data is now editable, so I add new data. The tile sprite types (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now have two colours instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
+The level and sprite data is now editable, so I add new data. The tile sprite types (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now have two colours each instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
 
-I also add data for each room to allow a palette change per character row. e.g. In 'The Bathroom', the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can still only show four colours maximum.
+I also add new data for each room to allow a palette change per character row. e.g. In 'The Bathroom', the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can still only show at most four colours. This leads to some compromises, notice the wall behind the toilet is black and white not yellow and blue.
 
-Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were many many changes. I also corrected the position and titles of each of the rooms (e.g. 'Coservatory Roof') and expanded the compression for room names to accommodate full stops in the room titles. All this aligned the game closer to the Spectrum version.
+Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were many many changes. I also corrected the position and titles of each of the rooms (e.g. 'Coservatory Roof') and expanded the compression for room names to accommodate full stops in the room titles. All these changes aligned the game closer to the Spectrum version.
 
-I also added a 'SCENERY' tile type to help get the room definitions closer to the Spectrum in one or two places.
+I also added a new 'scenery' tile type to help get the room definitions closer to the Spectrum in one or two places.
 
-## Arrows
-Arrows were missing from rooms with ropes (this was because of a collision issue as the ropes would notice a white arrow was colliding with it and assumed it was Willy). I fixed this just by making the arrows a different colour, and reinstated arrows as needed. I retimed all the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
+### Arrows
+Arrows were missing from rooms with ropes (this was because of a collision issue: ropes would notice something was colliding with it and assumed it was Willy). I fixed this by making the arrows a different logical colour from Willy and checking specifically for Willy's colour on a rope collision. I then reinstated all arrows as needed. I retimed all the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
 
-## Sprites
-I added some code to reflect sprites from their definitions into cache. This means we can store 4 sprites not 8 for some enemies going both left and right (this affects the Monk, Saw, Pig, Bird, and Penguin).
+### The Rope
+I fixed the swing offsets of the rope to match the Spectrum, and moved 'The Beach' rope two character cells left to match the Spectrum. I tweaked the logic to make the player move a little better on the rope. The rope is flicker free.
 
+### Sprites
 I added back in the missing enemy guard sprite as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
 
 I also removed several unused tile sprites.
 
+I added some code to reflect enemy sprites from their definitions into the screen ready cache. This means we can store 4 sprites rather than 8 for some enemies that move left and right (this affects the Monk, Saw, Pig, Bird, and Penguin).
+
 All sprites are now compressed to save memory, and are decompressed at runtime as needed. The compression is nybble based, decompressing one byte at a time:
 
     0-3     this byte is the same as a byte previously decoded in this sprite (previous byte, previous byte but one, but two, but three)
-    4-9     one of the 6 predetermined most common bytes (stored in a table)
+    4-9     this byte is one of the 6 predetermined most common bytes (stored in a table)
     10-14   The next nybble together with this nybble specifies one of the 80 next most common bytes (stored in a table)
     15      The next two nybbles specify the value of the byte
 
 Thus we save memory on bytes that can be encoded as 0-9, break even on encoding 10-14, and use an extra nybble when encoding 15 is required. Additionally, some sprites don't compress well. We encode these instead as raw bytes (pairs of nybbles), with the first nybble of the sprite encoded as 0 to indicate a raw encoding (since value 0 or any value 0-3 wouldn't otherwise occur at the start of a sprite).
 
-## Enemies
-Vertical enemies spin at a medium speed, with the Razor Blade enemies spinning fast. The Monk in the Chapel remains looking left (as if possessed?), as per the Spectrum.
+### Enemies
+Vertical enemies spin at a medium speed, with the Razor Blade enemies spinning fast. The Monk in the Chapel remains steadfastly looking left (as if possessed?), as per the Spectrum.
 
-## Items
+### Items
 Items twinkle individually, rather than in waves of colour previously. e.g. see 'Ballroom West'.
 
-## Time
+### Time
 We start the game at 7:00am as per the Spectrum (not 7:00pm), working through until 1:00am at a similar rate to the Spectrum.
 
-## Lives
-The Lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but copies Manic Miner instead.
+### Lives
+The remaining lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but copies Manic Miner instead.
 
-## Animated Scenery
+### Animated Scenery
 
 ![First Landing](first.gif)
 
@@ -90,13 +93,13 @@ I added the feature from the Spectrum that the cross in the 'First Landing' flas
 This animates in a standard palette of colours, and flashes the 'GAME OVER' letters individually.
 
 ### The Title Screen
-The scrolling text moves a little smoother than it used to be while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text has been tidied up slightly ('Jet Set Willy' not 'Jetset Willy', and 'BBC Micro' not 'BBC micro'). The Moonlight Sonata plays.
 
-## Spectrum Font
-The spectrum font was added and used throughout. Prior to this point I was reading the OS definitions for the characters and this needed Master specific code, but in the end I found enough space to encode the characters we need from the Spectrum font, which feels cleaner. The font sprites are compressed in the same way as the other sprites.
+![Title Screen](title.gif)
 
-## The Rope
-I fixed the swing offsets of the rope to match the Spectrum, and moved the beach rope two character cells left to match the Spectrum. I tweaked the logic to make the player move a little better on the rope. The rope is flicker free.
+The title screen uses the palette changing technology to cycle through colours. The scrolling text moves a little smoother than it used to be while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text is tidied up slightly (the name of the game is 'Jet Set Willy' not 'Jetset Willy', and I switched to 'BBC Micro' not 'BBC micro'). The Moonlight Sonata plays.
+
+### Spectrum Font
+The spectrum font was added and used throughout. Prior to this point I was reading the OS definitions for the characters from ROM and this needed Master specific code. In the end I found enough space to encode the characters we need from the Spectrum font, which feels nicer. The font sprites are compressed in the same way as all the other sprites.
 
 ## Help
 *  http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt
