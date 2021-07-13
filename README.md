@@ -24,7 +24,7 @@ The data had many small pockets of unused memory, so I coalesced all these toget
 
 Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player visits 'The Watch Tower'. This bug is present on the [Complete BBC Micro Games archive version (maybe disk based?)](http://www.bbcmicro.co.uk/game.php?id=439)  but not the [Level 7 disassembly (maybe cassette based?)](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
 
-I moved the start position of the player to the correct position (in the bath, as per the Spectrum). Willy faces right initially. I've not replicated the Spectrum bug where Willy starts looking left if the previous game ended with willy left. The philosophy here is to not slavishly follow every little quirk of the Spectrum version, but I do use it to guide towards a more authentic Jet Set Willy experience.
+I moved the start position of the player to the correct position (in the bath, as per the Spectrum). Willy faces right initially. I've not replicated the Spectrum bug where Willy starts looking left if the previous game ended with willy left. The philosophy here is to not slavishly follow every little quirk of the Spectrum version, but I do use it to guide towards a good Jet Set Willy experience.
 
 I have updated the in game tune to be longer, more accurate, and kinder on the ears.
 
@@ -37,12 +37,12 @@ The rooms are compressed. Each room is encoded as a stream of bits, with differe
 
 The next step is to write a tool that can take that text file and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# console application. I take the time to make sure that the resulting bytes are identical to the original bytes. Every time I assemble the game, I encode the latest data too.
 
+### The Bathroom, before and after
+![Bathroom](bathroom.png)
+
 Now the level and sprite data is editable, I add data so that each type of sprite that defines the room (an 8x8 'tile') can have two colours instead of one. Walls in the Bathroom can be red and yellow for example, rather than being one colour against black.
 
 I also add data for each room to have palette changes per character row. e.g. In 'The Bathroom', the enemy at the top of the room moves left and right and can be coloured green (as per the Spectrum) to give more colours.
-
-![Bathroom](bathroom.png)
-The Bathroom, before and after
 
 Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. This was not the only sweep. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were a *lot* of changes. I also correct the position and names of each of the rooms (e.g. 'Coservatory Roof') expanding the compression for room names to accommodate full stops. All aligning to be closer to the Spectrum version.
 
