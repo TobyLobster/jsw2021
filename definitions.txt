@@ -279,10 +279,10 @@ Room 5
     Conveyor direction: right
     Slope direction: \
     Rope present: yes
-    Deadly tile logical colours  : 0 1
-    Conveyor tile logical colours: 0 1
+    Deadly tile logical colours  : 0 2
+    Conveyor tile logical colours: 0 2
     Slope tile logical colours   : 0 3
-    Wall tile logical colours    : 2 1
+    Wall tile logical colours    : 1 2
     Platform tile logical colours: 3 0
     Item tile sprite    : 68
     Deadly tile sprite  : 71
@@ -290,8 +290,8 @@ Room 5
     Slope tile sprite   : 72
     Wall tile sprite    : 70
     Platform tile sprite: 69
-    Palette: black, green, blue, white
-    Palette change: 9 1 cyan
+    Palette: black, blue, green, white
+    Palette change: 9 2 cyan
     Title: tab 2, "We must perform a Quirkafleeg"
     Tile commands:
         Use WALL
@@ -315,7 +315,7 @@ Room 5
             Max Extent: 10
             Initial Dir: left
             Speed: 2
-            Logical colour: 1
+            Logical colour: 2
     Arrows: 0
         Arrow: no
         Arrow: Y 7, X index 1
@@ -2658,9 +2658,9 @@ Room 39
     Slope tile sprite   : 60
     Wall tile sprite    : 48
     Platform tile sprite: 48
-    Palette: black, red, green, white
+    Palette: black, red, white, white
     Palette change: 6 2 yellow
-    Palette change: 12 2 cancel
+    Palette change: 12 2 green
     Title: tab 12, "The Hall"
     Tile commands:
         Use WALL
@@ -2826,7 +2826,9 @@ Room 42
     Slope tile sprite   : 25
     Wall tile sprite    : 53
     Platform tile sprite: 52
-    Palette: black, red, green, white
+    Palette: black, red, magenta, white
+    Palette change: 3 2 blue
+    Palette change: 4 2 green
     Palette change: 5 1 cyan
     Palette change: 7 1 yellow
     Palette change: 12 1 cancel
@@ -7204,8 +7206,8 @@ BackgroundSprite 23
     .#####.#
 
 BackgroundSprite 24
-    .......#                                              ; On a Branch Over the Drive SLOPE [x1]
-    ....#.#.
+    .....#.#                                              ; On a Branch Over the Drive SLOPE [x1]
+    ......#.
     .....#..
     ....#...
     .#.#....

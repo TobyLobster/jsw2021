@@ -11,9 +11,9 @@
 ;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-player_start_room                                   = 29       ;
-player_start_x                                      = 1 * 8    ; must be even!
-player_start_y                                      = 10 * 8     ;
+player_start_room                                   = 48          ;
+player_start_x                                      = 30 * 8      ; must be even!
+player_start_y                                      = 4 * 8     ;
 
 charA          = 0
 charT          = 17
@@ -2494,7 +2494,7 @@ skip_unplot
     jsr draw_arrows                                 ;
 skip_plot
 
-    ldx #0                                          ; plot and unplot player as normal
+    ldx #0                                          ; set flags to plot and unplot player as normal
     stx player_not_plotted                          ;
 
     ; check for collisions with enemies, arrows, items
@@ -4572,7 +4572,10 @@ plot_or_unplot_arrow
     jsr calculate_tile_address_for_enemy_X          ;
     ldy #$20                                        ;
     lda (tile_address_low1),Y                       ;
-    bmi unplot_arrow                                ;
+    cmp #$c5                                        ;
+    beq plot_arrow1                                 ; if (deadly) then undraw arrow by EOR
+    tay                                             ;
+    bmi wipe_arrow                                  ;
 plot_arrow1
     ldy #$0f                                        ;
 plot_arrow_loop
@@ -4588,7 +4591,7 @@ arrow_sprite_address_high = * + 2
     rts                                             ;
 
 ; ***************************************************************************************
-unplot_arrow
+wipe_arrow
     ldy #$0f                                        ;
     lda #0
 -
@@ -4699,14 +4702,13 @@ consider_next_arrow0
     bpl initialise_arrows_loop                      ;
 
 handle_room_tweaks_on_entry
-    lda #0                                          ;
-    sta space_tile                                  ;
     ldy #$80                                        ;
+    sty space_tile                                  ;
     ldx player_room                                 ;
     cpx #$19                                        ; Swimming Pool
     bne check_nightmare_room                        ; Is this the Swimming Pool?
-    lda #1                                          ;
-    sta space_tile                                  ;
+    ldy #1                                          ;
+    sty space_tile                                  ;
     lda swimming_pool_item_collected                ;
     bne check_nightmare_room                        ; if (already collected) then branch
     inc swimming_pool_item_collected                ; Collect item on first visit
