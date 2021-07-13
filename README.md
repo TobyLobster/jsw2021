@@ -27,9 +27,8 @@ The data had many small pockets of unused memory, so I coalesced all these toget
 
 Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player visits 'Watch Tower'. This bug is present on the [Complete BBC Micro Games archive version (maybe disk based?)](http://www.bbcmicro.co.uk/game.php?id=439)  but not the [Level 7 disassembly (maybe cassette based?)](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
 
-I have updated the in game tune to be longer, more accurate, and gentler on the ears.
-
-At this point I start to remove all use of the OS. The game uses OSWRCH to write text (and more), OSWORD for sound, and OSBYTE for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of OSWRCH is replaced first, then sound routines and replaced, then keyboard. I can use more of zero page for variables, which saves memory for each instance a variable is accessed.
+### Removing OS Usage
+At this point I start to remove all use of the OS. The game uses OSWRCH to write text (and more), OSWORD for sound, and OSBYTE for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of OSWRCH is replaced first, then sound routines are replaced, then keyboard. I can use more of zero page for variables, which saves memory for each instance a variable is accessed.
 
 ### Interrupts and Palette Changes
 The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at any character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
@@ -46,11 +45,17 @@ The level and sprite data is now editable, so I add new data. The tile sprite ty
 
 I also add new data for each room to allow a palette change per character row. e.g. In 'The Bathroom', the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can still only show at most four colours. This leads to some compromises, notice the wall behind the toilet is black and white not yellow and blue.
 
-Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were many many changes. I also corrected the position and titles of each of the rooms (e.g. 'Coservatory Roof') and expanded the compression for room names to accommodate full stops in the room titles. All these changes aligned the game closer to the Spectrum version.
+Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies' initial positions, directions, speeds, and extents. There were many many changes. I also corrected the position and titles of each of the rooms (e.g. correcting 'Coservatory Roof' to 'Conservatory Roof') and expanded the compression for room names to accommodate full stops in the room titles. All these changes aligned the game closer to the Spectrum version.
 
 I also added a new 'scenery' tile type to help get the room definitions closer to the Spectrum in one or two places.
 
 I moved the start position of the player to the correct position (at the end the bath, as per the Spectrum). Willy faces right initially. I've not replicated the Spectrum bug where Willy starts looking left if the previous game ended with willy left. The philosophy here is to not slavishly follow every little quirk of the Spectrum version, but I do use it to guide towards a good Jet Set Willy experience.
+
+We start the game at 7:00am as per the Spectrum (not 7:00pm), working through until 1:00am at a similar rate to the Spectrum.
+
+For reference, here is 'The Bathroom' on the Spectrum:
+
+![Bathroom](bathroom_spec.png)
 
 ### Arrows
 Arrows were missing from rooms with ropes (this was because of a collision issue: ropes would notice something was colliding with it and assumed it was Willy). I fixed this by making the arrows a different logical colour from Willy and checking specifically for Willy's colour on a rope collision. I then reinstated all arrows as needed. I retimed all the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
@@ -80,9 +85,6 @@ Vertical enemies spin at a medium speed, with the Razor Blade enemies spinning f
 ### Items
 Items twinkle individually, rather than in waves of colour previously. e.g. see 'Ballroom West'.
 
-### Time
-We start the game at 7:00am as per the Spectrum (not 7:00pm), working through until 1:00am at a similar rate to the Spectrum.
-
 ### Lives
 The remaining lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but copies Manic Miner instead.
 
@@ -103,6 +105,9 @@ The title screen uses the same palette changing technology as described above to
 
 ### Spectrum Font
 The spectrum font was added and used throughout. Prior to this point I was reading the OS definitions for the characters from ROM and this needed Master specific code. In the end I found enough space to encode the characters we need from the Spectrum font, which feels nicer. The font sprites are compressed in the same way as all the other sprites.
+
+### Music
+I have updated the in game tune to be longer, more accurate, and gentler on the ears. Moonlight Sonata plays on the title screen.
 
 ## Help
 *  http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt
