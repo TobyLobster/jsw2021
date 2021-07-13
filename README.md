@@ -6,8 +6,8 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
     jsw.ssd
 
 ## Improvements
-* More colours.
-* Better colours.
+* More colours on screen.
+* More accurate colour choices.
 * Corrected room and sprite definitions.
 * More tuneful.
 * New font.
@@ -41,7 +41,8 @@ Now the level and sprite data is editable, I add data so that each type of sprit
 
 I also add data for each room to have palette changes per character row. e.g. In 'The Bathroom', the enemy at the top of the room moves left and right and can be coloured green (as per the Spectrum) to give more colours.
 
-![First Landing](first.gif)
+![Bathroom](bathroom.gif)
+The Bathroom, before and after
 
 Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. This was not the only sweep. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were a *lot* of changes. I also correct the position and names of each of the rooms (e.g. 'Coservatory Roof') expanding the compression for room names to accommodate full stops. All aligning to be closer to the Spectrum version.
 
@@ -75,7 +76,13 @@ Items flash more individually, rather than in waves of colour previously. e.g. s
 ## Time
 We start at 7am as per the Spectrum (not 7pm), working through until 1am at a similar rate to the Spectrum.
 
+## Lives
+The Lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but copies Manic Miner instead.
+
 ## Animated Scenery
+
+![First Landing](first.gif)
+
 I added the feature from the Spectrum that the cross in the 'First Landing' flashes, and other places such as 'Nomen Luni' other scenery flashes too.
 
 ### The Game Over Screen
@@ -90,7 +97,7 @@ The spectrum font was added and used throughout. Prior to this point I was readi
 ## The Rope
 I fixed the swing of the rope to match the Spectrum, and moved the beach rope two character cells left to match the Spectrum. I tweaked the logic to make the player move a little better on the rope. The rope is flicker free.
 
-## I Had Help
+## Help
 *  http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt
 An excellent disassembly for understanding the BBC Micro version. This was the starting point.
 
