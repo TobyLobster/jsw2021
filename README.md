@@ -96,7 +96,7 @@ This animates in a standard palette of colours, and flashes the 'GAME OVER' lett
 
 ![Title Screen](title.gif)
 
-The title screen uses the palette changing technology to cycle through colours. The scrolling text moves a little smoother than it used to be while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text is tidied up slightly (the name of the game is 'Jet Set Willy' not 'Jetset Willy', and I switched to 'BBC Micro' not 'BBC micro'). The Moonlight Sonata plays.
+The title screen uses the same palette changing technology as described above to cycle through colours. The scrolling text moves a little smoother now while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text is tidied up slightly (the name of the game is 'Jet Set Willy' not 'Jetset Willy', and I switched to 'BBC Micro' not 'BBC micro'). The Moonlight Sonata plays, with less screech than the Spectrum.
 
 ### Spectrum Font
 The spectrum font was added and used throughout. Prior to this point I was reading the OS definitions for the characters from ROM and this needed Master specific code. In the end I found enough space to encode the characters we need from the Spectrum font, which feels nicer. The font sprites are compressed in the same way as all the other sprites.
