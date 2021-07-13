@@ -6,8 +6,8 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
     jsw.ssd
 
 ## Improvements
-* Increased number of colours.
-* More accurate colours.
+* More colours.
+* Better colours.
 * Corrected room and sprite definitions.
 * More tuneful.
 * New font.
@@ -41,7 +41,7 @@ Now the level and sprite data is editable, I add data so that each type of sprit
 
 I also add data for each room to have palette changes per character row. e.g. In 'The Bathroom', the enemy at the top of the room moves left and right and can be coloured green (as per the Spectrum) to give more colours.
 
-![first landing](/url "first.gif")
+![First Landing](first.gif)
 
 Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. This was not the only sweep. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were a *lot* of changes. I also correct the position and names of each of the rooms (e.g. 'Coservatory Roof') expanding the compression for room names to accommodate full stops. All aligning to be closer to the Spectrum version.
 
