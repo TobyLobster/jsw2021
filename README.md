@@ -30,26 +30,27 @@ I have updated the in game tune to be longer, more accurate, and kinder on the e
 
 At this point I start to remove all use of the OS. The game uses OSWRCH to write text (and more), OSWORD for sound, and OSBYTE for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of OSWRCH is replaced first, then sound routines and replaced, then keyboard. I can use more of zero page for variables, which saves memory for each instance a variable is accessed.
 
-The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at different character rows down the screen, for updating the music and sound, and updating timers for the game. At each character row in the game area, one palette change can occur. A different palette is switched in for the 'footer' area of the screen. But to use this data, I need to be able to edit the rooms.
+### Palette changes
+The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at any character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
 
 ### The Rooms
 The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for different data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first need to decode the existing encoded bytes into an editable text file. I wrote a C# console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too, so I can edit them as well.
 
-The next step is to write a tool that can take that text file and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# console application. I take the time to make sure that the resulting bytes are identical to the original bytes. Every time I assemble the game, I encode the latest data too.
+The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# console application. I take the time to make sure that the resulting bytes are identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
 
 ### The Bathroom, before and after
 ![Bathroom](bathroom.png)
 
-Now the level and sprite data is editable, I add data so that each type of sprite that defines the room (an 8x8 'tile') can have two colours instead of one. Walls in the Bathroom can be red and yellow for example, rather than being one colour against black.
+The level and sprite data is now editable, so I add new data. Each type of sprite (8x8 'tile) that defines the room layout (e.g. wall, platform, deadly, slope, conveyor, scenery) now has two colours instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow (as per the Spectrum) for example, rather than being a single colour always against black.
 
-I also add data for each room to have palette changes per character row. e.g. In 'The Bathroom', the enemy at the top of the room moves left and right and can be coloured green (as per the Spectrum) to give more colours.
+I also add data for each room to allow a palette change per character row. e.g. In 'The Bathroom', the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can only show four colours maximum.
 
-Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. This was not the only sweep. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were a *lot* of changes. I also correct the position and names of each of the rooms (e.g. 'Coservatory Roof') expanding the compression for room names to accommodate full stops. All aligning to be closer to the Spectrum version.
+Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. This was not the only sweep. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were many many changes. I also correct the position and names of each of the rooms (e.g. 'Coservatory Roof') expanding the compression for room names to accommodate full stops. All aligning to be closer to the Spectrum version.
 
 I also added a 'SCENERY' tile type to help get the room definitions closer to the Spectrum in one or two places.
 
 ## Arrows
-I reinstated arrows back onto the rooms with ropes as needed, which were missing from the BBC version. I retimed the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds timed as per the Spectrum to give the player warning of their arrival.
+Arrows were missing from rooms with ropes (this was because of a collision issue as the ropes would notice a white arrow was colliding with it and assumed it was Willy). I fixed this just by making the arrows a different colour, and reinstated arrows as needed. I retimed the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
 
 ## Sprites
 I added some code to reflect sprites from their definitions into cache. This means we can store 4 sprites not 8 for some enemies going both left and right (The Monk, Saw, Pig, Bird, and Penguin).
