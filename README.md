@@ -41,41 +41,41 @@ The next step is to write a tool that can read 'definitions.txt' and produce an 
 ### The Bathroom, before and after
 ![Bathroom](bathroom.png)
 
-The level and sprite data is now editable, so I add new data. Each type of sprite (8x8 'tile) that defines the room layout (e.g. wall, platform, deadly, slope, conveyor, scenery) now has two colours instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow (as per the Spectrum) for example, rather than being a single colour always against black.
+The level and sprite data is now editable, so I add new data. The tile sprite types (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now have two colours instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
 
-I also add data for each room to allow a palette change per character row. e.g. In 'The Bathroom', the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can only show four colours maximum.
+I also add data for each room to allow a palette change per character row. e.g. In 'The Bathroom', the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can still only show four colours maximum.
 
-Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. This was not the only sweep. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were many many changes. I also correct the position and names of each of the rooms (e.g. 'Coservatory Roof') expanding the compression for room names to accommodate full stops. All aligning to be closer to the Spectrum version.
+Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. More sweeps happened later where I checked the positions and definitions of the tiles, the enemies initial positions, directions, speeds, and extents. There were many many changes. I also corrected the position and titles of each of the rooms (e.g. 'Coservatory Roof') and expanded the compression for room names to accommodate full stops in the room titles. All this aligned the game closer to the Spectrum version.
 
 I also added a 'SCENERY' tile type to help get the room definitions closer to the Spectrum in one or two places.
 
 ## Arrows
-Arrows were missing from rooms with ropes (this was because of a collision issue as the ropes would notice a white arrow was colliding with it and assumed it was Willy). I fixed this just by making the arrows a different colour, and reinstated arrows as needed. I retimed the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
+Arrows were missing from rooms with ropes (this was because of a collision issue as the ropes would notice a white arrow was colliding with it and assumed it was Willy). I fixed this just by making the arrows a different colour, and reinstated arrows as needed. I retimed all the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
 
 ## Sprites
-I added some code to reflect sprites from their definitions into cache. This means we can store 4 sprites not 8 for some enemies going both left and right (The Monk, Saw, Pig, Bird, and Penguin).
+I added some code to reflect sprites from their definitions into cache. This means we can store 4 sprites not 8 for some enemies going both left and right (this affects the Monk, Saw, Pig, Bird, and Penguin).
 
-I added back in the missing enemy guard sprites as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
+I added back in the missing enemy guard sprite as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
 
 I also removed several unused tile sprites.
 
-All sprites are now compressed to save memory, and are decompressed at runtime as needed. The compression is nybble based, decompressing a byte at a time:
+All sprites are now compressed to save memory, and are decompressed at runtime as needed. The compression is nybble based, decompressing one byte at a time:
 
     0-3     this byte is the same as a byte previously decoded in this sprite (previous byte, previous byte but one, but two, but three)
     4-9     one of the 6 predetermined most common bytes (stored in a table)
-    10-14   The next nybble with this nybble specifies on of the 80 next most common bytes (stored in a table)
+    10-14   The next nybble together with this nybble specifies one of the 80 next most common bytes (stored in a table)
     15      The next two nybbles specify the value of the byte
 
-Thus we save memory on bytes that can be encoded as 0-9, break even on encoding 10-14, and use an extra nybble when encoding 15 is required. Additionally, some sprites don't compress well. We encode these instead as raw bytes (pairs of nybbles), with the first nybble of the sprite encoded as 0 (since value 0 or any value 0-3 wouldn't otherwise occur at the start of a sprite).
+Thus we save memory on bytes that can be encoded as 0-9, break even on encoding 10-14, and use an extra nybble when encoding 15 is required. Additionally, some sprites don't compress well. We encode these instead as raw bytes (pairs of nybbles), with the first nybble of the sprite encoded as 0 to indicate a raw encoding (since value 0 or any value 0-3 wouldn't otherwise occur at the start of a sprite).
 
 ## Enemies
-Vertical enemies spin at a medium speed, with the Razor Blade enemies spinning fast. The Monk in the Chapel remains looking left (as if possessed?), as per Spectrum.
+Vertical enemies spin at a medium speed, with the Razor Blade enemies spinning fast. The Monk in the Chapel remains looking left (as if possessed?), as per the Spectrum.
 
 ## Items
-Items flash more individually, rather than in waves of colour previously. e.g. see 'Ballroom West'.
+Items twinkle individually, rather than in waves of colour previously. e.g. see 'Ballroom West'.
 
 ## Time
-We start at 7am as per the Spectrum (not 7pm), working through until 1am at a similar rate to the Spectrum.
+We start the game at 7:00am as per the Spectrum (not 7:00pm), working through until 1:00am at a similar rate to the Spectrum.
 
 ## Lives
 The Lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but copies Manic Miner instead.
@@ -93,10 +93,10 @@ This animates in a standard palette of colours, and flashes the 'GAME OVER' lett
 The scrolling text moves a little smoother than it used to be while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text has been tidied up slightly ('Jet Set Willy' not 'Jetset Willy', and 'BBC Micro' not 'BBC micro'). The Moonlight Sonata plays.
 
 ## Spectrum Font
-The spectrum font was added and used throughout. Prior to this point I was reading the OS definitions which needed to be different on the Master, but I found enough space to encode the characters we need from the Spectrum font, which feels better. The font characters are compressed in the same way as the other sprites.
+The spectrum font was added and used throughout. Prior to this point I was reading the OS definitions for the characters and this needed Master specific code, but in the end I found enough space to encode the characters we need from the Spectrum font, which feels cleaner. The font sprites are compressed in the same way as the other sprites.
 
 ## The Rope
-I fixed the swing of the rope to match the Spectrum, and moved the beach rope two character cells left to match the Spectrum. I tweaked the logic to make the player move a little better on the rope. The rope is flicker free.
+I fixed the swing offsets of the rope to match the Spectrum, and moved the beach rope two character cells left to match the Spectrum. I tweaked the logic to make the player move a little better on the rope. The rope is flicker free.
 
 ## Help
 *  http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt
