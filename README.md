@@ -15,12 +15,16 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
 * 'Watch Tower' crash bug fixed.
 * Arrow rendering bug fixed.
 * Player start position fixed.
-* Use RETURN for jump.
+* Uses the RETURN key for jump.
+* Works on the Master too.
+
+## Disclaimer
+The improvements that follow are made possible only by the advent of modern PCs, with modern tools, emulators and the combined resources of internet. It should be said that the original BBC version written by Dave Mann (using the pseudonym Chris Robson) was a great achievement and remains very playable today.
 
 ## What I did
 Step one is some admin. I create a single source file. The original code/data is split over two files, and code execution flows between them via jump tables. This would have been useful back in the day when memory was tight for developing on the BBC Micro itself. By splitting the source like this you could assemble half of the code as you worked on it and have a chance to fit that source code into memory. In a modern development environment (we have computers with loads of memory) this dichotomy isn't needed, so I put all the code and data together in one file and removed the jump tables. It took some effort to make sure that every detail is labelled correctly, and to remove any assumptions about memory layout in the code so all the code and data can be relocated in memory without causing bugs. Most commonly there were a few places where specific data was assumed to lie on page boundaries. This is usually done for performance benefits with a side benefit of saving a few bytes of memory, but in this case the performance and memory benefit was negligible. The convenience of being able to move, add, remove and change code freely is compelling.
 
-The data had many small pockets of unused memory, so I coalesced all these together into one place. I also moved the memory required for the screen to the end of RAM ($5600 to $7fff. 32 characters in each row for 21 character rows) so the rest of the game lies together below the screen memory.
+The data had many small pockets of unused memory, so I coalesced all these together into one place. I also moved the memory required for the screen to the end of RAM ($5600 to $7fff. 32 characters in each row for 21 character rows) so the rest of the game lies contiguously below the screen memory.
 
 ### The 'Watch Tower' bug
 ![Watch Tower](watch.png)
@@ -57,6 +61,9 @@ For reference, here is 'The Bathroom' on the Spectrum:
 
 ![Bathroom](bathroom_spec.png)
 
+### Border Colour
+One feature from the Spectrum that didn't make it into the final game was a border colour. The border helps define the edges of the room giving a more enclosed feel. The BBC Micro has no support for a hardware border colour. Experiments showed it was just about possible to change the palette at the top and bottom of the screen (although there were timing issues since the entire palette needed changing very quickly) but for a border to look good you really need the left and right edges too. This couldn't be done with palette changes so would need bytes written to screen memory. This would limit the border colour to one of the four colours on screen, and would take a lot of extra memory that is in short supply. Reluctantly this feature had to go.
+
 ### Arrows
 Arrows were missing from rooms with ropes (this was because of a collision issue: ropes would notice something was colliding with it and assumed it was Willy). I fixed this by making the arrows a different logical colour from Willy and checking specifically for Willy's colour on a rope collision. I then reinstated all arrows as needed. I retimed all the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
 
@@ -86,7 +93,7 @@ Vertical enemies spin at a medium speed, with the Razor Blade enemies spinning f
 Items twinkle individually, rather than in waves of colour previously. e.g. see 'Ballroom West'.
 
 ### Lives
-The remaining lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but copies Manic Miner instead.
+The remaining lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but apes Manic Miner instead.
 
 ### Animated Scenery
 
@@ -109,9 +116,14 @@ The spectrum font was added and used throughout. Prior to this point I was readi
 ### Music
 I have updated the in game tune to be longer, more accurate, and gentler on the ears. Moonlight Sonata plays on the title screen.
 
-## Help
+## Thanks
+* Thanks to Graham Nelson for suggesting various good ideas, including the palette swapping trick and sprite compression scheme.
+
 *  http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt
 An excellent disassembly for understanding the BBC Micro version. This was the starting point.
 
 * https://skoolkit.ca/disassemblies/jet_set_willy/hex/
 The definitive place for discovering exactly how the original Spectrum game works.
+
+* http://mdfs.net/Software/JSW/BBC/
+More disassemblies, including patched versions of JSW 2.
