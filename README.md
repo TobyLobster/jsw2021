@@ -19,8 +19,9 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
 * Works on the Master too.
 
 ## What I did
-It should be noted that the original BBC version written by Dave Mann (using the pseudonym Chris Robson) was a great achievement. Indeed it remains very playable today. The improvements that follow are only made possible by the advent of modern PCs, with modern tools, emulators, the combined resources of internet, and time.
+It should be noted that the original BBC version written by Dave Mann (using the pseudonym Chris Robson) was a great achievement. Indeed it remains very playable today.The improvements that follow are only made possible by the advent of modern PCs, modern tools, emulators, the combined resources of internet, and more time. Nothing here is intended to detract from his efforts.
 
+### We must perform some filing
 Step one is some admin. I create a single source file. The original code/data is split over two files, and code execution flows between them via jump tables. This would have been useful back in the day when memory was tight for developing on the BBC Micro itself. By splitting the source like this you could assemble half of the code as you worked on it and have a chance to fit that source code into memory. In a modern development environment (we have computers with loads of memory) this dichotomy isn't needed, so I put all the code and data together in one file and removed the jump tables. It took some effort to make sure that every detail is labelled correctly, and to remove any assumptions about memory layout in the code so all the code and data can be relocated in memory without causing bugs. Most commonly there were a few places where specific data was assumed to lie on page boundaries. This is usually done for performance benefits with a side benefit of saving a few bytes of memory, but in this case the performance and memory benefit was negligible. The convenience of being able to move, add, remove and change code freely is compelling.
 
 The data had many small pockets of unused memory, so I coalesced all these together into one place. I also moved the memory required for the screen to the end of RAM ($5600 to $7fff. 32 characters in each row for 21 character rows) so the rest of the game lies contiguously below the screen memory.
@@ -28,10 +29,10 @@ The data had many small pockets of unused memory, so I coalesced all these toget
 ### The *Watch Tower* bug
 ![Watch Tower](images/watch.png)
 
-Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player visits *Watch Tower*. This bug is present on the [Complete BBC Micro Games archive version (maybe disk based?)](http://www.bbcmicro.co.uk/game.php?id=439)  but not the [Level 7 disassembly (maybe cassette based?)](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
+Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player enters *Watch Tower*. This bug is present on the [Complete BBC Micro Games archive version (maybe disk based?)](http://www.bbcmicro.co.uk/game.php?id=439)  but not the [Level 7 disassembly (maybe cassette based?)](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
 
 ### Removing OS Usage
-At this point I start to remove all use of the OS. The game uses OSWRCH to write text (and more), OSWORD for sound, and OSBYTE for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of OSWRCH is replaced first, then sound routines are replaced, then keyboard. I can use more of zero page for variables, which saves memory for each instance a variable is accessed.
+At this point I start to remove all use of the OS. The game uses *OSWRCH* to write text (and more), *OSWORD* for sound, and *OSBYTE* for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of *OSWRCH* is replaced first, then sound routines are replaced, then keyboard. I use more of zero page for variables, which saves memory each instance a variable is accessed.
 
 ### Interrupts and Palette Changes
 The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at any character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
@@ -44,7 +45,7 @@ The next step is to write a tool that can read 'definitions.txt' and produce an 
 ### The Bathroom (before and after)
 ![Bathroom](images/bathroom.png)
 
-The level and sprite data is now editable, so I add new data. The tile sprite types (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now have two colours each instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
+The level and sprite data is now editable, so I add new data. Each tile sprite type (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now has two colours each instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
 
 I also add new data for each room to allow a palette change per character row. e.g. In *The Bathroom*, the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can still only show at most four colours. This leads to some compromises, notice the wall behind the toilet is black and white not yellow and blue.
 
@@ -52,7 +53,7 @@ Now I have these colourful abilities I take a sweep through the whole mansion, p
 
 I also added a new 'scenery' tile type to help get the room definitions closer to the Spectrum in one or two places.
 
-Another subtle change is that tile at the top of the central vertical wall has been corrected.
+Another subtle change is that the tile at the top of the central vertical wall has been corrected.
 
 I moved the start position of the player to the correct position (at the end the bath, as per the Spectrum). Willy faces right initially. I've not replicated the Spectrum bug where Willy starts looking left if the previous game ended with willy left. The philosophy here is to not slavishly follow every little quirk of the Spectrum version, but I do use it to guide towards a good Jet Set Willy experience.
 
@@ -78,7 +79,7 @@ I added back in this missing happy enemy guard sprite, as found in *Rescuing Esm
 
 I also removed several unused tile sprites.
 
-I added some code to reflect enemy sprites from their definitions into the screen ready cache. This means we can store 4 sprites rather than 8 for some enemies that move left and right (this affects the Monk, Saw, Pig, Bird, and Penguin).
+I added some code to reflect enemy sprites from their definitions into the screen ready cache. This means we can store just 4 sprites rather than 8 for some enemies that move left and right (this affects the Monk, Saw, Pig, Bird, and Penguin).
 
 All sprites are now compressed to save memory, and are decompressed at runtime as needed. The compression is nybble based, decompressing one byte at a time:
 
@@ -129,4 +130,4 @@ An excellent disassembly for understanding the BBC Micro version. This was the s
 The definitive place for discovering exactly how the original Spectrum game works.
 
 * http://mdfs.net/Software/JSW/BBC/
-More disassemblies, including patched versions of JSW 2.
+More disassemblies, including patched versions of JSW and JSW 2.
