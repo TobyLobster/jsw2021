@@ -72,6 +72,7 @@ I fixed the swing offsets of the rope to match the Spectrum, and moved 'The Beac
 
 ### Sprites
 ![Guard](guard.png)
+
 I added back in this missing enemy guard sprite, as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
 
 I also removed several unused tile sprites.
