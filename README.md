@@ -8,9 +8,9 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
 ## Improvements
 * More colours on screen.
 * More accurate colour choices.
-* Corrected room and sprite definitions.
 * More tuneful.
 * New font.
+* Corrected room and sprite definitions.
 * Arrows and ropes working together again.
 * *Watch Tower* crash bug fixed.
 * Arrow rendering bug fixed.
@@ -119,6 +119,20 @@ The spectrum font was added and used throughout. Prior to this point I was readi
 
 ### Music
 I have updated the in game tune *If I Were A Rich Man* to be longer, more accurate, and gentler on the ears. *Moonlight Sonata* now plays on the title screen.
+
+### Documenting the Remaining Minor Differences
+
+    - The jump parabola shape is very slightly different (while still being the same height and length overall) since the code seems to have problems with odd numbers of pixel height changes within the jump. This makes only a few minor changes overall:
+        - *Nomen Luni*: On the BBC you can jump from the top of the slope, under the Moon enemy to land on the platform under the ledge. On the Spectrum you have to jump to the lower platform first.
+        - *The Bow*: to jump up from the platform next to the wheel item needs two platform tiles instead of just one.
+        - *Top Landing*: Jumping into the Chapel area lands on the top level of flooring not the tiles below as on the Spectrum.
+    - *The Forgotten Abbey*: The platform under the item should be a wall, but changing this means the player can't fall down past it, trapping them at the top of the room.
+    - *The Chapel*: The player can't jump through the slope.
+    - *To the Kitchens  Main Stairway*: The lower pastille enemy should be a bird, but that's too many different enemy sprites to fit in the cache. This would require 512 bytes more memory!
+    - *The Forgotten Abbey*: Is missing an enemy on the middle platform, but this would be one too many enemies than the code is  set up to handle.
+
+### Final Thoughts
+This was a much bigger undertaking than Manic Miner since there are about 3 times as many rooms as there were caverns, but I am very pleased with the final result. The look of the mansion is greatly enhanced and the extra features like having more music and a new font make the game feel more polished. The cumulative effect of all the smaller fixes I believe add up to make the game feel more authentic as a whole.
 
 ## Thanks
 * Thanks to Graham Nelson for suggesting various good ideas, including the palette swapping trick and sprite compression scheme.
