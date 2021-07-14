@@ -38,9 +38,9 @@ At this point I start to remove all use of the OS. The game uses *OSWRCH* to wri
 The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at any character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
 
 ### The Room Data
-The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for different data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first need to decode the existing encoded bytes into an editable text file. I wrote a C# .NET Core console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too.
+The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for different data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first needed to decode the existing encoded bytes into an editable text file. I wrote a C# .NET Core console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too.
 
-The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# .NET Core console application. I took the time to make sure that the resulting bytes are identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
+The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# .NET Core console application. I took the time to make sure that the resulting bytes were identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
 
 ### The Bathroom (before and after)
 ![Bathroom](images/bathroom.png)
@@ -106,13 +106,13 @@ The remaining lives are shown by a line of Willy characters walking right. This 
 I added the feature from the Spectrum that the cross in the *First Landing* flashes, and other places such as *Nomen Luni* other scenery flashes too.
 
 ### The Game Over Screen
-This animates in a standard palette of colours, and flashes the 'GAME OVER' letters individually.
+This uses a standard palette of colours, and flashes the letters of 'GAME OVER' individually.
 
 ### The Title Screen
 
 ![Title Screen](images/title.gif)
 
-The title screen uses the same palette changing technology as described above to cycle through colours. The scrolling text moves a little smoother now while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text is tidied up slightly (the name of the game is 'Jet Set Willy' not 'Jetset Willy', and I switched to 'BBC Micro' not 'BBC micro'). The *Moonlight Sonata* plays, with less screech than the Spectrum.
+The title screen uses the same palette changing technology as described above to cycle through colours. The scrolling text moves a little smoother now while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text is tidied up slightly (the game is 'Jet Set Willy' not 'Jetset Willy', and I switched to 'BBC Micro' not 'BBC micro'). The *Moonlight Sonata* plays, with less screech than the Spectrum.
 
 ### Spectrum Font
 The spectrum font was added and used throughout. Prior to this point I was reading the OS definitions for the characters from ROM and this needed Master specific code. In the end I found enough space to encode the characters we need from the Spectrum font, which feels nicer. The font sprites are compressed in the same way as all the other sprites.
@@ -130,4 +130,4 @@ An excellent disassembly for understanding the BBC Micro version. This was the s
 The definitive place for discovering exactly how the original Spectrum game works.
 
 * http://mdfs.net/Software/JSW/BBC/
-More disassemblies, including patched versions of JSW and JSW 2.
+More BBC Micro disassemblies, including patched versions of JSW and JSW 2.
