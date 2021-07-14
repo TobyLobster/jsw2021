@@ -62,16 +62,17 @@ For reference, here is 'The Bathroom' on the Spectrum:
 ![Bathroom](bathroom_spec.png)
 
 ### Border Colour
-One feature from the Spectrum that didn't make it into the final game was a border colour. The border helps define the edges of the room giving a more enclosed feel. The BBC Micro has no support for a hardware border colour. Experiments showed it was just about possible to change the palette at the top and bottom of the screen (although there were timing issues since the entire palette needed changing very quickly) but for a border to look good you really need the left and right edges too. This couldn't be done with palette changes so would need bytes written to screen memory. This would limit the border colour to one of the four colours on screen, and would take a lot of extra memory that is in short supply. Reluctantly this feature had to go.
+One feature from the Spectrum that didn't make it into the final game was a border colour. The border helps define the edges of the room giving a more enclosed feel. The BBC Micro has no support for a hardware border colour. Experiments showed it was just about possible to change the palette at the top and bottom of the screen (although there were timing issues since the entire palette needed changing very quickly) but for a border to look good you really need the left and right edges too. This couldn't be done with palette changes so would need bytes written to screen memory. This would limit the border colour to one of the four colours on screen, and would take a lot of extra memory that is in short supply. Reluctantly this feature had to be dropped.
 
 ### Arrows
-Arrows were missing from rooms with ropes (this was because of a collision issue: ropes would notice something was colliding with it and assumed it was Willy). I fixed this by making the arrows a different logical colour from Willy and checking specifically for Willy's colour on a rope collision. I then reinstated all arrows as needed. I retimed all the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
+Arrows were missing from rooms with ropes (this was because of a collision issue: ropes would notice something was colliding with it and assumed it was Willy rather than an arrow). I fixed this by making all arrows a different logical colour from Willy and checking specifically for Willy's colour on a rope collision. I then reinstated all arrows from the Spectrum version. I retimed all the arrows as per the Spectrum, and fixed a bug in the rendering of arrows that left a hole in the wall of 'A bit of tree'. Arrow sounds are now timed as per the Spectrum to give the player warning of their arrival.
 
 ### The Rope
 I fixed the swing offsets of the rope to match the Spectrum, and moved 'The Beach' rope two character cells left to match the Spectrum. I tweaked the logic to make the player move a little better on the rope. The rope is flicker free.
 
 ### Sprites
-I added back in the missing enemy guard sprite as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
+![Guard](guard.png)
+I added back in this missing enemy guard sprite, as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
 
 I also removed several unused tile sprites.
 
