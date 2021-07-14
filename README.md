@@ -27,7 +27,7 @@ Step one is some admin. I create a single source file. The original code/data is
 The data had many small pockets of unused memory, so I coalesced all these together into one place. I also moved the memory required for the screen to the end of RAM ($5600 to $7fff. 32 characters in each row for 21 character rows) so the rest of the game lies contiguously below the screen memory.
 
 ### The 'Watch Tower' bug
-![Watch Tower](watch.png)
+![Watch Tower](images/watch.png)
 
 Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player visits 'Watch Tower'. This bug is present on the [Complete BBC Micro Games archive version (maybe disk based?)](http://www.bbcmicro.co.uk/game.php?id=439)  but not the [Level 7 disassembly (maybe cassette based?)](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
 
@@ -43,7 +43,7 @@ The rooms are compressed. Each room is encoded as a stream of bits, with differe
 The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# .NET Core console application. I took the time to make sure that the resulting bytes are identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
 
 ### The Bathroom (before and after)
-![Bathroom](bathroom.png)
+![Bathroom](images/bathroom.png)
 
 The level and sprite data is now editable, so I add new data. The tile sprite types (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now have two colours each instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
 
@@ -59,7 +59,7 @@ We start the game at 7:00am as per the Spectrum (not 7:00pm), working through un
 
 For reference, here is 'The Bathroom' on the Spectrum:
 
-![Bathroom](bathroom_spec.png)
+![Bathroom](images/bathroom_spec.png)
 
 ### Border Colour
 One feature from the Spectrum that didn't make it into the final game was a border colour. The border helps define the edges of the room giving a more enclosed feel. The BBC Micro has no support for a hardware border colour. Experiments showed it was just about possible to change the palette at the top and bottom of the screen (although there were timing issues since the entire palette needed changing very quickly) but for a border to look good you really need the left and right edges too. This couldn't be done with palette changes so would need bytes written to screen memory. This would limit the border colour to one of the four colours on screen, and would take a lot of extra memory that is in short supply. Reluctantly this feature had to be dropped.
@@ -71,9 +71,9 @@ Arrows were missing from rooms with ropes (this was because of a collision issue
 I fixed the swing offsets of the rope to match the Spectrum, and moved 'The Beach' rope two character cells left to match the Spectrum. I tweaked the logic to make the player move a little better on the rope. The rope is flicker free.
 
 ### Sprites
-![Guard](guard.png)
+![Guard](images/guard.png)
 
-I added back in this missing enemy guard sprite, as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
+I added back in this missing happy enemy guard sprite, as found in 'Rescuing Esmerelda' and 'Above the West Bedroom'.
 
 I also removed several unused tile sprites.
 
@@ -99,7 +99,7 @@ The remaining lives are shown by a line of Willy characters walking right. This 
 
 ### Animated Scenery
 
-![First Landing](first.gif)
+![First Landing](images/first.gif)
 
 I added the feature from the Spectrum that the cross in the 'First Landing' flashes, and other places such as 'Nomen Luni' other scenery flashes too.
 
@@ -108,7 +108,7 @@ This animates in a standard palette of colours, and flashes the 'GAME OVER' lett
 
 ### The Title Screen
 
-![Title Screen](title.gif)
+![Title Screen](images/title.gif)
 
 The title screen uses the same palette changing technology as described above to cycle through colours. The scrolling text moves a little smoother now while still retaining the speed (moving four pixels at a time instead of eight). The scrolling text is tidied up slightly (the name of the game is 'Jet Set Willy' not 'Jetset Willy', and I switched to 'BBC Micro' not 'BBC micro'). The Moonlight Sonata plays, with less screech than the Spectrum.
 
