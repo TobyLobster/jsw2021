@@ -5,9 +5,19 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
 
     jsw.ssd
 
+## Keys
+
+    Z               Left
+    X               Right
+    RETURN          Jump
+    Q               Disable Music
+    S               Enable Music
+    SHIFT+ESCAPE    Quit current game
+    SPACE           Start new game
+
 ## Improvements
 * More colours on screen.
-* More accurate colour choices.
+* More authentic colour choices.
 * More tuneful.
 * New font.
 * Corrected room and sprite definitions.
@@ -129,10 +139,10 @@ I have updated the in game tune *If I Were A Rich Man* to be longer, more accura
 * *The Forgotten Abbey*: The platform under the item should be a wall, but changing this means the player can't fall down past it, trapping them at the top of the room.
 * *The Chapel*: The player can't jump through the slope.
 * *To the Kitchens  Main Stairway*: The lower pastille enemy should be a bird, but that's too many different enemy sprites to fit in the cache. This would require 512 bytes more memory!
-* *The Forgotten Abbey*: Is missing an enemy on the middle platform, but this would be one too many enemies than the code is  set up to handle.
+* *The Forgotten Abbey*: Is missing an enemy on the middle platform, but this would be one too many enemies than the code is set up to handle.
 
 ### Final Thoughts
-This was a much bigger undertaking than Manic Miner since there are about 3 times as many rooms as there were caverns, but I am very pleased with the final result. The look of the mansion is greatly enhanced and the extra features like having more music and a new font make the game feel more polished. The cumulative effect of all the smaller fixes I believe add up to make the game feel more authentic as a whole.
+This was a much bigger undertaking than Manic Miner since there are 3 times as many rooms as there were caverns, but I am very pleased with the final result. The look of the mansion is greatly enhanced and the extra features like having more music and a new font make the game feel more polished. The cumulative effect of all the smaller fixes I believe add up to make the game feel like a more authentic Jet Set Willy experience as a whole.
 
 ## Thanks
 * Thanks to Graham Nelson for suggesting various good ideas, including the palette swapping trick and sprite compression scheme.
