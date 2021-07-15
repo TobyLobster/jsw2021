@@ -1781,7 +1781,7 @@ Room 27
             Sprite: 23
             Initial Pos: (8,4)
             Min Extent: 0
-            Max Extent: 11
+            Max Extent: 10
             Initial Dir: up
             Speed: 2
             Logical colour: 2
@@ -1813,7 +1813,7 @@ Room 27
             Sprite: 3
             Initial Pos: (20,4)
             Min Extent: 0
-            Max Extent: 11
+            Max Extent: 10
             Initial Dir: up
             Speed: 2
             Logical colour: 2
