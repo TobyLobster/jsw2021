@@ -23,10 +23,10 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
 * Corrected room and sprite definitions.
 * Arrows and ropes working together again.
 * *Watch Tower* crash bug fixed.
+* Uses the RETURN key for jump.
 * Arrow rendering bug fixed.
 * Player start position fixed.
-* Uses the RETURN key for jump.
-* Works on the Master too.
+* Works on the Master.
 
 ## What I did
 It should be noted that the original BBC version written by Dave Mann (using the pseudonym Chris Robson) was a great achievement. Indeed it remains very playable today.The improvements that follow are only made possible by the advent of modern PCs, modern tools, emulators, the combined resources of internet, and more time. Nothing here is intended to detract from his efforts.
@@ -39,31 +39,31 @@ The data had many small pockets of unused memory, so I coalesced all these toget
 ### The *Watch Tower* bug
 ![Watch Tower](images/watch.png)
 
-Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player enters *Watch Tower*. This bug is present on the [Complete BBC Micro Games archive version (maybe disk based?)](http://www.bbcmicro.co.uk/game.php?id=439)  but not the [Level 7 disassembly (maybe cassette based?)](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
+Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player enters *Watch Tower*. This bug is present on the [Complete BBC Micro Games archive version](http://www.bbcmicro.co.uk/game.php?id=439)  (maybe disk based?) but not the [Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt) (maybe cassette based?). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
 
 ### Removing OS Usage
-At this point I start to remove all use of the OS. The game uses *OSWRCH* to write text (and more), *OSWORD* for sound, and *OSBYTE* for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of *OSWRCH* is replaced first, then sound routines are replaced, then keyboard. I use more of zero page for variables, which saves memory each instance a variable is accessed.
+At this point I start to remove all use of the OS. The game uses *OSWRCH* to write text (and more), *OSWORD* for sound, and *OSBYTE* for keyboard, vsync etc. Although I need to write more code to replace these OS routines, it does save memory overall in that the game can use more memory locations if the OS no longer uses them. Use of *OSWRCH* is replaced first, then sound routines are replaced, then keyboard. I use more of zero page for variables, which saves memory for each instance in code that a variable is accessed.
 
 ### Interrupts and Palette Changes
-The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at any character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
+The only part of the OS that continues to run (necessarily) is the handling of IRQs. The game uses these interrupts to switch palette colours at each character row down the screen. At each character row in the game area, one palette change can occur. A different palette altogether is switched in for the 'footer' area of the screen. Interrupts are also used for updating the music and sound, and updating timers for the game. But to use this new palette changing facility, I need to be able to edit the room data.
 
 ### The Room Data
-The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for different data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first needed to decode the existing encoded bytes into an editable text file. I wrote a C# .NET Core console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too.
+The rooms are compressed. Each room is encoded as a stream of bits, with different numbers of bits required for each piece of data. This is described in [the Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt). To be able to edit this data, I first needed to decode the existing encoded bytes into an editable text file. I wrote a C# .NET Core console application to do this. The result is 'definitions.txt', a text file describing exactly the information required by the game to show each room. I also include the sprite definitions in this text file too.
 
-The next step is to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# .NET Core console application. I took the time to make sure that the resulting bytes were identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
+The next step was to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# .NET Core console application. I took the time to make sure that the resulting bytes were identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
 
 ### The Bathroom (before and after)
 ![Bathroom](images/bathroom.png)
 
-The level and sprite data is now editable, so I add new data. Each tile sprite type (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now has two colours each instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
+The level and sprite data is now editable, so I added new data. Each tile sprite type (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now has two colours each instead of one (the Spectrum calls these two colours PAPER and INK). Walls in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
 
 I also add new data for each room to allow a palette change per character row. e.g. In *The Bathroom*, the enemy at the top of the room moving left and right is now coloured green (as per the Spectrum) by changing a colour of the palette to green for those two rows. Note that each row can still only show at most four colours. This leads to some compromises, notice the wall behind the toilet is black and white not yellow and blue.
 
-Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. More sweeps happened later where I checked the positions and definitions of the tiles, the initial enemy positions, directions, speeds, and extents. There were many many changes. I also corrected the position and titles of each of the rooms (e.g. correcting *Coservatory Roof* to *Conservatory Roof*) and expanded the compression for room names to accommodate full stops in the room titles. All these changes aligned the game closer to the Spectrum version.
+Now I have these colourful abilities I take a sweep through the whole mansion, painting by numbers. It really brightens the place up. More sweeps happened later where I checked the positions and definitions of the tiles, the initial enemy positions, directions, speeds, and extents. There were many many changes. I also corrected the position and titles of each of the rooms (e.g. correcting *Coservatory Roof* to *Conservatory Roof*) and expanded the compression for room names to accommodate full stops in the room titles, and mid-word capitalisation (e.g. *MegaTree*). All these changes aligned the game closer to the Spectrum version.
 
-I also added a new 'scenery' tile type to help get the room definitions closer to the Spectrum in one or two places.
+I also added the new 'scenery' tile type to help get the room definitions closer to the Spectrum in one or two places.
 
-Another subtle change is that the tile at the top of the central vertical wall has been corrected.
+Another subtle change in *The Bathroom* is that the tile at the top of the central vertical wall has been corrected.
 
 I moved the start position of the player to the correct position (at the end the bath, as per the Spectrum). Willy faces right initially. I've not replicated the Spectrum bug where Willy starts looking left if the previous game ended with willy left. The philosophy here is to not slavishly follow every little quirk of the Spectrum version, but I do use it to guide towards a good Jet Set Willy experience.
 
