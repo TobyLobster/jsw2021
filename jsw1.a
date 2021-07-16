@@ -6,14 +6,14 @@
 ; game constants
 
 ; Proper start position
-player_start_room                                   = 21        ; 21 = The Bathroom
-player_start_x                                      = 20 * 8    ;
-player_start_y                                      = 13 * 8    ;
+;player_start_room                                   = 21        ; 21 = The Bathroom
+;player_start_x                                      = 20 * 8    ;
+;player_start_y                                      = 13 * 8    ;
 
 ; Temp start
-;player_start_room                                   = 48          ;
-;player_start_x                                      = 30 * 8      ; must be even!
-;player_start_y                                      = 4 * 8     ;
+player_start_room                                   = 23          ;
+player_start_x                                      = 30 * 8      ; must be even!
+player_start_y                                      = 9 * 8     ;
 
 charA          = 0
 charT          = 17
@@ -953,9 +953,13 @@ initialise_enemies_loop                             ; For each enemy,
     sta enemies_maximum,Y                           ;
     jsr get_one_bit_of_room_data                    ; direction (0 = horizontal, 1 = vertical)
     asl                                             ;
-    beq not_zero                                    ;
+    beq horizontal                                  ;
+    lda enemies_maximum,Y                           ; }
+    clc                                             ; }
+    adc #1                                          ; } vertical monsters maximum is one more than the multiple of eight
+    sta enemies_maximum,Y                           ; }
     lda #$ff                                        ;
-not_zero
+horizontal
     sta enemies_direction,Y                         ;
     jsr get_one_bit_of_room_data                    ; direction (0 = left/up, 1=right/down)
     sta invert                                      ;

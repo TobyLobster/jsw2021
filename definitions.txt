@@ -1030,7 +1030,7 @@ Room 15
             Sprite: 25
             Initial Pos: (14,3)
             Min Extent: 0
-            Max Extent: 11
+            Max Extent: 10
             Initial Dir: down
             Speed: 1
             Logical colour: 1
@@ -1038,7 +1038,7 @@ Room 15
             Sprite: 42
             Initial Pos: (11,6)
             Min Extent: 2
-            Max Extent: 11
+            Max Extent: 10
             Initial Dir: up
             Speed: 6
             Logical colour: 3
@@ -1526,7 +1526,7 @@ Room 23
             Sprite: 10
             Initial Pos: (11,4)
             Min Extent: 0
-            Max Extent: 9
+            Max Extent: 8
             Initial Dir: up
             Speed: 2
             Logical colour: 2

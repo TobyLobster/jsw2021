@@ -21,9 +21,9 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
 * More tuneful.
 * New font.
 * Corrected room and sprite definitions.
-* Arrows and ropes working together again.
-* *Watch Tower* crash bug fixed.
+* Arrows and ropes together again.
 * Uses the RETURN key for jump.
+* *Watch Tower* crash bug fixed.
 * Arrow rendering bug fixed.
 * Player start position fixed.
 * Works on the Master.
@@ -139,7 +139,8 @@ I have updated the in game tune *If I Were A Rich Man* to be longer, more accura
 * *The Forgotten Abbey*: The platform under the item should be a wall, but changing this means the player can't fall down past it, trapping them at the top of the room.
 * *The Chapel*: The player can't jump through the slope.
 * *To the Kitchens  Main Stairway*: The lower pastille enemy should be a bird, but that's too many different enemy sprites to fit in the cache. This would require 512 bytes more memory!
-* *The Forgotten Abbey*: Is missing an enemy on the middle platform, but this would be one too many enemies than the code is set up to handle.
+* *The Forgotten Abbey*: Is missing an enemy on the middle platform, but the code is only set up to handle 0-7 enemies in a room, and this would be the eighth.
+* The extents of vertical enemies is specified per pixel on the Spectrum, but only per cell on the BBC, so they can be a few pixels out occasionally.
 
 ### Final Thoughts
 This was a much bigger undertaking than Manic Miner since there are 3 times as many rooms as there were caverns, but I am very pleased with the final result. The look of the mansion is greatly enhanced and the extra features like having more music and a new font make the game feel more polished. The cumulative effect of all the smaller fixes I believe add up to make the game feel like a more authentic Jet Set Willy experience as a whole.
