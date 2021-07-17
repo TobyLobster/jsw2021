@@ -31,12 +31,12 @@ Starting from a [disassembly/reassembly of the original BBC Micro game](https://
 ## What I did
 It should be noted that the original BBC version written by Dave Mann (using the pseudonym Chris Robson) was a great achievement. Indeed it remains very playable today. The improvements that follow are only made possible by the advent of modern PCs, modern tools, emulators, the combined resources of the Internet, and more time. Nothing here is intended to detract from his efforts.
 
-### We must perform some filing
+### We Must Perform Some Filing
 Step one is some admin. I created a single source file. The original code/data is split over two files, and code execution flows between them via jump tables. This would have been useful back in the day when memory was tight for developing on the BBC Micro itself. By splitting the source like this you could assemble half of the code as you worked on it and have a chance to fit that source code into memory. In a modern development environment (we have computers with loads of memory) this dichotomy isn't needed, so I put all the code and data together in one file and removed the jump tables. It took some effort to make sure that every detail is labelled correctly, and to remove any assumptions about memory layout in the code so all the code and data can be relocated in memory without causing bugs. Most commonly there were a few places where specific data was assumed to lie on page boundaries. This is usually done for performance benefits with a side benefit of saving a few bytes of memory, but in this case the performance and memory benefit was negligible. The convenience of being able to move, add, remove and change code freely is compelling.
 
-The data had many small pockets of unused memory, so I coalesced all these together into one place. I also moved the memory required for the screen to the end of RAM ($5600 to $7fff. 32 characters in each row for 21 character rows) so the rest of the game lies contiguously below the screen memory.
+The data had many small pockets of unused memory, so I coalesced all these together into one place. I also moved the memory required for the screen to the end of RAM ($5600 to $7FFF. 32 characters in each row for 21 character rows) so the rest of the game lies contiguously below the screen memory.
 
-### The *Watch Tower* bug
+### The *Watch Tower* Bug
 ![Watch Tower](images/watch.png)
 
 Enough admin, onto the first bug fix. The original BBC version has a bug where the game crashes as soon as the player enters *Watch Tower*. This bug is present on the [Complete BBC Micro Games archive version](http://www.bbcmicro.co.uk/game.php?id=439)  (maybe disk based?) but not the [Level 7 disassembly](http://www.level7.org.uk/miscellany/jet-set-willy-disassembly.txt) (maybe cassette based?). The reason for the bug is that the code that loads and runs the second file of the game is located exactly where this room definition is supposed to be. The original room definition has now been restored, and the bug is fixed.
@@ -52,7 +52,7 @@ The rooms are compressed. Each room is encoded as a stream of bits, with differe
 
 The next step was to write a tool that can read 'definitions.txt' and produce an encoded version of it in bytes (as ASM assembly source). This is a second C# .NET Core console application. I took the time to make sure that the resulting bytes were identical to the original bytes. Now every time I assemble the game, I encode the latest data too.
 
-### The Bathroom (before and after)
+### The Bathroom (Before and After)
 ![Bathroom](images/bathroom.png)
 
 The level and sprite data is now editable, so I added new data. Each tile sprite type (i.e. wall, platform, deadly, slope, conveyor, scenery) for a room now has two colours instead of one (the Spectrum calls these two colours PAPER and INK). Platforms in the Bathroom can be red and yellow as per the Spectrum for example, rather than being one single colour always against black.
