@@ -4213,7 +4213,7 @@ write_items_collected
     lda items_collected_high                        ;
     jsr write_digit_a                               ;
     lda items_collected_low                         ;
-    jmp write_digit_a                               ;
+    ; fall through...
 
 ; ***************************************************************************************
 write_digit_a
