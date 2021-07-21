@@ -137,7 +137,7 @@ I have updated the in game tune *If I Were A Rich Man* to be longer, more accura
     - *The Bow*: to jump up from the platform next to the wheel item needs two platform tiles instead of just one.
     - *Top Landing*: Jumping into the Chapel area lands on the top level of flooring not the tiles below as on the Spectrum.
 * *The Forgotten Abbey*: The platform under the item should be a wall, but changing this means the player can't fall down past it, trapping them at the top of the room.
-* All the differences above match what is seen in JSW II, so I imagine the jump parabola in JSW II is the same as the BBC version.
+* All the differences above match what is seen in the Spectrum's JSW II, so I imagine the jump parabola there matches the BBC version.
 * *The Chapel*: The player can't jump through the slope.
 * *To the Kitchens  Main Stairway*: The lower pastille enemy should be a bird, but that's too many different enemy sprites to fit in the cache. This would require 512 bytes more memory!
 * *The Forgotten Abbey*: Is missing an enemy on the middle platform, but the code is only set up to handle 0-7 enemies in a room, and this would be the eighth.
