@@ -6,56 +6,1395 @@
 ; Boot Jet Set Willy
 #run "JSW.ssd"
 
+#clock t = $4b          ; count ticks of the game loop
+#clock r = $55          ; count room changes
+#clock v = vsync
+#clock c = cycles
+
 ; Name each game action
 Left    = Key_Z
 Right   = Key_X
-Jump    = Key_Colon
+Jump    = Key_Return
 Start   = Key_Space
 Quiet   = Key_Q
 
-;
-; Each line is of the form:
-;   <start time in vsyncs> <name of key to press> <duration of press in vsyncs>
+; Start
+Wait 957t
+Start 5t
 
-; Allow 5 seconds (250 vsyncs) for the game to load then start the game
-250 Start 5
+; **** The Bathroom
+Right 9t
+Left 50t
+    @45t Jump 1t
+Right 30t
+Jump 5t
+Wait 9t
+Left 1r
+    @1t Jump 1t
 
-; Turn off the music
-5 Quiet 5
+; **** Top Landing
+Left 110t
+    @64t Jump 1t
+    @18t Jump 1t
+    @18t Jump 1t
+Wait 30t
+Right 1r
 
-; The Bathroom
-0 Right 40
-40 Left 180
-150 Jump 5
-50 Right 120
-120 Left 210
-0 Jump 5
-#flush
+; **** First Landing
+Left 54t
+Right 60t
+    Jump 1t
+    @50t Jump 1t
+Right 1r
+    @18t Jump 5t
 
-; Top Landing
-0 Left 400
-225 Jump 5
-75 Jump 5
-70 Jump 5
-70 Right 260
-#flush
+; **** The Chapel
+Right 17t
+Wait 5t
+Jump 1t
+Wait 30t
+Right 77t
+Wait 50t
+Right 20t
+    Jump 1t
+Left 20t
+    Jump 1t
+    Quiet 1t
+Wait 30t
+Left 40t
+Wait 25t
+Left 1r
+    @10t Jump 1t
 
-; First Landing
-0 Left 246
+; **** First Landing (from The Chapel)
+Left 1t
+    Jump 1t
+Left 1r
 
-; The Nightmare Room
-295 Left 100
-152 Left 105
-111 Left 111
-161 Right 43
-24 Jump 12
-#flush
-0 Right 20
-0 Jump 5
-#flush
-0 Left 14
-41 Right 17
-5 Jump 12
-81 Right 10
-45 Right 5
-0 Jump 5
+; **** Main Stairway
+Right 31t
+Left 90t
+    Jump 1t
+    @20t Jump 1t
+    @25t Jump 1t
+    @18t Jump 1t
+Wait 30t
+Right 48t
+    @5t Jump 1t
+    @18t Jump 1t
+Left 1r
+    @70t Jump 1t
+
+
+; **** The Kitchens (low)
+Left 60t
+    @35t Jump 1t
+    @18t Jump 1t
+Wait 30t
+Left 1r
+    @6t Jump 1t
+    @20t Jump 1t
+
+; **** West of Kitchen (low to medium)
+Wait 13t
+Left 70t
+    @5t Jump 1t
+    @25t Jump 1t
+    @20t Jump 1t
+Right 1r
+    Jump 1t
+    @20t Jump 1t
+    @30t Jump 1t
+
+; **** The Kitchen (medium to high)
+Right 30t
+    Jump 1t
+    Wait 20t
+Wait 23t
+Right 20t
+    Jump 1t
+Wait 8t
+Right 6t
+    @5t Jump 1t
+Wait 12t
+Left 1t
+    Jump 1t
+Wait 17t
+Left 1r
+    @10t Jump 1t
+    @20t Jump 1t
+
+; **** West of Kitchen (high)
+Left 50t
+    @1t Jump 1t
+    @35t Jump 1t
+Wait 3t
+Left 3t
+Wait 20t
+Left 1t
+    Jump 1t
+Wait 18t
+Jump 1t
+Wait 17t
+Left 1t
+    Jump 1t
+
+; **** Banyan Tree
+Left 18t
+Right 1r
+    @70t Jump 1t
+    @20t Jump 1t
+
+; **** The Nightmare Room
+Right 38t
+    @20t Jump 1t
+Wait 40t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 3t
+    @2t Jump 1t
+Wait 20t
+Right 3t
+Wait 20t
+Right 1t
+    Jump 1t
+Wait 33t
+Right 1t
+    Jump 1t
+Wait 30t
+Right 3t
+Left 1t
+    Jump 1t
+Wait 20t
+Left 30t
+Wait 10t
+Left 14t
+Wait 25t
+Left 1r
+
+; **** Banyan Tree (going up)
+Left 28t
+    @17t Jump 1t
+Wait 8t
+Left 1t
+    Jump 1t
+Wait 37t
+Left 1t
+    Jump 1t
+Wait 16t
+Right 2t
+    @1t Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Left 20t
+    Jump 1t
+Jump 1t
+Wait 18t
+
+; **** A Bit of Tree
+Right 1t
+    Jump 1t
+Wait 19t
+Right 29t
+    @8t Jump 1t
+    @16t Jump 1t
+Wait 19t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Right 5t
+    @4t Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Jump 1r
+
+; **** Under the Roof
+Wait 15t
+Left 4t
+    @3t Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 35t
+Left 1t
+    Jump 1t
+Left 1r
+
+; **** Conservatory Roof
+Left 26t
+    @25t Jump 1t
+Left 28t
+Wait 15t
+Jump 1t
+Wait 18t
+Right 1r
+    @12t Jump 1t
+Wait 10t
+Left 5t
+    @4t Jump 1t
+Left 40t
+Right 1r
+
+; **** Orangery
+Wait 4t
+Right 8t
+Wait 5t
+Left 5t
+Right 1t
+    Jump 1t
+Wait 18t
+Left 28t
+Wait 4t
+Left 1t
+    Jump 1t
+Wait 22t
+Left 1t
+    Jump 1t
+Wait 22t
+Left 3t
+    @2t Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 22t
+Left 4t
+Right 4t
+Wait 27t
+Right 1t
+    Jump 1t
+Wait 12t
+Right 3t
+Wait 5t
+Left 1t
+    Jump 1t
+Wait 28t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 22t
+Right 4t
+Wait 4t
+Right 2t
+Jump 1t
+Left 1r
+
+; **** Swimming Pool
+Left 1r
+
+; **** West Wing
+Left 55t
+Wait 13t
+Left 1t
+    Jump 1t
+Wait 15t
+Left 1r
+    @39t Jump 1t
+
+; **** West Bedroom
+Left 33t
+    @30t Jump 1t
+Jump 1r
+
+; **** Above the West Bedroom
+Right 38t
+    @37t Jump 1t
+
+; **** West Wing Roof (left side)
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 15t
+Left 1r
+    Jump 1t
+
+; **** Above the West Bedroom
+Left 27t
+Right 6t
+Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Right 1r
+    Jump 1t
+
+; **** West Wing Roof (top)
+Right 1r
+    @20t Jump 1t
+    @25t Jump 1t
+    @20t Jump 1t
+    @18t Jump 1t
+    @18t Jump 1t
+
+; **** Orangery (briefly)
+Right 8t
+Left 1r
+
+; **** West Wing Roof (bottom)
+Left 90t
+    @12t Jump 1t
+    @52t Jump 1t
+    @21t Jump 1t
+Right 100t
+    @40t Jump 1t
+Left 1r
+
+; **** West  Wing
+Left 1r
+
+; **** Back Stairway
+Left 23t
+Right 1r
+    Jump 1t
+
+; **** Code Store
+Right 10t
+Wait 15t
+Jump 1t
+Wait 23t
+Jump 1t
+Wait 45t
+Right 1t
+    Jump 1t
+Wait 45t
+Right 8t
+Wait 98t
+Left 2t
+    Jump 1t
+Right 30t
+Jump 1t
+Left 1r
+
+; **** Back Stairway (to Beach)
+Left 120t
+    @10t Jump 1t
+    @90t Jump 1t
+Right 20t
+Left 1r
+    Jump 1t
+
+; **** Back Door
+Left 1r
+
+; **** Tool Shed
+Left 1r
+
+; **** The Beach
+Wait 50t
+Left 30t
+    @25t Jump 1t
+Wait 20t
+Left 4t
+Wait 40t
+Left 1r
+    Jump 1t
+
+; **** The Yacht
+Left 1r
+    @33t Jump 1t
+    @18t Jump 1t
+    @18t Jump 1t
+
+; **** The Bow
+Left 50t
+    @10t Jump 1t
+    @20t Jump 1t
+Left 33t
+Right 1r
+    @20t Jump 1t
+
+; **** The Yacht (inside)
+Right 7t
+Wait 10t
+Right 40t
+Left 40t
+Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Left 1r
+    Jump 1t
+
+; **** The Bow (coming back)
+Left 16t
+Right 16t
+Left 1t
+    Jump 1t
+Wait 62t
+Left 1t
+    Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Right 1r
+    Jump 1t
+
+; **** The Yacht (coming back)
+Right 1r
+    @32t Jump 1t
+    @22t Jump 1t
+    @22t Jump 1t
+
+; **** The Beach (coming back)
+Right 90t
+    @30t Jump 1t
+    @18t Jump 1t
+    @18t Jump 1t
+    @18t Jump 1t
+Wait 30t
+Left 1t
+    Jump 1t
+Wait 65t
+Jump 1t
+Wait 18t
+Right 1r
+    Jump 1t
+
+; **** Tool Shed
+Right 25t
+    @5t Jump 1t
+Wait 12t
+Right 1t
+    Jump 1t
+Left 40t
+Wait 32t
+Jump 1t
+Wait 25t
+Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 40t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1r
+
+; **** The Beach (very briefly!)
+Right 1r
+
+; **** Tool Shed (coming back)
+Right 1r
+
+; **** Back Door (coming back)
+Right 1r
+
+; **** Back Stairway
+Wait 32t
+Right 28t
+Left 1r
+
+; **** The Wine Cellar
+Right 32t
+Wait 25t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 28t
+Left 15t
+Wait 32t
+Jump 1t
+Wait 18t
+Left 15t
+Wait 13t
+Left 4t
+Wait 40t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 20t
+Left 32t
+    @31t Jump 1t
+Wait 35t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 30t
+    Jump 1t
+Right 20t
+    @11t Jump 5t
+Wait 46t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 40t
+Left 10t
+Right 50t
+    @19t Jump 1t
+Left 50t
+    @31t Jump 1t
+    @17t Jump 1t
+Wait 35t
+Left 40t
+    Jump 1t
+Right 30t
+Left 16t
+    @1t Jump 1t
+Right 40t
+Wait 55t
+Jump 1t
+Right 1r
+    @54t Jump 1t
+
+; **** The Forgotten Abbey
+Right 20t
+    @5t Jump 5t
+Wait 85t
+Right 40t
+Jump 1t
+Right 80t
+    @65t Jump 1t
+Wait 55t
+Jump 1t
+Wait 15t
+Left 100t
+    Jump 1t
+    @80t Jump 1t
+    @18t Jump 1t
+Wait 18t
+Right 6t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 22t
+Left 12t
+Wait 16t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 23t
+    @21t Jump 1t
+Left 35t
+Right 26t
+    @25t Jump 1t
+Wait 17t
+Left 20t
+Right 1r
+    @25t Jump 1t
+
+; **** The Security Guard
+Right 1t
+    Jump 1t
+Wait 23t
+Right 1r
+    @90t Jump 1t
+Wait 18t
+
+; **** Under the Drive
+Right 80t
+    @50t Jump 1t
+    @20t Jump 1t
+Wait 30t
+Right 1r
+    Jump 1t
+
+; **** Tree Root
+Wait 20t
+Right 25t
+    @15t Jump 1t
+Wait 30t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 50t
+    Jump 1t
+Jump 1t
+Left 36t
+Wait 6t
+Jump 1t
+Wait 12t
+Left 2t
+Jump 1t
+Wait 23t
+Left 22t
+Jump 1t
+Wait 18t
+Left 11t
+    @10t Jump 1t
+Wait 17t
+Jump 1t
+Wait 15t
+Jump 1t
+Wait 18t
+Right 1r
+
+; **** Under the Drive (top)
+Wait 18t
+Jump 1t
+Wait 18t
+Jump 1t
+Wait 18t
+Left 6t
+Wait 10t
+Right 20t
+    Jump 1t
+Wait 35t
+Left 1t
+    Jump 1t
+Wait 18t
+Right 24t
+    @2t Jump 1t
+Wait 18t
+Jump 1r
+
+; **** The Drive
+Right 1r
+
+; **** At the Foot of the MegaTree
+Wait 20t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 1r
+    @24t Jump 1t
+
+; **** Under the MegaTree
+Right 1r
+    @20t Jump 1t
+
+; **** The Bridge
+Right 1r
+    @44t Jump 1t
+    @25t Jump 1t
+
+; **** The Off Licence
+Wait 30t
+Right 131t
+    @100t Jump 1t
+Jump 1t
+Wait 21t
+Jump 1t
+Wait 22t
+Jump 1t
+Wait 17t
+Jump 1t
+Wait 21t
+Right 70t
+    @5t Jump 1t
+    @24t Jump 1t
+    @21t Jump 1t
+Left 1t
+Jump 1t
+Wait 20t
+Jump 1t
+Wait 17t
+Jump 1t
+Wait 17t
+Jump 1t
+Wait 20t
+Right 4t
+Wait 45t
+Left 1r
+
+; **** The Bridge (coming back)
+Left 60t
+    @30t Jump 1t
+    @20t Jump 1t
+Wait 7t
+Left 1r
+    @1t Jump 1t
+
+; **** Under the MegaTree (coming back)
+Left 1r
+    @80t Jump 1t
+
+; **** At the Foot Of the MegaTree (going up to the right)
+Left 55t
+Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 1r
+    Jump 1t
+
+; **** Under the MegaTree (top)
+Right 25t
+Jump 1t
+Wait 15t
+Right 16t
+Wait 20t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 8t
+    @6t Jump 1t
+Wait 18t
+Right 5t
+Wait 15t
+Left 4t
+Jump 1t
+Wait 15t
+Jump 1t
+Wait 18t
+Right 5t
+Left 30t
+    @5t Jump 1t
+Wait 30t
+Left 1t
+    Jump 1t
+Wait 18t
+Right 2t
+Left 1t
+    Jump 1t
+Wait 25t
+Left 1r
+    Jump 1t
+
+; **** At the Foot Of the MegaTree (going up)
+Left 60t
+    @54t Jump 8t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 15t
+Jump 1r
+
+; Inside the MegaTrunk (going to Cuckoo's Nest)
+Wait 60t
+Right 1t
+    Jump 1t
+Right 1r
+    @35t Jump 1t
+
+; Cuckoo's Nest
+Right 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Right 50t
+    @42t Jump 1t
+Wait 18t
+Right 5t
+Wait 42t
+Right 6t
+Jump 1t
+Wait 17t
+Left 1r
+    @41t Jump 1t
+
+; Inside the MegaTrunk (returning from Cuckoo's Nest)
+Left 30t
+Wait 30t
+Left 30t
+    Jump 1t
+    @24t Jump 3t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Left 8t
+    @7t Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Jump 1r
+
+; **** Tree Top
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 16t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 22t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 15t
+Jump 1t
+Wait 18t
+Left 6t
+Wait 4t
+Left 1t
+    Jump 1t
+Wait 75t
+Left 10t
+    @5t Jump 1t
+Wait 40t
+Left 1r
+
+; **** Out on a limb
+Left 60t
+    @15t Jump 1t
+Wait 50t
+Jump 1t
+Wait 15t
+Jump 1t
+Wait 30t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 3t
+    @2t Jump 1t
+Wait 18t
+Right 6t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 22t
+Left 6t
+    @3t Jump 1t
+Wait 18t
+Left 3t
+Jump 1t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 22t
+Right 46t
+    Jump 1t
+Wait 26t
+Left 8t
+    @7t Jump 1t
+Wait 26t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Jump 1t
+Wait 18t
+Right 1t
+    Jump 1t
+Wait 24t
+Right 1t
+    Jump 1t
+Wait 24t
+Right 1r
+
+; **** On A Branch Over the Drive
+Wait 50t
+Right 8t
+Left 30t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 24t
+Right 1t
+    Jump 1t
+Wait 24t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 1r
+    @25t Jump 1t
+
+; **** Inside the MegaTrunk (going down)
+Right 70t
+    Jump 1t
+    @35t Jump 10t
+Left 10t
+Right 10t
+Left 1r
+
+; **** At the foot of the Megatree (going down)
+Wait 4t
+Left 4t
+Wait 4t
+Right 12t
+Wait 4t
+Left 12t
+Wait 4t
+Right 6t
+Wait 12t
+Left 1t
+    Jump 1t
+Left 1r
+    @38t Jump 1t
+
+; **** The Drive (coming back)
+Left 27t
+Jump 1t
+Wait 18t
+Left 1r
+
+; **** The Security Guard (coming back)
+Left 40t
+    @24t Jump 1t
+Wait 5t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1r
+
+; **** The Front Door
+Left 1r
+
+; **** The Hall
+Left 1r
+    @44t Jump 1t
+    @18t Jump 1t
+    @18t Jump 1t
+    @18t Jump 1t
+
+; **** Ballroom East
+Left 70t
+Wait 20t
+Left 16t
+Wait 20t
+Left 1r
+
+; **** Ballroom West
+Left 8t
+Wait 70t
+Left 40t
+Right 50t
+Wait 10t
+Left 1r
+    Jump 1t
+    @35t Jump 1t
+
+; **** Main Stairway (heading out to the Front Door Item)
+Left 20t
+Right 1r
+    Jump 1t
+
+; **** Ballroom West (top)
+Right 1r
+
+; **** Ballroom East (top)
+Right 42t
+Wait 46t
+Right 1r
+    Jump 10t
+
+; **** The Hall (top)
+Right 1r
+    @11t Jump 1t
+    @18t Jump 1t
+
+; **** The Front Door (top)
+Right 40t
+Left 1r
+
+; **** The Hall (top, coming back)
+Left 1r
+    @70t Jump 1t
+
+; **** Ballroom East (top, coming back)
+Left 60t
+Wait 15t
+Left 39t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 15t
+Jump 1r
+
+; **** East Wall Base
+Wait 15t
+Right 2t
+    Jump 1t
+Wait 15t
+Left 4t
+Jump 1t
+Wait 15t
+Right 18t
+    Jump 1t
+Wait 15t
+Left 3t
+    @2t Jump 1t
+Wait 75t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 1t
+    Jump 1t
+Wait 30t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 4t
+Jump 1t
+
+; **** Halfway up the East Wall
+Wait 15t
+Left 17t
+    Jump 1t
+    @15t Jump 1t
+Wait 33t
+Right 1t
+    Jump 1t
+Wait 15t
+Left 3t
+Wait 35t
+Jump 1t
+Wait 13t
+Left 1t
+    Jump 10t
+Wait 15t
+Right 10t
+    Jump 10t
+Wait 15t
+Right 10t
+    Jump 10t
+Wait 2t
+Jump 10t
+
+; **** Priests' Hole
+Wait 8t
+Left 1t
+    Jump 1t
+Wait 15t
+Right 12t
+    @2t Jump 1t
+Wait 20t
+Right 4t
+Wait 113t
+Jump 1t
+Wait 38t
+Left 25t
+    @4t Jump 1t
+Wait 78t
+Right 8t
+    @7t Jump 1t
+Wait 14t
+Left 1t
+    Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Right 26t
+    Jump 1t
+Jump 1t
+Wait 70t
+Left 4t
+    @3t Jump 1t
+Left 1r
+
+; **** Emergency Generator
+Left 1r
+    @4t Jump 10t
+    @70t Jump 1t
+
+; **** Dr Jones
+Wait 12t
+Left 1t
+    Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Left 4t
+Jump 1t
+Wait 5t
+Right 4t
+    @3t Jump 1t
+Wait 18t
+Left 55t
+Wait 4
+Right 8t
+Wait 4
+Left 8t
+Wait 4
+Right 8t
+Wait 4
+Left 8t
+Wait 4
+Right 8t
+Wait 4
+Left 20t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Jump 1t
+Wait 15t
+Left 1t
+    Jump 1t
+Wait 15t
+Left 20t
+    @8t Jump 10t
+Left 1r
+
+; **** The Attic
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 26t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 4t
+    @2t Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Wait 18t
+Left 1r
+
+; **** Under The Roof
+Wait 75t
+Jump 1t
+Left 42t
+Right 1r
+
+; **** Nomen Luni
+Right 28t
+    @25t Jump 1t
+Wait 12t
+Left 23t
+    Jump 10t
+Right 1t
+    Jump 1t
+Wait 12t
+Right 1t
+    Jump 1t
+Wait 15t
+Right 24t
+    Jump 1t
+    @20t Jump 1t
+Right 1r
+
+; **** On The Roof
+Wait 15t
+Right 90t
+    @12t Jump 1t
+    @70t Jump 1t
+Left 65t
+    @35t Jump 1t
+Wait 55t
+Right 1t
+    Jump 1t
+Wait 90t
+Right 1r
+    Jump 1t
+
+; **** Up on the Battlements
+Right 8t
+Wait 5t
+Right 1t
+    Jump 1t
+Wait 55t
+Right 65t
+    @11t Jump 1t
+    @26t Jump 1t
+Wait 7t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 10t
+Jump 1t
+Right 1r
+
+; **** We must perform a Quirkafleeg
+Right 30t
+    @16t Jump 1t
+Left 1r
+
+; **** Watch Tower
+Wait 4t
+Jump 1t
+Wait 22t
+Left 2t
+Right 1t
+    Jump 1t
+Wait 25t
+Right 1t
+    Jump 1t
+Wait 18t
+Right 2t
+    @1t Jump 1t
+Wait 12t
+Left 1t
+    Jump 1t
+Wait 55t
+Left 2t
+    @1t Jump 1t
+Wait 18t
+Left 12t
+Wait 5t
+Left 1t
+    Jump 1t
+Wait 12t
+Left 4t
+    @3t Jump 1t
+Wait 18t
+Right 4t
+    @3t Jump 1t
+Wait 18t
+Right 20t
+Left 1r
+
+; **** We must perform a Quirkafleeg (down from Watch Tower)
+Wait 20t
+Left 5t
+Wait 70t
+Right 2t
+    Jump 1t
+Wait 15t
+Right 16t
+Jump 1t
+Right 1r
+
+; **** I'm sure I've seen this somewhere before..
+Wait 20t
+Right 20t
+    @10t Jump 1t
+Wait 18t
+Right 20t
+    @10t Jump 1t
+Wait 8t
+Right 25t
+    @14t Jump 1t
+Wait 8t
+Right 32t
+    @4t Jump 1t
+Jump 1t
+Right 1r
+
+; **** Rescue Esmerelda
+Wait 15t
+Right 1r
+    @10t Jump 1t
+    @25t Jump 1t
+    @35t Jump 1t
+
+; **** On top of the house
+Right 82t
+    @30t Jump 1t
+Left 1r
+    @20t Jump 1t
+    @30t Jump 1t
+    @30t Jump 1t
+    @30t Jump 1t
+    @30t Jump 1t
+
+; **** Rescue Esmerelda (coming back)
+Left 15t
+Right 10t
+    Jump 10t
+
+; **** Ballroom East
+Wait 30t
+Jump 1t
+Wait 15t
+Left 60t
+Wait 25t
+Left 16t
+Wait 30t
+Left 1r
+
+; **** Ballroom West
+Wait 30t
+Left 1r
+    Jump 1t
+    @16t Jump 1t
+
+; **** Main Stairway (going back upstairs)
+Left 1r
+
+; **** First Landing
+Left 60t
+Right 1r
+
+; **** Top Landing
+Wait 15t
+Jump 1t
+Wait 18t
+Left 1t
+    Jump 1t
+Left 1r
+
+; **** Master Bedroom
+Left 1r
