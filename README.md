@@ -142,6 +142,10 @@ I have updated the in game tune *If I Were A Rich Man* to be longer, more accura
 * *The Forgotten Abbey*: Is missing an enemy on the middle platform, but the code is only set up to handle 0-7 enemies in a room, and this would be the eighth.
 * The extents of vertical enemies is specified per pixel on the Spectrum, but only per cell on the BBC, so they can be a few pixels out occasionally.
 
+### Play Through
+[![jsw2021](https://img.youtube.com/vi/KHj33IzaPYc)](https://www.youtube.com/watch?v=KHj33IzaPYc)
+I hacked away at the b2 emulator to allow playback of keyboard inputs from a text file. This allowed me to automatically play through the entire game to check that it was completable.
+
 ### Final Thoughts
 This was a much bigger undertaking than Manic Miner since there are 3 times as many rooms as there were caverns, but I am very pleased with the final result. The look of the mansion is greatly enhanced and the extra features like having more music and a new font make the game feel more polished. The cumulative effect of all the smaller fixes I believe add up to make the game feel like a more authentic Jet Set Willy experience as a whole.
 
