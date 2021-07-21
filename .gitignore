@@ -1,4 +1,3 @@
-jsw.ssd
 jsw.ssd.dsk
 jsw1.sym
 jsw1.txt
@@ -17,5 +16,7 @@ screens_jsw2/
 jsw2021.bbprojectd
 **/*.user
 **/bin/
+!tools/bin/
 **/.vs/
 **/obj/
+notes/
