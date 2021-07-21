@@ -142,7 +142,7 @@ I have updated the in game tune *If I Were A Rich Man* to be longer, more accura
 * *The Forgotten Abbey*: Is missing an enemy on the middle platform, but the code is only set up to handle 0-7 enemies in a room, and this would be the eighth.
 * The extents of vertical enemies is specified per pixel on the Spectrum, but only per cell on the BBC, so they can be a few pixels out occasionally.
 
-### Play Through
+### Play Through Video
 YouTube Video:
 
 [![jsw2021](https://img.youtube.com/vi/KHj33IzaPYc/0.jpg)](https://www.youtube.com/watch?v=KHj33IzaPYc)
