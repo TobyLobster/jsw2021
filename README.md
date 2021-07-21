@@ -143,7 +143,10 @@ I have updated the in game tune *If I Were A Rich Man* to be longer, more accura
 * The extents of vertical enemies is specified per pixel on the Spectrum, but only per cell on the BBC, so they can be a few pixels out occasionally.
 
 ### Play Through
+YouTube Video:
+
 [![jsw2021](https://img.youtube.com/vi/KHj33IzaPYc/0.jpg)](https://www.youtube.com/watch?v=KHj33IzaPYc)
+
 I hacked away at the b2 emulator to allow playback of keyboard inputs from a text file. This allowed me to automatically play through the entire game to check that it was completable.
 
 ### Final Thoughts
