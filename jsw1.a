@@ -2350,6 +2350,25 @@ scenery
     rts                                             ;
 
 ; ***************************************************************************************
+slope_climb_eors
+    !byte $ff, $00
+
+slope_climb_adds
+    !byte $05, $fe
+
+slope_checks
+    !byte $00, $06
+
+slope_values
+    !byte $41, $40
+
+slope_speeds
+    !byte $02, $fe
+
+slope_tile_offsets
+    !byte $61, $60, $61
+
+; ***************************************************************************************
 free_before_nmi = $0d00 - *
 
 !if (* > $0d00) {
@@ -3080,25 +3099,6 @@ leave_with_zero
 leave_with_minus_one
     lda #$ff                                        ; Treat tile as though not a slope
     rts                                             ;
-
-; ***************************************************************************************
-slope_climb_eors
-    !byte $ff, $00
-
-slope_climb_adds
-    !byte $05, $fe
-
-slope_checks
-    !byte $00, $06
-
-slope_values
-    !byte $41, $40
-
-slope_speeds
-    !byte $02, $fe
-
-slope_tile_offsets
-    !byte $61, $60, $61
 
 ; ***************************************************************************************
 consider_conveyor_effect
@@ -4124,7 +4124,9 @@ check_y_loop
     bcc check_y_loop                                ;
     cpx #2                                          ;
     bcc remove_player_from_rope                     ;
+    jsr limit_rope_height_x                         ;
     stx player_rope_pixel                           ;
+
 player_already_on_rope
     lda player_jump_timer                           ;
     cmp #$0e                                        ;
@@ -4155,6 +4157,7 @@ player_moving_down_rope
     dex                                             ;
     dex                                             ;
 player_moving_up_rope
+    jsr limit_rope_height_x                         ;
     stx player_rope_pixel                           ;
     cpx #3                                          ;
     bcs leave1                                      ;
@@ -4168,6 +4171,19 @@ remove_player_from_rope
     lda #0                                          ;
     sta player_rope_pixel                           ;
 leave1
+    rts                                             ;
+
+; ***************************************************************************************
+limit_rope_height_x
+    lda player_room                                 ;
+    cmp #3                                          ;
+    beq +                                           ;
+    cmp #48                                         ;
+    bne leave1                                      ;
++
+    cpx #$15                                        ;
+    bcc leave1                                      ;
+    ldx #$15                                        ;
     rts                                             ;
 
 ; ***************************************************************************************
@@ -4628,6 +4644,7 @@ update_lives
     lda game_timer                                  ;
     and #3                                          ;
     bne leave6                                      ;
+force_update_lives
 life_sprite_address_low = * + 1
     lda #$00                                        ;
     clc                                             ;
@@ -4738,9 +4755,15 @@ real_entry_point
     jsr reset_game                                  ;
 new_life_loop
     jsr initialise_room                             ;
+    lda #64                                         ; default to half stride
+    sta life_sprite_address_low                     ;
+    jsr force_update_lives                          ;
 game_loop
     inc replay_timer                                ;
+    lda music_enabled                               ;
+    beq +                                           ;
     jsr update_lives                                ;
++
     jsr update_game                                 ;
     jsr check_for_game_exit                         ;
     lda player_killed                               ;
@@ -4796,14 +4819,12 @@ colour_index = * + 1
 
 check_for_game_exit
     lda keyStateShift                               ;
-    beq leave7                                      ;
+    beq return1                                     ;
     lda keyStateEscape                              ;
-    beq leave7                                      ;
+    beq return1                                     ;
     pla                                             ; Remove check_for_game_exit from stack
     pla                                             ;
     jmp real_entry_point                            ;
-leave7
-    rts                                             ;
 
 ; ***************************************************************************************
 game_over_string

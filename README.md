@@ -107,7 +107,7 @@ Vertical enemies spin at a medium speed, with the Razor Blade enemies spinning f
 Items twinkle individually, rather than in waves of colour previously. e.g. see *Ballroom West*.
 
 ### Lives
-The remaining lives are shown by a line of Willy characters walking right. This is unlike the Spectrum where they are static, but apes Manic Miner instead.
+The remaining lives are shown by a line of Willy characters walking right. They now only move right when the music is playing, as per the Spectrum.
 
 ### Animated Scenery
 
