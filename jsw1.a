@@ -508,7 +508,10 @@ initialise_room
     jsr initialise_enemies                          ;
     jsr initialise_arrows                           ;
     jsr calculate_screen_address_of_conveyor        ;
-    jmp plot_enemies                                ; [not really needed, but may be useful for screenshots]
+    jsr plot_enemies                                ; [not really needed, but may be useful for screenshots]
+    lda #64                                         ; default to half stride
+    sta life_sprite_address_low                     ;
+    jmp force_update_lives                          ;
 
 ; ***************************************************************************************
 initialise_room_data
@@ -537,23 +540,21 @@ initialise_room_data
     sta entry_horizontal_speed                      ;
     lda player_jump_timer                           ;
     sta entry_jump_timer                            ;
+    lda #0                                          ;
+    !if (* != $0257) {
+        !error "Error setting break effect byte $0258, wrong position!", *
+    }
+    bit $03                                         ; set $0258 to 3. This value is normally set by *FX 200,3 to clear memory on break
+                                                    ; This ensures a clean CTRL-Break
+    sta tile_type                                   ;
     lda player_x_in_enemies                         ;
     sta entry_x                                     ;
     lda player_y_in_enemies                         ;
     sta entry_y                                     ;
-!if (* != $0256) {
-    !if (* != $0257) {
-        !error "Error setting break effect byte $0258, wrong position!"
-    }
-}
-    bit $0303                                       ; set $0258 to 3. This value is normally set by *FX 200,3 to clear memory on break
-                                                    ; This ensures a clean CTRL-Break
     sta where_player_fell_from                      ;
     lda player_is_jumping                           ;
     sta entry_is_jumping                            ;
     jsr reset_tile_xy                               ;
-    lda #0                                          ;
-    sta tile_type                                   ;
     jsr wipe_tile_table                             ;
 initialise_background_scenery_loop
     ldy #$ff                                        ;
@@ -2365,9 +2366,6 @@ slope_values
 slope_speeds
     !byte $02, $fe
 
-slope_tile_offsets
-    !byte $61, $60, $61
-
 ; ***************************************************************************************
 free_before_nmi = $0d00 - *
 
@@ -2376,6 +2374,9 @@ free_before_nmi = $0d00 - *
 }
     * = $0d00
     rti
+
+slope_tile_offsets
+    !byte $61, $60, $61
 
 ; ***************************************************************************************
 previous_decompressed_low
@@ -4755,9 +4756,6 @@ real_entry_point
     jsr reset_game                                  ;
 new_life_loop
     jsr initialise_room                             ;
-    lda #64                                         ; default to half stride
-    sta life_sprite_address_low                     ;
-    jsr force_update_lives                          ;
 game_loop
     inc replay_timer                                ;
     lda music_enabled                               ;
