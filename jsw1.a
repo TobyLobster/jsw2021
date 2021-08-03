@@ -120,8 +120,6 @@ crtcAddressWrite                                    = $fe01     ;
 videoULARegister                                    = $fe20
 videoULAPaletteRegister                             = $fe21     ; Video ULA palette register
 
-ROMSEL                                              = $fe30     ; ROM Select (Master)
-
 ; ***************************************************************************************
 ; Write to System VIA, register B
 ; On Entry:
@@ -156,8 +154,6 @@ systemVIADataDirectionRegisterA                     = $fe43     ; System VIA dat
 systemVIARegisterANoHandshake                       = $fe4f     ; System VIA Register A without handshaking
 
 systemVIARegisterB                                  = $fe40     ;
-systemVIAInterruptFlagRegister                      = $fe4d     ;
-
 systemVIATimer1CounterLow                           = $fe44     ;
 systemVIATimer1CounterHigh                          = $fe45     ;
 systemVIATimer1LatchLow                             = $fe46     ;
@@ -207,7 +203,9 @@ blocks_to_copy                                      = $02
 text_screen_low                                     = $03
 text_screen_high                                    = $04
 text_colour_mask                                    = $05
-old_romsel                                          = $06
+
+; $06 unused
+
 character_definitions_low                           = $07
 character_definitions_high                          = $08
 temp1                                               = $09
